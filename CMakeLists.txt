@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(caaa)
 
-# Find cJSON package
-find_package(cJSON)
-
 # If not found, fetch from GitHub
 if(NOT cJSON_FOUND)
   include(FetchContent)
@@ -15,5 +12,7 @@ if(NOT cJSON_FOUND)
   FetchContent_MakeAvailable(cJSON)
 endif()
 
-add_executable(caaa ./src/main.c)
+add_executable(caaa src/main.c)
+#target_include_directories(caaa PRIVATE ${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(caaa PRIVATE cJSON)

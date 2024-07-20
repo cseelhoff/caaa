@@ -6,7 +6,6 @@ Player* player_new(const char* name, unsigned char team, unsigned char index) {
     player->name = name;
     player->team = team;
     player->is_human = false;
-    player->capital = "";
     return player;
 }
 
