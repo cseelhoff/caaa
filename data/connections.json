@@ -1,0 +1,14 @@
+{
+    "connections": [
+        {
+            "source_name": "Russia",
+            "destination_name": "Germany",
+            "required_names": []
+        },
+        {
+            "source_name": "Germany",
+            "destination_name": "Russia",
+            "required_names": []
+        }
+    ]
+}

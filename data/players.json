@@ -1,0 +1,16 @@
+{
+    "players": [
+        {
+            "name": "Russia",
+            "team": 1,
+            "captial": "Russia",
+            "money": 10
+        },
+        {
+            "name": "Germany",
+            "team": 2,
+            "captial": "Germany",
+            "money": 10
+        }
+    ]
+}
