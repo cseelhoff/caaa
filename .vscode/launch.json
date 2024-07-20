@@ -5,10 +5,10 @@
             "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/caaa",
+            "program": "/workspaces/caaa/build/caaa",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "/workspaces/caaa/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -21,6 +21,13 @@
             ],
             "preLaunchTask": "CMake: Build",
             "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "CMake Debug",
+            "type": "cmake",
+            "request": "launch",
+            "cmakeDebugType": "script",
+            "scriptPath": "${workspaceFolder}/CMakeLists.txt"
         }
     ]
 }

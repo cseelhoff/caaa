@@ -1,11 +1,11 @@
 #include "game_data.h"
-//#include "cJSON.h"
+#include "cJSON.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 // Existing gameDataInstance definition
 GameData gameDataInstance = {0};
-/*
+
 // Function to read the entire content of a file into a string
 char* readFileToString(const char* filename) {
     FILE* file = fopen(filename, "rb");
@@ -69,4 +69,3 @@ GameData* initializeGameData() {
 
     return &gameDataInstance;
 }
-*/

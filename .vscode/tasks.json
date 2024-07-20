@@ -6,7 +6,7 @@
             "command": "cmake",
             "args": [
                 "--build",
-                "${workspaceFolder}/build",
+                "/workspaces/caaa",
                 "--config",
                 "Debug"
             ],
@@ -18,7 +18,7 @@
                 "$gcc"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/build"
+                "cwd": "/workspaces/caaa"
             }
         }
     ],

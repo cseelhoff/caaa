@@ -1,19 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
-project(caaa)
+project(caaa VERSION 0.1.0 LANGUAGES C)
+add_executable(caaa src/main.c)
 
 include(FetchContent)
-
 FetchContent_Declare(
   cJSON
   GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-  GIT_TAG        v1.7.14 # Optionally specify a version tag or commit hash here 
+  GIT_TAG        v1.7.14
 )
-
 FetchContent_MakeAvailable(cJSON)
-
-add_executable(caaa src/main.c)
 target_link_libraries(caaa PRIVATE cjson)
-
-#target_include_directories(caaa PRIVATE ${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/include)
+target_include_directories(caaa PRIVATE /workspaces/caaa/include)
+#include_directories(${CMAKE_SOURCE_DIR}/include)
 #link_libraries(cJSON)

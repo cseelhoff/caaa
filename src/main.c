@@ -1,7 +1,8 @@
 #include <stdio.h>
-//#include "unit_type.h"
+#include "game_data.h"
 
 int main() {
-    printf("Starting CAAA\n");
+    printf("Starting CAAA \n");
+    GameData* gameData = initializeGameData();
     return 0;
 }
