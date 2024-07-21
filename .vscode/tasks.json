@@ -8,7 +8,9 @@
                 "--build",
                 "/workspaces/caaa/out/build/mypreset",
                 "--config",
-                "Debug"
+                "Debug",
+                "--target",
+                "caaa"
             ],
             "group": {
                 "kind": "build",

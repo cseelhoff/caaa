@@ -8,11 +8,15 @@ add_executable(caaa ${SOURCES})
 target_include_directories(caaa PRIVATE /workspaces/caaa/include)
 
 include(FetchContent)
-FetchContent_Declare(
-  cJSON
-  GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-  GIT_TAG        v1.7.14
-)
-FetchContent_MakeAvailable(cJSON)
+find_package(cJSON QUIET) # Check if cJSON is already available
+
+if(NOT cJSON_FOUND) # If not found, fetch and build cJSON
+  FetchContent_Declare(
+    cJSON
+    GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+    GIT_TAG        v1.7.14
+  )
+  FetchContent_MakeAvailable(cJSON)
+endif()
 target_link_libraries(caaa PRIVATE cjson)
 target_include_directories(caaa PRIVATE "/workspaces/caaa/out/build/mypreset/_deps/cjson-src")

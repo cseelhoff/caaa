@@ -1,6 +1,6 @@
 #include "game_data.h"
 #include "cJSON.h"
-#include "unit_type.h"
+#include "unittype.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,39 +12,26 @@ GameData gameDataInstance = {0};
 
 void createDummyGameState() {
   int dummyGameState[] = {
-      0, // Current Player is allied with Next Player T/F
+      0, // ActiveUnitStatus stat 1 for Territory1
+      0, // ActiveUnitStatus stat 2 for Territory1
+
       0, // Player Money
-      0, // Next Player is allied with Next,Next Player T/F
-      0, // Next Player Money
-      0, // Territory1 Land Value
-      0, // T1 is water T/F
-      0, // T1 original owner (player_index offset from current - unsign char)
-      0, //
+      0, // Current Player is allied with Next Player T/F
+      0, // Territory1 (CurrentPlayer perspective stat1)
+      0, // Territory1 (CurrentPlayer perspective stat2)
+      0, // Territory2 (CurrentPlayer perspective stat1)
+      0, // Territory2 (CurrentPlayer perspective stat2)
+
+      0, // NextPlayer Money
+      0, // NextPlayer is allied with Next Player T/F
+      0, // Territory1 (NextPlayer perspective stat1)
+      0, // Territory1 (NextPlayer perspective stat2)
+      0, // Territory2 (NextPlayer perspective stat1)
+      0, // Territory2 (NextPlayer perspective stat2)
   };
 }
 
-// Function to read the entire content of a file into a string
-char *readFileToString(const char *filename) {
-  FILE *file = fopen(filename, "rb");
-  if (file == NULL)
-    return NULL;
-
-  fseek(file, 0, SEEK_END);
-  long length = ftell(file);
-  fseek(file, 0, SEEK_SET);
-
-  char *content = (char *)malloc(length + 1);
-  if (content) {
-    fread(content, 1, length, file);
-    content[length] = '\0'; // Null-terminate the string
-  }
-
-  fclose(file);
-  return content;
-}
-
-// Modified initializeGameData function
-GameData *initializeGameData(int a) {
+GameData* initializeGameData(int a) {
   // print out current directory
   char cwd[1024];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -53,90 +40,135 @@ GameData *initializeGameData(int a) {
     printf("Failed to get current directory\n");
     return &gameDataInstance;
   }
-  UnitType* unitTypes = get_unitTypes("./data/unit_types.json");
+
+  cJSON* cjson = get_cjson_from_path("./data/unit_types.json", "unitTypes");
+  int unitTypes_count = get_count_from_cjson_array(cjson);
+  if (unitTypes_count == 0)
+    return &gameDataInstance;
+  UnitType* unitTypes = get_unitTypes_from_cjson(cjson, unitTypes_count);
   return &gameDataInstance;
 }
 
-UnitType* get_unitTypes(char *unit_types_json_path) {
-  UnitType *unitTypes;
-  char *jsonString = readFileToString(unit_types_json_path);
+cJSON* get_cjson_from_path(char* unit_types_json_path,
+                           char* object_item_string) {
+  cJSON* cJSON_ptr;
+  char* jsonString = readFileToString(unit_types_json_path);
   if (jsonString == NULL) {
     printf("Failed to read unit types JSON file\n");
-    return unitTypes;
+    return cJSON_ptr;
   }
 
-  cJSON *json = cJSON_Parse(jsonString);
-  if (json == NULL) {
+  cJSON_ptr = cJSON_Parse(jsonString);
+  free(jsonString);
+  if (cJSON_ptr == NULL) {
     printf("Failed to parse unit types JSON\n");
-    free(jsonString);
-    return unitTypes;
+    return cJSON_ptr;
   }
 
-  cJSON *unitTypesArray = cJSON_GetObjectItemCaseSensitive(json, "unitTypes");
-  if (!cJSON_IsArray(unitTypesArray)) {
-    printf("unitTypes is not an array\n");
-    cJSON_Delete(json);
-    free(jsonString);
-    return unitTypes;
+  cJSON_ptr = cJSON_GetObjectItemCaseSensitive(cJSON_ptr, object_item_string);
+  if (!cJSON_IsArray(cJSON_ptr)) {
+    printf("%s is not an array\n", object_item_string);
+  }
+  return cJSON_ptr;
+}
+
+char* readFileToString(const char* filename) {
+  FILE* file = fopen(filename, "rb");
+  if (file == NULL)
+    return NULL;
+
+  fseek(file, 0, SEEK_END);
+  long length = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  char* content = (char*)malloc(length + 1);
+  if (content) {
+    fread(content, 1, length, file);
+    content[length] = '\0';
   }
 
-  int unitTypeCount = cJSON_GetArraySize(unitTypesArray);
-  if (unitTypeCount == 0) {
-    printf("No unit types found\n");
-    cJSON_Delete(json);
-    free(jsonString);
-    return unitTypes;
-  }
+  fclose(file);
+  return content;
+}
 
+int get_count_from_cjson_array(cJSON* cjson_array) {
+  int count = cJSON_GetArraySize(cjson_array);
+  if (count == 0) {
+    printf("No items found in array\n");
+    cJSON_Delete(cjson_array);
+  }
+  return count;
+}
+
+UnitType* get_unitTypes_from_cjson(cJSON* unitTypes_cjson, int unitType_count) {
   // Allocate memory for the array of UnitType structures
-  unitTypes = malloc(unitTypeCount * sizeof(UnitType));
+  UnitType* unitTypes = malloc(unitType_count * sizeof(UnitType));
   if (!unitTypes) {
     printf("Memory allocation failed\n");
-    cJSON_Delete(json);
-    free(jsonString);
+    cJSON_Delete(unitTypes_cjson);
     return unitTypes;
   }
-
-  cJSON *unitType_cjson;
-  cJSON_ArrayForEach(unitType_cjson, unitTypesArray) {
-    cJSON *name = cJSON_GetObjectItemCaseSensitive(unitType_cjson, "name");
-    if (!name || !cJSON_IsString(name))
-      break;
-
-    cJSON *attack = cJSON_GetObjectItemCaseSensitive(unitType_cjson, "attack");
-    cJSON *defense =
-        cJSON_GetObjectItemCaseSensitive(unitType_cjson, "defense");
-    cJSON *max_moves =
-        cJSON_GetObjectItemCaseSensitive(unitType_cjson, "max_moves");
-    cJSON *max_hits =
-        cJSON_GetObjectItemCaseSensitive(unitType_cjson, "max_hits");
-    cJSON *cost = cJSON_GetObjectItemCaseSensitive(unitType_cjson, "cost");
-    cJSON *max_supported =
-        cJSON_GetObjectItemCaseSensitive(unitType_cjson, "max_supported");
-    cJSON *weight = cJSON_GetObjectItemCaseSensitive(unitType_cjson, "weight");
-
-    UnitType unitType = {strdup(name->valuestring),
-                         attack->valueint,
-                         defense->valueint,
-                         max_moves->valueint,
-                         max_hits->valueint,
-                         cost->valueint,
-                         0,
-                         max_supported->valueint,
-                         weight->valueint,
-                         false,
-                         0,
-                         false,
-                         0,
-                         0,
-                         0,
-                         0,
-                         0,
-                         0};
+  int index = 0;
+  cJSON* unit;
+  cJSON_ArrayForEach(unit, unitTypes_cjson) {
+    unitTypes[index].name = get_string_from_cjson(unit, "name", UT_DEF_NAME);
+    unitTypes[index].attack =
+        get_char_from_cjson(unit, "attack", UT_DEF_ATTACK);
+    unitTypes[index].defense =
+        get_char_from_cjson(unit, "defense", UT_DEF_DEFENSE);
+    unitTypes[index].max_moves =
+        get_char_from_cjson(unit, "max_moves", UT_DEF_MAX_MOVES);
+    unitTypes[index].cost = get_char_from_cjson(unit, "cost", UT_DEF_COST);
+    unitTypes[index].max_supportable =
+        get_char_from_cjson(unit, "max_supportable", UT_DEF_MAX_SUPPORTABLE);
+    unitTypes[index].max_supported =
+        get_char_from_cjson(unit, "max_supported", UT_DEF_MAX_SUPPORTED);
+    unitTypes[index].weight =
+        get_char_from_cjson(unit, "weight", UT_DEF_WEIGHT);
+    unitTypes[index].raid_strength =
+        get_char_from_cjson(unit, "raid_strength", UT_DEF_RAID_STRENGTH);
+    unitTypes[index].max_land =
+        get_char_from_cjson(unit, "max_land", UT_DEF_MAX_LAND);
+    unitTypes[index].max_air =
+        get_char_from_cjson(unit, "max_air", UT_DEF_MAX_AIR);
+    unitTypes[index].sub_strength =
+        get_char_from_cjson(unit, "sub_strength", UT_DEF_SUB_STRENGTH);
+    unitTypes[index].bombard =
+        get_char_from_cjson(unit, "bombard", UT_DEF_BOMBARD);
+    unitTypes[index].aa_shots =
+        get_char_from_cjson(unit, "aa_shots", UT_DEF_AA_SHOTS);
+    unitTypes[index].is_air =
+        get_bool_from_cjson(unit, "is_air", UT_DEF_IS_AIR);
+    unitTypes[index].is_water =
+        get_bool_from_cjson(unit, "is_water", UT_DEF_IS_WATER);
+    unitTypes[index].is_detector =
+        get_bool_from_cjson(unit, "is_detector", UT_DEF_IS_DETECTOR);
+    index++;
   }
-
-  cJSON_Delete(json);
-  free(jsonString);
-
   return unitTypes;
+}
+
+char* get_string_from_cjson(cJSON* cjson, char* key, char* default_value) {
+  char* value = default_value;
+  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
+  if (value_cjson && cJSON_IsString(value_cjson))
+    value = strdup(value_cjson->valuestring);
+  return value;
+}
+
+unsigned char get_char_from_cjson(cJSON* cjson, char* key,
+                                  unsigned char default_value) {
+  unsigned char value = default_value;
+  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
+  if (value_cjson && cJSON_IsNumber(value_cjson))
+    value = value_cjson->valueint;
+  return value;
+}
+
+bool get_bool_from_cjson(cJSON* cjson, char* key, bool default_value) {
+  bool value = default_value;
+  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
+  if (value_cjson)
+    value = cJSON_IsTrue(value_cjson);
+  return value;
 }
