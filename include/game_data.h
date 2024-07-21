@@ -16,6 +16,6 @@ typedef struct {
 
 extern GameData gameDataInstance;
 
-GameData* initializeGameData();
+GameData* initializeGameData(void);
 
 #endif

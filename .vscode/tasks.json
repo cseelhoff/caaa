@@ -6,7 +6,7 @@
             "command": "cmake",
             "args": [
                 "--build",
-                "/workspaces/caaa",
+                "/workspaces/caaa/build",
                 "--config",
                 "Debug"
             ],

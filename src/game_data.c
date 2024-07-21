@@ -6,6 +6,19 @@
 // Existing gameDataInstance definition
 GameData gameDataInstance = {0};
 
+void createDummyGameState() {
+    int dummyGameState[] = {
+        0, // Current Player is allied with Next Player T/F
+        0, // Player Money
+        0, // Next Player is allied with Next,Next Player T/F
+        0, // Next Player Money
+        0, // Territory1 Land Value
+        0, // T1 is water T/F
+        0, // T1 original owner (player_index offset from current - unsign char)
+        0, //
+    };
+}
+
 // Function to read the entire content of a file into a string
 char* readFileToString(const char* filename) {
     FILE* file = fopen(filename, "rb");

@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "territory.h": "c",
+        "player.h": "c"
+    }
+}

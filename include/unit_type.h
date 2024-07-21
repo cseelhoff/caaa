@@ -5,23 +5,23 @@
 
 typedef struct UnitType {
     const char* name;
-    unsigned char attack;
-    unsigned char defense;
-    unsigned char max_moves;
-    unsigned char max_hits;
-    unsigned char cost;
-    unsigned char max_supportable;
-    unsigned char max_supported;
-    unsigned char weight;
-    bool is_air;
-    unsigned char bombs;
-    bool is_water;
-    unsigned char max_land;
-    unsigned char max_air;
-    bool is_sub;
-    bool is_anti_sub;
-    unsigned char bombard;
-    unsigned char aa_shots;
+    const unsigned char attack;
+    const unsigned char defense;
+    const unsigned char max_moves;
+    const unsigned char max_hits;
+    const unsigned char cost;
+    const unsigned char max_supportable;
+    const unsigned char max_supported;
+    const unsigned char weight;
+    const bool is_air;
+    const unsigned char bombs;
+    const bool is_water;
+    const unsigned char max_land;
+    const unsigned char max_air;
+    const unsigned char sub_strength;
+    const bool is_anti_sub;
+    const unsigned char bombard;
+    const unsigned char aa_shots;
 } UnitType;
 
-#endif // UNIT_TYPE_H
+#endif

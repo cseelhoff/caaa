@@ -1,7 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "territory.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -11,20 +10,16 @@ typedef enum {
 
 #define TOTAL_PLAYERS 2
 
+struct Territory;
+
 typedef struct {
     const char* name;
-    Team team;
+    const Team team;
+    const unsigned char player_index;
+    const struct Territory* capital_territory_ptr;
+    const bool is_allied[TOTAL_PLAYERS - 1];
     bool is_human;
-    Territory capital;
-    unsigned char capital_index;
-    bool is_allied[TOTAL_PLAYERS - 1];
-    unsigned char index;
     int money;
-    int reserved_money;
 } Player;
 
-// Function prototypes
-Player* player_new(const char* name, unsigned char team, unsigned char index);
-void player_free(Player* player);
-
-#endif // PLAYER_H
+#endif

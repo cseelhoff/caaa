@@ -1,12 +1,11 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "territory.h" 
+struct Territory;
 
 typedef struct Connection {
-    Territory source_territory;
-    Territory destination_territory;
-    Territory required_territories[2];
+    struct Territory* destination_territory;
+    struct Territory* required_territory[2];
 } Connection;
 
 #endif

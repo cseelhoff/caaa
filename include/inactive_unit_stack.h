@@ -3,12 +3,10 @@
 
 #include "unit_health.h"
 
-#define TOTAL_INACTIVE_UNIT_STATUS_TYPES 1
-
 typedef struct InactiveUnitStack {
-    UnitHealth unit_health;
-    unsigned char quantity;
-    struct InactiveUnitStack* stack_after_hit;
+    const UnitHealth unit_health;
+    const unsigned int* after_hit_increment_quantity_pointer;
+    unsigned int quantity;
 } InactiveUnitStack;
 
 #endif
