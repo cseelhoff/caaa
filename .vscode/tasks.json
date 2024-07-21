@@ -6,7 +6,7 @@
             "command": "cmake",
             "args": [
                 "--build",
-                "/workspaces/caaa/build",
+                "/workspaces/caaa/out/build/mypreset",
                 "--config",
                 "Debug"
             ],

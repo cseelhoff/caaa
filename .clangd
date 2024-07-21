@@ -1,2 +1,4 @@
 CompileFlags:
-  Add: [-I/workspaces/caaa/build/_deps/cjson-src]
+  Add: 
+    - "-I/workspaces/caaa/out/build/mypreset/_deps/cjson-src"
+    - "-I/workspaces/caaa/include"

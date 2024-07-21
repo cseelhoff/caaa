@@ -8,14 +8,17 @@
 #include "connection.h"
 
 typedef struct {
-    UnitType unitTypes[UNIT_TYPE_COUNT];
-    Player players[PLAYER_COUNT];
-    Territory territories[TERRITORY_COUNT];
-    Connection connections[CONNECTION_COUNT];
+    /*
+    struct UnitType unitTypes[UNIT_TYPE_COUNT];
+    struct Player players[PLAYER_COUNT];
+    struct Territory territories[TERRITORY_COUNT];
+    struct Connection connections[CONNECTION_COUNT];
+    */
+    int a;
 } GameData;
 
 extern GameData gameDataInstance;
 
-GameData* initializeGameData(void);
+GameData* initializeGameData(int a);
 
 #endif

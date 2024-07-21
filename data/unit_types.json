@@ -1,5 +1,5 @@
 {
-    "unittypes": [
+    "unitTypes": [
         {
             "name": "Artillery", 
             "attack": 2, 

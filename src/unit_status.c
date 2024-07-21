@@ -1,6 +1,6 @@
 #include <stddef.h>
 #include "unit_status.h"
-
+/*
 void unit_status_init(UnitStatus* status, UnitHealth unit_health, unsigned char moves_remaining) {
     if (status != NULL) {
         status->unit_health = unit_health;
@@ -21,3 +21,4 @@ void create_unit_statuses(UnitHealth* unit_healths, int unit_healths_count, Unit
     }
     *moved_unit_statuses_count = index;
 }
+*/

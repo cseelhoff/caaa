@@ -3,6 +3,6 @@
 
 int main() {
     printf("Starting CAAA \n");
-    //GameData* gameData = initializeGameData();
+    GameData* gameData = initializeGameData(0);
     return 0;
 }
