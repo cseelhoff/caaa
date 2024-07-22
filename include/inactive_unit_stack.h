@@ -5,8 +5,8 @@
 
 typedef struct InactiveUnitStack {
   const UnitHealth unit_health;
-  const unsigned int* after_hit_increment_quantity_pointer;
-  unsigned int quantity;
+  uint8_t* after_hit_increment_quantity_pointer;
+  uint8_t quantity;
 } InactiveUnitStack;
 
 #endif
