@@ -1,12 +1,14 @@
 #include "game_data.h"
 #include "cJSON.h"
+#include "json_data_loader.h"
+#include "unit_health.h"
 #include "unittype.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdint.h>
 
 // Existing gameDataInstance definition
 GameData gameDataInstance = {0};
@@ -30,6 +32,56 @@ void createDummyGameState() {
       0, // Territory2 (NextPlayer perspective stat1)
       0, // Territory2 (NextPlayer perspective stat2)
   };
+  // note on land units on transports:
+  // before a transport is split into statuses, it needs to be split into cargo statuses
+  // a russian transport could fall under any of these types (45 yikes - 8 if no ally coop) +1 empty:
+  // 1. a transport with 1 russian infantry
+  // 2. a transport with 1 russian tank
+  // 3. a transport with 1 russian artillery
+  // 4. a transport with 1 russian AA
+  // 5. a transport with 1 british infantry
+  // 6. a transport with 1 british tank
+  // 7. a transport with 1 british artillery
+  // 8. a transport with 1 british AA
+  // 9. a transport with 1 american infantry
+  // 10. a transport with 1 american tank
+  // 11. a transport with 1 american artillery
+  // 12. a transport with 1 american AA
+  // 13. a transport with 1 russian infantry and 1 russian infantry
+  // 14. a transport with 1 russian infantry and 1 russian tank
+  // 15. a transport with 1 russian infantry and 1 russian artillery
+  // 16. a transport with 1 russian infantry and 1 russian AA
+  // 17. a transport with 1 russian infantry and 1 british infantry
+  // 18. a transport with 1 russian infantry and 1 british tank
+  // 19. a transport with 1 russian infantry and 1 british artillery
+  // 20. a transport with 1 russian infantry and 1 british AA
+  // 21. a transport with 1 russian infantry and 1 american infantry
+  // 22. a transport with 1 russian infantry and 1 american tank
+  // 23. a transport with 1 russian infantry and 1 american artillery
+  // 24. a transport with 1 russian infantry and 1 american AA
+  // 25. a transport with 1 russian tank and 1 british infantry
+  // 26. a transport with 1 russian tank and 1 american infantry
+  // 27. a transport with 1 russian artillery and 1 british infantry
+  // 28. a transport with 1 russian artillery and 1 american infantry
+  // 29. a transport with 1 russian AA and 1 british infantry
+  // 30. a transport with 1 russian AA and 1 american infantry
+  // 31. a transport with 1 british infantry and 1 british infantry
+  // 32. a transport with 1 british infantry and 1 british tank
+  // 33. a transport with 1 british infantry and 1 british artillery
+  // 34. a transport with 1 british infantry and 1 british AA
+  // 35. a transport with 1 british infantry and 1 american infantry
+  // 36. a transport with 1 british infantry and 1 american tank
+  // 37. a transport with 1 british infantry and 1 american artillery
+  // 38. a transport with 1 british infantry and 1 american AA
+  // 39. a transport with 1 british tank and 1 american infantry
+  // 40. a transport with 1 british artillery and 1 american infantry
+  // 41. a transport with 1 british AA and 1 american infantry
+  // 42. a transport with 1 american infantry and 1 american infantry
+  // 43. a transport with 1 american infantry and 1 american tank
+  // 44. a transport with 1 american infantry and 1 american artillery
+  // 45. a transport with 1 american infantry and 1 american AA
+
+
 }
 
 GameData* initializeGameData(int a) {
@@ -54,113 +106,97 @@ GameData* initializeGameData(int a) {
   for (int i = 0; i < unitTypes_count; i++) {
     unitHealths_count += unitTypes[i].max_hits;
   }
+  const UnitHealth* unitHealths =
+      create_unit_healths(unitTypes, unitTypes_count, unitHealths_count);
+
+    int unitStatuses_count = 0;
+  for (int i = 0; i < unitHealths_count; i++) {
+    unitStatuses_count += unitTypes[i].max_moves;
+  }
+  const UnitStatus* unitStatuses =
+      create_unit_statuses(unitHealths, unitHealths_count, unitStatuses_count);
+
+  // Load Territories
+  cJSON* territories_cjson = loadJsonPath("./data/territories.json", "territories");
+  int territories_count = get_count_from_cjson_array(territories_cjson);
+  if (territories_count == 0) {
+    printf("No territories found\n");
+    return &gameDataInstance;
+  }
+  Territory* territories = get_territories_from_cjson(territories_cjson, territories_count);
+
+
+
+  int inactive_unit_stacks_count = territories_count * PLAYER_COUNT * unitHealths_count;
+  for (int i = 0; i < PLAYER_COUNT; i++) {
+    inactive_unit_stacks_count += unitHealths[i].unit_type->max_land;
+  }
+  
+
+  int gameState[] = {
+    // fixed memory positions...
+      //phase
+        0, //0 = combat move, 1 = land planes/purchase/place units
+      //russia territory 1
+        8, //factory_max in russia
+        8, //factory_health in russia
+        8, //construction points remaining in russia
+        0, //was russia recently conquered
+      //germany territory 2
+        8, //factory_max in germany
+        8, //factory_health in germany
+        8, //construction points remaining in germany
+        0, //was germany recently conquered
+    // dynamic memory positions...
+      // inactive/total unit statuses
+      // russia (current player)
+        0, //rus money (current player)
+        //russia territory 1
+          1, //is russia owned by russia (current player)
+          1, //is russia owned by russian ally
+          //russia units in russia
+          0, //qty of rus art in russia
+        //germany territory 1
+          1, //is germany owned by russia (current player)
+          1, //is germany owned by russian ally
+          //russia units in germany
+          0, //qty of rus art in germany
+      // germany (current player)
+        0, //germany money (current player)
+        //russia territory 1
+          1, //is russia owned by germany (current player+1)
+          1, //is russia owned by german ally
+          //russia units in russia
+          0, //qty of ger art in russia
+        //germany territory 1
+          1, //is germany owned by germany (current player)
+          1, //is germany owned by german ally
+          //german units in germany
+          0, //qty of german art in germany
+      // active unit statuses (current player)
+      0, //qty of rus art in russia with 1 move left
+      0, //qty of rus art in germany with 1 move left
+  };
+  int gameStateIndex = 0;
+  for (int i = 0; i < territories_count; i++) {
+    gameState[gameStateIndex++] = territories[i].factory_max;
+    gameState[gameStateIndex++] = territories[i].factory_health;
+    gameState[gameStateIndex++] = territories[i].construction_remaining;
+    gameState[gameStateIndex++] = territories[i].recently_conquered;
+  }
+  for (int i = 0; i < players_count; i++) {
+    gameState[gameStateIndex++] = players[i].money;
+    for (int j = 0; j < territories_count; j++) {
+      gameState[gameStateIndex++] = territories[j].is_owned_by_current_player;
+      gameState[gameStateIndex++] = territories[j].is_ally_owned;
+      for (int k = 0; k < inactive_unit_stacks_count; k++) {
+        gameState[gameStateIndex++] = territories[j].inactive_armies[i][k].unit_count;
+      }
+    }
+  }
+  for (int i = 0; i < active_unit_stacks_count; i++) {
+    gameState[gameStateIndex++] = active_unit_stacks[i].unit_count;
+  }
+
   return &gameDataInstance;
-}
-
-cJSON* loadJsonPath(char* path, char* string) {
-  cJSON* cjson;
-  char* jsonString = readFileToString(path);
-  if (jsonString == NULL) {
-    printf("Failed to read unit types JSON file\n");
-    return cjson;
-  }
-
-  cjson = cJSON_Parse(jsonString);
-  free(jsonString);
-  if (cjson == NULL) {
-    printf("Failed to parse unit types JSON\n");
-    return cjson;
-  }
-
-  cjson = cJSON_GetObjectItemCaseSensitive(cjson, string);
-  if (!cJSON_IsArray(cjson)) {
-    printf("%s is not an array\n", string);
-  }
-  return cjson;
-}
-
-char* readFileToString(const char* filename) {
-  FILE* file = fopen(filename, "rb");
-  if (file == NULL)
-    return NULL;
-
-  fseek(file, 0, SEEK_END);
-  long length = ftell(file);
-  fseek(file, 0, SEEK_SET);
-
-  char* content = (char*)malloc(length + 1);
-  if (content) {
-    fread(content, 1, length, file);
-    content[length] = '\0';
-  }
-
-  fclose(file);
-  return content;
-}
-
-int get_count_from_cjson_array(cJSON* cjson_array) {
-  int count = cJSON_GetArraySize(cjson_array);
-  if (count == 0) {
-    printf("No items found in array\n");
-    cJSON_Delete(cjson_array);
-  }
-  return count;
-}
-
-UnitType* get_unitTypes_from_cjson(cJSON* unitTypes_cjson, int unitType_count) {
-  // Allocate memory for the array of UnitType structures
-  UnitType* unitTypes = malloc(unitType_count * sizeof(UnitType));
-  if (!unitTypes) {
-    printf("Memory allocation failed\n");
-    cJSON_Delete(unitTypes_cjson);
-    return unitTypes;
-  }
-  int index = 0;
-  cJSON* unit;
-  cJSON_ArrayForEach(unit, unitTypes_cjson) {
-    UnitType u = u;
-    u.name = getJsonString(unit, "name", DEF_UT_NAME);
-    u.attack = getJsonChar(unit, "attack", DEF_ATTACK);
-    u.defense = getJsonChar(unit, "defense", DEF_DEFENSE);
-    u.max_moves = getJsonChar(unit, "max_moves", DEF_MAX_MOVES);
-    u.cost = getJsonChar(unit, "cost", DEF_COST);
-    u.bonus_attack = getJsonChar(unit, "bonus_attack", DEF_BONUS_ATTACK);
-    u.gives_bonus = getJsonChar(unit, "gives_bonus", DEF_GIVES_BONUS);
-    u.weight = getJsonChar(unit, "weight", DEF_WEIGHT);
-    u.raid_strength = getJsonChar(unit, "raid_strength", DEF_RAID_STRENGTH);
-    u.max_land = getJsonChar(unit, "max_land", DEF_MAX_LAND);
-    u.max_air = getJsonChar(unit, "max_air", DEF_MAX_AIR);
-    u.sub_strength = getJsonChar(unit, "sub_strength", DEF_SUB_STRENGTH);
-    u.bombard = getJsonChar(unit, "bombard", DEF_BOMBARD);
-    u.aa_shots = getJsonChar(unit, "aa_shots", DEF_AA_SHOTS);
-    u.is_air = getJsonBool(unit, "is_air", DEF_IS_AIR);
-    u.is_water = getJsonBool(unit, "is_water", DEF_IS_WATER);
-    u.is_detector = getJsonBool(unit, "is_detector", DEF_IS_DETECTOR);
-    index++;
-  }
-  return unitTypes;
-}
-
-char* getJsonString(cJSON* cjson, char* key, char* default_value) {
-  char* value = default_value;
-  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
-  if (value_cjson && cJSON_IsString(value_cjson))
-    value = strdup(value_cjson->valuestring);
-  return value;
-}
-
-uint8_t getJsonChar(cJSON* cjson, char* key, uint8_t default_val) {
-  uint8_t value = default_val;
-  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
-  if (value_cjson && cJSON_IsNumber(value_cjson))
-    value = value_cjson->valueint;
-  return value;
-}
-
-bool getJsonBool(cJSON* cjson, char* key, bool default_value) {
-  bool value = default_value;
-  cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
-  if (value_cjson)
-    value = cJSON_IsTrue(value_cjson);
-  return value;
 }

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <cJSON.h>
 
 #define DEF_UT_NAME "DEFAULT UNITTYPE"
 #define DEF_ATTACK 0
@@ -42,5 +43,7 @@ typedef struct UnitType {
   bool is_water;
   bool is_detector;
 } UnitType;
+
+UnitType* get_unitTypes_from_cjson(cJSON* unitTypes_cjson, int unitType_count);
 
 #endif

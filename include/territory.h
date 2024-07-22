@@ -29,7 +29,7 @@ typedef struct Territory {
   uint8_t construction_remaining;
   bool recently_conquered;
   ActiveUnitStack my_unit_stacks[TOTAL_ACTIVE_UNIT_STATUS_TYPES];
-  InactiveUnitStack inactive_armies[TOTAL_PLAYERS - 1]
+  InactiveUnitStack inactive_armies[TOTAL_PLAYERS]
                                    [TOTAL_INACTIVE_UNIT_STATUS_TYPES];
 } Territory;
 

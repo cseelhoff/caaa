@@ -1,0 +1,32 @@
+{
+    "inactive_units": [
+        {
+            "Player": "Russia",
+            "Territories": [
+                {
+                    "Territory": "Russia",
+                    "units": [
+                        {
+                            "type": "artillery",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "Player": "Germany",
+            "Territories": [
+                {
+                    "Territory": "Germany",
+                    "units": [
+                        {
+                            "type": "artillery",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

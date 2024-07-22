@@ -5,15 +5,12 @@
 #include <stdint.h>
 
 typedef struct UnitStatus {
-  const UnitHealth unit_health;
-  const uint8_t moves_remaining;
+  const UnitHealth* unit_health;
+  uint8_t moves_remaining;
+  //UnitStatus* unitStatusAfterMove;
 } UnitStatus;
 
-void unit_status_init(UnitStatus* status, UnitHealth unit_health,
-                      uint8_t moves_remaining);
-
-void create_unit_statuses(UnitHealth* unit_healths, int unit_healths_count,
-                          UnitStatus* moved_unit_statuses,
-                          int* moved_unit_statuses_count);
+UnitStatus* create_unit_statuses(const UnitHealth* unitHealths, int unitHealths_count,
+                                 int unitStatuses_count);
 
 #endif
