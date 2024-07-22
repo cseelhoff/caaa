@@ -3,6 +3,7 @@
 
 #include "player.h"
 #include "unit_status.h"
+#include <stdint.h>
 
 typedef struct ActiveUnitStack {
   const UnitStatus* unit_status;
@@ -14,7 +15,7 @@ typedef struct ActiveUnitStack {
 } ActiveUnitStack;
 
 void active_unit_stack_init(ActiveUnitStack* stack, UnitStatus unit_status,
-                            Player owner, unsigned char unit_quantity);
+                            Player owner, uint8_t unit_quantity);
 
 void create_unit_stacks(Player* players, int players_count,
                         UnitStatus* unmoved_unit_statuses, int unmoved_count,

@@ -2,7 +2,7 @@
 #include <string.h>    // For memset
 
 void territory_init(Territory* territory, const char* name,
-                    unsigned char land_value, unsigned char original_owner_id,
+                    uint8_t land_value, uint8_t original_owner_id,
                     unsigned int index) {}
 
 void territory_build_factory(Territory* territory) {

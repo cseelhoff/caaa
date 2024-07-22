@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum { Axis, Allies } Team;
 
@@ -12,7 +13,7 @@ struct Territory;
 typedef struct {
   const char* name;
   const Team team;
-  const unsigned char player_index;
+  const uint8_t player_index;
   const struct Territory* capital_territory_ptr;
   const bool is_allied[TOTAL_PLAYERS - 1];
   bool is_human;

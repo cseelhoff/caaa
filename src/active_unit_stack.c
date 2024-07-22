@@ -2,7 +2,7 @@
 //#include <stdlib.h> // For dynamic memory allocation
 
 void active_unit_stack_init(ActiveUnitStack* stack, UnitStatus unit_status,
-                            Player owner, unsigned char unit_quantity) {
+                            Player owner, uint8_t unit_quantity) {
   /*
       if (stack != NULL) {
           stack->unit_status = unit_status;
@@ -22,7 +22,7 @@ void active_unit_stack_init(ActiveUnitStack* stack, UnitStatus unit_status,
 // version's functionality.
 /*
 ActiveUnitStack* create_unit_stack(UnitStatus unit_status, Player owner,
-unsigned char unit_quantity) { ActiveUnitStack* stack =
+uint8_t unit_quantity) { ActiveUnitStack* stack =
 (ActiveUnitStack*)malloc(sizeof(ActiveUnitStack)); if (stack != NULL) {
         unit_stack_init(stack, unit_status, owner, unit_quantity);
     }
