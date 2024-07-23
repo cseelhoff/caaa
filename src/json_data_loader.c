@@ -45,7 +45,7 @@ char* readFileToString(const char* filename) {
   return content;
 }
 
-int get_count_from_cjson_array(cJSON* cjson_array) {
+int getJsonArrayLength(cJSON* cjson_array) {
   int count = cJSON_GetArraySize(cjson_array);
   if (count == 0) {
     printf("No items found in array\n");

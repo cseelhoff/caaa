@@ -1,4 +1,0 @@
-#define UNIT_TYPE_COUNT 1
-#define PLAYER_COUNT 2
-#define TERRITORY_COUNT 2
-#define CONNECTION_COUNT 2

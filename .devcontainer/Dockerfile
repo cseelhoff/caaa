@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:1-debian-11
+FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
 
 ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 
@@ -9,6 +9,12 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
         chmod +x /tmp/reinstall-cmake.sh && /tmp/reinstall-cmake.sh ${REINSTALL_CMAKE_VERSION_FROM_SOURCE}; \
     fi \
     && rm -f /tmp/reinstall-cmake.sh
+
+# Install clangd
+RUN apt-get update && apt-get install -y clangd
+
+# Cleanup
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # [Optional] Uncomment this section to install additional vcpkg ports.
 # RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
