@@ -23,8 +23,12 @@ typedef struct {
   bool is_human;
 } Player;
 
-Player* getJsonPlayers(cJSON* players_cjson, int player_count);
-Player* getPlayerByName(Player* players, int player_count,
-                        char* original_owner);
+typedef struct {
+  Player* array;
+  int count;
+} Players;
+
+Players getPlayersFromJson(char* json_path);
+Player* getPlayerByName(Players players, char* name);
 
 #endif

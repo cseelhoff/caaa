@@ -2,8 +2,8 @@
 #include "cJSON.h"
 #include "inactive_unit_stack.h"
 #include "json_data_loader.h"
-#include "unit_health.h"
-#include "unittype.h"
+#include "static_unit.h"
+#include "unit_type.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,31 +24,15 @@ GameData* initializeGameData(int a) {
   }
 
   // Load Players
-  cJSON* players_cjson = loadJsonPath("./data/players.json", "players");
-  int players_count = getJsonArrayLength(players_cjson);
-  if (players_count == 0) {
-    printf("No players found\n");
-    return gameDataInstance;
-  }
-  Player* players = getJsonPlayers(players_cjson, players_count);
+  Players players = getPlayersFromJson("./data/players.json");
+  const UnitTypes unitTypes = getUnitTypesFromJson("./data/unit_types.json");
+  UnitTypes cargo = {};
 
-  cJSON* cjson = loadJsonPath("./data/unit_types.json", "unitTypes");
-  int unitTypes_count = getJsonArrayLength(cjson);
-  if (unitTypes_count == 0) {
-    printf("No unit types found\n");
-    return gameDataInstance;
-  }
-  const UnitType* unitTypes = get_unitTypes_from_cjson(cjson, unitTypes_count);
+  
+  const UnitHealths unitHealths = createUnitHealths(unitTypes);
 
-  int unitHealths_count = 0;
-  for (int i = 0; i < unitTypes_count; i++) {
-    unitHealths_count += unitTypes[i].max_hits;
-  }
-  const UnitHealth* unitHealths =
-      create_unit_healths(unitTypes, unitTypes_count, unitHealths_count);
-
-  int inactive_unit_stacks_count = players_count * unitHealths_count;
-  for (int i = 0; i < players_count; i++) {
+  int inactive_unit_stacks_count = players.count * unitHealths_count;
+  for (int i = 0; i < players.count; i++) {
     inactive_unit_stacks_count += unitHealths[i].unit_type->max_land;
   }
   const InactiveUnitStack* inactive_unit_stacks = create_inactive_unit_stacks(
@@ -68,7 +52,7 @@ GameData* initializeGameData(int a) {
     printf("No territories found\n");
     return gameDataInstance;
   }
-  Territory* territories = get_territories_from_cjson(ters_cjson, ters_count);
+  Territory* territories = getJsonTerritories(ters_cjson, ters_count);
 
   // Load Connections
   cJSON* cons_cjson = loadJsonPath("./data/connections.json", "connections");
@@ -77,7 +61,8 @@ GameData* initializeGameData(int a) {
     printf("No connections found\n");
     return gameDataInstance;
   }
-  Connection* connections = get_connections_from_cjson(cons_cjson, cons_count);
+  Connection* connections =
+      getJsonConnections(cons_cjson, cons_count, territories, ters_count);
 
   uint8_t gameState[] = {
       // fixed memory positions...

@@ -7,6 +7,7 @@
 
 cJSON* loadJsonPath(char* json_path, char* object_item_string);
 char* readFileToString(const char* filename);
+cJSON* getJsonArray(cJSON* cjson, char* string);
 int getJsonArrayLength(cJSON* cjson_array);
 char* getJsonString(cJSON* cjson, char* key, char* default_value);
 uint8_t getJsonUint8_t(cJSON* cjson, char* key, uint8_t default_value);

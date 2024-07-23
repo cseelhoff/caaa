@@ -19,16 +19,15 @@ struct Connection;
 typedef struct Territory {
   char* name;
   unsigned int territory_index;
-  bool is_water;
+  Player* original_owner;
+  Player* owner;
   ActiveUnitStack* my_unit_stacks;      //[TOTAL_ACTIVE_UNIT_STATUS_TYPES];
   InactiveUnitStack* inactive_armies;   //[TOTAL_PLAYERS]
                                         //[TOTAL_INACTIVE_UNIT_STATUS_TYPES];
   struct Connection* water_connections; //[8];
   struct Territory* connected_land_territories; //[8];
-  Player* original_owner;
-  Player* owner;
-  uint8_t land_conn_count;
   uint8_t water_conn_count;
+  uint8_t land_conn_count;
   uint8_t land_value;
   uint8_t factory_max;
   uint8_t factory_hp;
@@ -36,11 +35,15 @@ typedef struct Territory {
   bool is_owned_by_current_player;
   bool is_ally_owned;
   bool newly_conquered;
+  bool is_water;
 } Territory;
 
-Territory* getJsonTerritories(cJSON* ters_cjson, int ters_count,
-                              Player* players, int player_count);
-Territory* getTerritoryByName(Territory* territories, int territory_count,
-                              char* dest_territory);
+typedef struct {
+  Territory* array;
+  unsigned int count;
+} Territories;
+
+Territory* getJsonTerritories(cJSON* json, int t_count, Players* players);
+Territory* getTerritoryByName(Territories* territories, char* name);
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef INACTIVE_UNIT_STACK_H
 #define INACTIVE_UNIT_STACK_H
 
-#include "unit_health.h"
+#include "unit_status.h"
 
 typedef struct InactiveUnitStack {
   UnitHealth unit_health;
@@ -9,7 +9,12 @@ typedef struct InactiveUnitStack {
   uint8_t quantity;
 } InactiveUnitStack;
 
-InactiveUnitStack* create_inactive_unit_stacks(const UnitHealth* unitHealths,
+typedef struct {
+  InactiveUnitStack* array;
+  int count;
+} InactiveUnitStacks;
+
+InactiveUnitStack* createInactiveUnitStacks(const UnitHealth* unitHealths,
                                                int unitHealths_count,
                                                int inactive_unit_stacks_count);
 

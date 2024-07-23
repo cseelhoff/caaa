@@ -8,21 +8,18 @@ cJSON* loadJsonPath(char* path, char* string) {
   cJSON* cjson;
   char* jsonString = readFileToString(path);
   if (jsonString == NULL) {
-    printf("Failed to read unit types JSON file\n");
+    printf("Failed to read %s JSON file\n", path);
     return cjson;
   }
 
   cjson = cJSON_Parse(jsonString);
   free(jsonString);
   if (cjson == NULL) {
-    printf("Failed to parse unit types JSON\n");
+    printf("Failed to parse %s JSON\n", string);
     return cjson;
   }
 
-  cjson = cJSON_GetObjectItemCaseSensitive(cjson, string);
-  if (!cJSON_IsArray(cjson)) {
-    printf("%s is not an array\n", string);
-  }
+  cjson = getJsonArray(cjson, string);
   return cjson;
 }
 
@@ -43,6 +40,15 @@ char* readFileToString(const char* filename) {
 
   fclose(file);
   return content;
+}
+
+cJSON* getJsonArray(cJSON* cjson, char* string) {
+  cJSON* cjson_array = cJSON_GetObjectItemCaseSensitive(cjson, string);
+  if (!cJSON_IsArray(cjson_array)) {
+    printf("%s is not an array\n", string);
+    cJSON_Delete(cjson);
+  }
+  return cjson_array;
 }
 
 int getJsonArrayLength(cJSON* cjson_array) {

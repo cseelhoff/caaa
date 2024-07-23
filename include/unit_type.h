@@ -44,6 +44,11 @@ typedef struct UnitType {
   bool is_detector;
 } UnitType;
 
-UnitType* get_unitTypes_from_cjson(cJSON* unitTypes_cjson, int unitType_count);
+typedef struct {
+  UnitType* array;
+  unsigned int count;
+} UnitTypes;
+
+UnitTypes getUnitTypesFromJson(char* json_path);
 
 #endif
