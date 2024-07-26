@@ -14,7 +14,7 @@ if(NOT cJSON_FOUND) # If not found, fetch and build cJSON
   FetchContent_Declare(
     cJSON
     GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-    GIT_TAG        v1.7.14
+    GIT_TAG        v1.7.18
   )
   FetchContent_MakeAvailable(cJSON)
 endif()
