@@ -5,10 +5,10 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 file(GLOB SOURCES "src/*.c")
 add_executable(caaa ${SOURCES})
-target_include_directories(caaa PRIVATE /workspaces/caaa/include)
+target_include_directories(caaa PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 include(FetchContent)
-find_package(cJSON QUIET) # Check if cJSON is already available
+find_package(cJSON 1.7.18 QUIET) # Check if cJSON is already available
 
 if(NOT cJSON_FOUND) # If not found, fetch and build cJSON
   FetchContent_Declare(
@@ -18,5 +18,7 @@ if(NOT cJSON_FOUND) # If not found, fetch and build cJSON
   )
   FetchContent_MakeAvailable(cJSON)
 endif()
+
+# Link the cJSON library and include its directories
 target_link_libraries(caaa PRIVATE cjson)
-target_include_directories(caaa PRIVATE "/workspaces/caaa/out/build/mypreset/_deps/cjson-src")
+target_include_directories(caaa PRIVATE ${cJSON_SOURCE_DIR})
