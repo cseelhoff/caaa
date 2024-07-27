@@ -4,8 +4,12 @@ project(caaa VERSION 0.1.0 LANGUAGES C)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 file(GLOB SOURCES "src/*.c")
-add_executable(caaa ${SOURCES})
-target_include_directories(caaa PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+# Define a variable for the executable name
+set(EXECUTABLE_NAME caaa)
+
+add_executable(${EXECUTABLE_NAME} ${SOURCES})
+target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 include(FetchContent)
 find_package(cJSON 1.7.18 QUIET) # Check if cJSON is already available
@@ -20,5 +24,5 @@ if(NOT cJSON_FOUND) # If not found, fetch and build cJSON
 endif()
 
 # Link the cJSON library and include its directories
-target_link_libraries(caaa PRIVATE cjson)
-target_include_directories(caaa PRIVATE ${cJSON_SOURCE_DIR})
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE cjson)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE ${cJSON_SOURCE_DIR})
