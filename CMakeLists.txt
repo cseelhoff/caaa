@@ -5,10 +5,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+file(GLOB SOURCES "src/*.c")
+
 # Define a variable for the executable name
 set(EXECUTABLE_NAME caaa)
 
-add_executable(${EXECUTABLE_NAME} ${CMAKE_SOURCE_DIR}/src)
+add_executable(${EXECUTABLE_NAME} ${SOURCES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 include(FetchContent)
