@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(caaa VERSION 0.1.0 LANGUAGES C)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-file(GLOB SOURCES "src/*.c")
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Define a variable for the executable name
 set(EXECUTABLE_NAME caaa)
 
-add_executable(${EXECUTABLE_NAME} ${SOURCES})
+add_executable(${EXECUTABLE_NAME} ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 include(FetchContent)

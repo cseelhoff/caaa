@@ -1,16 +1,15 @@
-#ifndef UNIT_STATUS_H
-#define UNIT_STATUS_H
+#ifndef MOBILE_UNIT_H
+#define MOBILE_UNIT_H
 
 #include "unit_health.h"
 #include <stdint.h>
 
-typedef struct UnitStatus {
+typedef struct  {
   const UnitHealth* unit_health;
   uint8_t moves_remaining;
   //UnitStatus* unitStatusAfterMove;
-} UnitStatus;
+} MobileUnit;
 
-UnitStatus* create_unit_statuses(const UnitHealth* unitHealths, int unitHealths_count,
-                                 int unitStatuses_count);
+MobileUnits createMobileUnits(const UnitHealths unitHealths);
 
 #endif

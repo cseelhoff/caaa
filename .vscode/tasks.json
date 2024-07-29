@@ -6,11 +6,11 @@
             "command": "cmake",
             "args": [
                 "--build",
-                "/workspaces/caaa/out/build/mypreset",
+                "${workspaceFolder}/out/build/x64-debug",
                 "--config",
                 "Debug",
                 "--target",
-                "caaa"
+                "${workspaceFolderBasename}"
             ],
             "group": {
                 "kind": "build",
@@ -20,7 +20,7 @@
                 "$gcc"
             ],
             "options": {
-                "cwd": "/workspaces/caaa"
+                "cwd": "${workspaceFolder}"
             }
         }
     ],
