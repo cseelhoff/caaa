@@ -1,27 +1,9 @@
 #ifndef UNITTYPE_H
 #define UNITTYPE_H
 
+#include "config.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include <cJSON.h>
-
-#define DEF_UT_NAME "DEFAULT UNITTYPE"
-#define DEF_ATTACK 0
-#define DEF_DEFENSE 0
-#define DEF_MAX_MOVES 1
-#define DEF_COST 1
-#define DEF_BONUS_ATTACK 0
-#define DEF_GIVES_BONUS 0
-#define DEF_WEIGHT 6
-#define DEF_RAID_STRENGTH 0
-#define DEF_MAX_LAND 0
-#define DEF_MAX_AIR 0
-#define DEF_SUB_STRENGTH 0
-#define DEF_BOMBARD 0
-#define DEF_AA_SHOTS 0
-#define DEF_IS_AIR false
-#define DEF_IS_WATER false
-#define DEF_IS_DETECTOR false
 
 typedef struct UnitType {
   char* name;
@@ -44,11 +26,8 @@ typedef struct UnitType {
   bool is_detector;
 } UnitType;
 
-typedef struct {
-  UnitType* array;
-  unsigned int count;
-} UnitTypes;
+UnitType UnitTypes[UNIT_TYPES_COUNT];
 
-UnitTypes getUnitTypesFromJson(char* json_path);
+void loadUnitTypesFromJson(char* json_path);
 
 #endif

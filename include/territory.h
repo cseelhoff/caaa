@@ -1,30 +1,22 @@
 #ifndef TERRITORY_H
 #define TERRITORY_H
 
-#include "mobile_unit.h"
+#include "config.h"
 #include "player.h"
 #include <stdint.h>
-
-#define DEF_TER_NAME "DEFAULT UNITTYPE"
-#define DEF_LAND_VALUE 1
-#define DEF_IS_WATER false
-#define DEF_FACTORY_MAX 0
-#define DEF_FACTORY_HP 0
-#define DEF_BUILDS_LEFT 0
-#define DEF_CONQUERED false
 
 struct Connection;
 
 typedef struct Territory {
   char* name;
-  unsigned int territory_index;
-  Player* original_owner;
-  Player* owner;
+//  unsigned int territory_index;
+  unsigned int original_owner_index;
+  unsigned int owner_index;
 //  MobileUnits* mobile_units;      //[TOTAL_ACTIVE_UNIT_STATUS_TYPES];
 //  UnitHealths* inactive_stacks;   //[TOTAL_PLAYERS]
                                         //[TOTAL_INACTIVE_UNIT_STATUS_TYPES];
-  struct Connection* water_connections; //[8];
-  struct Territory* connected_land_territories; //[8];
+  struct Connection* water_connections[MAX_WATER_CONNECTIONS];
+  struct Territory* connected_land_territories[MAX_LAND_CONNECTIONS];
   uint8_t water_conn_count;
   uint8_t land_conn_count;
   uint8_t land_value;
@@ -37,12 +29,9 @@ typedef struct Territory {
   bool is_water;
 } Territory;
 
-typedef struct {
-  Territory* array;
-  unsigned int count;
-} Territories;
+Territory Territories[TERRITORIES_COUNT];
 
-Territories getTerritoriesFromJson(char* json_path, Players players);
-Territory* getTerritoryByName(Territories territories, char* name);
+void loadTerritoriesFromJson(char* json_path);
+Territory* getTerritoryByName(char* name);
 
 #endif

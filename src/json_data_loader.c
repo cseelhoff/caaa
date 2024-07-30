@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 cJSON* loadJsonPath(char* path, char* string) {
   cJSON* cjson;
@@ -46,40 +45,40 @@ cJSON* getJsonArray(cJSON* cjson, char* string) {
   cJSON* cjson_array = cJSON_GetObjectItemCaseSensitive(cjson, string);
   if (!cJSON_IsArray(cjson_array)) {
     printf("%s is not an array\n", string);
-    cJSON_Delete(cjson);
+    exit(1);
   }
   return cjson_array;
 }
 
 int getJsonArrayLength(cJSON* cjson_array) {
   int count = cJSON_GetArraySize(cjson_array);
-  if (count == 0) {
-    printf("No items found in array\n");
-    cJSON_Delete(cjson_array);
+  if (count != 0) {
+    return count;
   }
-  return count;
+  printf("No items found in array\n");
+  exit(1);
 }
 
-char* getJsonString(cJSON* cjson, char* key, char* default_value) {
-  char* value = default_value;
+char* getJsonString(cJSON* cjson, char* key) {
   cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
   if (value_cjson && cJSON_IsString(value_cjson))
-    value = strdup(value_cjson->valuestring);
-  return value;
+    return strdup(value_cjson->valuestring);
+  printf("Failed to get %s\n", key);
+  exit(1);
 }
 
-uint8_t getJsonUint8_t(cJSON* cjson, char* key, uint8_t default_value) {
-  uint8_t value = default_value;
+uint8_t getJsonUint8_t(cJSON* cjson, char* key) {
   cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
   if (value_cjson && cJSON_IsNumber(value_cjson))
-    value = value_cjson->valueint;
-  return value;
+    return value_cjson->valueint;
+  printf("Failed to get %s\n", key);
+  exit(1);
 }
 
-bool getJsonBool(cJSON* cjson, char* key, bool default_value) {
-  bool value = default_value;
+bool getJsonBool(cJSON* cjson, char* key) {
   cJSON* value_cjson = cJSON_GetObjectItemCaseSensitive(cjson, key);
   if (value_cjson)
-    value = cJSON_IsTrue(value_cjson);
-  return value;
+    return cJSON_IsTrue(value_cjson);
+  printf("Failed to get %s\n", key);
+  exit(1);
 }

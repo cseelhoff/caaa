@@ -1,21 +1,17 @@
 #ifndef TEAM_H
 #define TEAM_H
 
-#define DEF_TEAM_NAME "DEFAULT TEAM"
-
+#include "config.h"
 #include "player.h"
-#include <sys/types.h>
+#include <stdint.h>
 
 typedef struct team {
   char* name;
-  Players players;
+  Player* players[MAX_TEAM_SIZE];
 } Team;
 
-typedef struct {
-  Team* array;
-  u_int8_t count;
-} Teams;
+Team* Teams[TEAMS_COUNT];
 
-Teams getTeamsFromJson(char* json_path, Players players);
+void loadTeamsFromJson(char* json_path);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef UNIT_HEALTH_H
 #define UNIT_HEALTH_H
 
+#include "config.h"
 #include "unit_type.h"
 #include <stdint.h>
 
@@ -9,11 +10,7 @@ typedef struct {
   uint8_t hits_remaining;
 } UnitHealth;
 
-typedef struct {
-  UnitHealth* array;
-  int count;
-} UnitHealths;
-
-UnitHealths createUnitHealths(const UnitTypes unitTypes);
+UnitHealth UnitHealths[UNIT_HEALTHS_COUNT];
+void loadUnitHealths();
 
 #endif

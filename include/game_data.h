@@ -1,17 +1,23 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#include "connection.h"
 #include "player.h"
 #include "territory.h"
-#include "unit_type.h"
 #include <stdint.h>
+#include "config.h"
 
-typedef struct GameData {
-  Player* players;//[TOTAL_PLAYERS];
-  Territory* territories;//[TERRITORY_COUNT];
-  uint8_t *gameState;//[]
+typedef struct {
+  Player* players;
+  Territory* territories;
+  uint8_t *gameState;
 } GameData;
+
+typedef struct {
+  uint8_t factory_max;
+  uint8_t factory_hp;
+  uint8_t builds_left;
+  bool newly_conquered;
+} TerritoryState;
 
 GameData* initializeGameData(int a);
 

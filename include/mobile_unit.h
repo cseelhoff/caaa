@@ -1,6 +1,7 @@
 #ifndef MOBILE_UNIT_H
 #define MOBILE_UNIT_H
 
+#include "config.h"
 #include "unit_health.h"
 #include <stdint.h>
 
@@ -10,11 +11,7 @@ typedef struct  {
   //UnitStatus* unitStatusAfterMove;
 } MobileUnit;
 
-typedef struct {
-  MobileUnit* array;
-  int count;
-} MobileUnits;
-
-MobileUnits createMobileUnits(const UnitHealths unitHealths);
+MobileUnit MobileUnits[MOBILE_UNITS_COUNT];
+void createMobileUnits();
 
 #endif

@@ -1,16 +1,18 @@
 #include "game_data.h"
 #include "cJSON.h"
+#include "config.h"
 #include "json_data_loader.h"
 #include "team.h"
 #include "territory.h"
 #include "unit_type.h"
+#include "unit_health.h"
+#include "connection.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 GameData* initializeGameData(int a) {
   // use mallac for GameData gameDataInstance
@@ -28,22 +30,42 @@ GameData* initializeGameData(int a) {
   Players players = getPlayersFromJson("./data/players.json");
   Teams teams = getTeamsFromJson("./data/teams.json", players);
   const UnitTypes unitTypes = getUnitTypesFromJson("./data/unit_types.json");
-  UnitTypes cargo = {};
+  //UnitTypes cargo = {};
 
   const UnitHealths unitHealths = createUnitHealths(unitTypes);
-
   const Territories territories =
       getTerritoriesFromJson("./data/territories.json", players);
-
   const Connections connections =
-      getConnectionsFromJson("./data/connections.json", territories);
+      getConnectionsFromJson("./data/connections.json", territories);  
 
-  u_int8_t unitCounts[players.count][territories.count][unitHealths.count];
-  for (int playerIndex = 0; playerIndex < players.count; playerIndex++) {
-    for (int territoryIndex = 0; territoryIndex < territories.count;
+  TerritoryState territoriesStates[TERRITORIES_COUNT];
+  for (int i = 0; i < TERRITORIES_COUNT; i++) {
+    territoriesStates[i].builds_left = territories.array[i].builds_left;
+    territoriesStates[i].factory_hp = territories.array[i].factory_hp;
+    territoriesStates[i].factory_max = territories.array[i].factory_max;
+    territoriesStates[i].newly_conquered = territories.array[i].newly_conquered;
+  }
+
+  uint8_t money[PLAYERS_COUNT];
+  for (int i = 0; i < PLAYERS_COUNT; i++) {
+    money[i] = players.array[i].money;
+  }
+
+  uint8_t unitCounts[PLAYERS_COUNT][TERRITORIES_COUNT][UNIT_HEALTHS_COUNT];
+  for (int playerIndex = 0; playerIndex < PLAYERS_COUNT; playerIndex++) {
+    for (int territoryIndex = 0; territoryIndex < TERRITORIES_COUNT;
          territoryIndex++) {
-      for (int unitIndex = 0; unitIndex < unitHealths.count; unitIndex++) {
+      for (int unitIndex = 0; unitIndex < UNIT_HEALTHS_COUNT; unitIndex++) {
         unitCounts[playerIndex][territoryIndex][unitIndex] = 0;
+      }
+    }
+  }
+
+  uint8_t mobileCounts[PLAYERS_COUNT][TERRITORIES_COUNT][MOBILE_UNITS_COUNT];
+  for (int playerIndex = 0; playerIndex < PLAYERS_COUNT; playerIndex++) {
+    for (int terIndex = 0; terIndex < TERRITORIES_COUNT; terIndex++) {
+      for (int mobileIndex = 0; mobileIndex < MOBILE_UNITS_COUNT; mobileIndex++) {
+        mobileCounts[playerIndex][territoryIndex][mobileIndex] = 0;
       }
     }
   }
@@ -66,6 +88,7 @@ GameData* initializeGameData(int a) {
       // inactive/total unit statuses
       // russia (current player)
       0, // rus money (current player)
+      0, // ger money (current player+1)
       // russia territory 1
       1, // is russia owned by russia (current player)
       1, // is russia owned by russian ally

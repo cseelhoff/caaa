@@ -1,9 +1,9 @@
 #include "territory.h"
+#include "cJSON.h"
 #include "json_data_loader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 Territories getJsonTerritories(char* json_path, Players players) {
   cJSON* ters_cjson = loadJsonPath(json_path, "territories");
@@ -47,6 +47,7 @@ Territories getJsonTerritories(char* json_path, Players players) {
     t.is_water = getJsonBool(cjson, "is_water", DEF_IS_WATER);
     index++;
   }
+  cJSON_Delete(ters_cjson);
   return territories;
 }
 
