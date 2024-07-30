@@ -2,6 +2,7 @@
 #define CARGO_H
 
 #include "player.h"
+#include "team.h"
 #include "unit_type.h"
 #include <sys/types.h>
 
@@ -10,7 +11,7 @@ typedef struct {
   int count;
 } Cargos;
 
-Cargos createCargos(const UnitTypes unitTypes, const Players players);
+Cargos createCargos(const UnitTypes unitTypes, const Teams teams);
 u_int8_t getMaxCargoCapacity(const UnitTypes unitTypes);
 
 #endif

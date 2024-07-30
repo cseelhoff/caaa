@@ -4,7 +4,7 @@
 #include "connection.h"
 #include "player.h"
 #include "territory.h"
-#include "unittype.h"
+#include "unit_type.h"
 #include <stdint.h>
 
 typedef struct GameData {

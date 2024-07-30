@@ -1,4 +1,5 @@
 #include "cargo.h"
+#include "team.h"
 #include <sys/types.h>
 
 Cargos createCargos(const UnitTypes unitTypes, const Teams teams) {

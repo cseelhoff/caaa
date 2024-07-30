@@ -16,6 +16,6 @@ typedef struct {
   u_int8_t count;
 } Teams;
 
-Teams getTeamsFromJson(char* json_path);
+Teams getTeamsFromJson(char* json_path, Players players);
 
 #endif

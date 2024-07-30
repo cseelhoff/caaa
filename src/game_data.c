@@ -1,14 +1,15 @@
 #include "game_data.h"
 #include "cJSON.h"
-#include "inactive_unit_stack.h"
 #include "json_data_loader.h"
-#include "static_unit.h"
+#include "team.h"
+#include "territory.h"
 #include "unit_type.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 GameData* initializeGameData(int a) {
@@ -25,44 +26,27 @@ GameData* initializeGameData(int a) {
 
   // Load Players
   Players players = getPlayersFromJson("./data/players.json");
+  Teams teams = getTeamsFromJson("./data/teams.json", players);
   const UnitTypes unitTypes = getUnitTypesFromJson("./data/unit_types.json");
   UnitTypes cargo = {};
 
-  
   const UnitHealths unitHealths = createUnitHealths(unitTypes);
 
-  int inactive_unit_stacks_count = players.count * unitHealths_count;
-  for (int i = 0; i < players.count; i++) {
-    inactive_unit_stacks_count += unitHealths[i].unit_type->max_land;
-  }
-  const InactiveUnitStack* inactive_unit_stacks = create_inactive_unit_stacks(
-      unitHealths, unitHealths_count, inactive_unit_stacks_count);
+  const Territories territories =
+      getTerritoriesFromJson("./data/territories.json", players);
 
-  int unitStatuses_count = 0;
-  for (int i = 0; i < unitHealths_count; i++) {
-    unitStatuses_count += unitTypes[i].max_moves;
-  }
-  const UnitStatus* unitStatuses =
-      create_unit_statuses(unitHealths, unitHealths_count, unitStatuses_count);
+  const Connections connections =
+      getConnectionsFromJson("./data/connections.json", territories);
 
-  // Load Territories
-  cJSON* ters_cjson = loadJsonPath("./data/territories.json", "territories");
-  int ters_count = getJsonArrayLength(ters_cjson);
-  if (ters_count == 0) {
-    printf("No territories found\n");
-    return gameDataInstance;
+  u_int8_t unitCounts[players.count][territories.count][unitHealths.count];
+  for (int playerIndex = 0; playerIndex < players.count; playerIndex++) {
+    for (int territoryIndex = 0; territoryIndex < territories.count;
+         territoryIndex++) {
+      for (int unitIndex = 0; unitIndex < unitHealths.count; unitIndex++) {
+        unitCounts[playerIndex][territoryIndex][unitIndex] = 0;
+      }
+    }
   }
-  Territory* territories = getJsonTerritories(ters_cjson, ters_count);
-
-  // Load Connections
-  cJSON* cons_cjson = loadJsonPath("./data/connections.json", "connections");
-  int cons_count = getJsonArrayLength(cons_cjson);
-  if (cons_count == 0) {
-    printf("No connections found\n");
-    return gameDataInstance;
-  }
-  Connection* connections =
-      getJsonConnections(cons_cjson, cons_count, territories, ters_count);
 
   uint8_t gameState[] = {
       // fixed memory positions...
@@ -162,11 +146,11 @@ GameData* initializeGameData(int a) {
 
   };
   int gameStateIndex = 0;
-  for (int i = 0; i < territories_count; i++) {
-    gameState[gameStateIndex++] = territories[i].factory_max;
-    gameState[gameStateIndex++] = territories[i].factory_health;
-    gameState[gameStateIndex++] = territories[i].construction_remaining;
-    gameState[gameStateIndex++] = territories[i].recently_conquered;
+  for (int i = 0; i < territories.count; i++) {
+    gameState[gameStateIndex++] = territories.array[i].factory_max;
+    gameState[gameStateIndex++] = territories.array[i].factory_hp;
+    gameState[gameStateIndex++] = territories.array[i].builds_left;
+    gameState[gameStateIndex++] = territories.array[i].newly_conquered;
   }
   /*
   for (int i = 0; i < players_count; i++) {
@@ -184,5 +168,5 @@ GameData* initializeGameData(int a) {
     gameState[gameStateIndex++] = active_unit_stacks[i].unit_count;
   }
   */
-  return &gameDataInstance;
+  return gameDataInstance;
 }

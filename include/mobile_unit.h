@@ -10,6 +10,11 @@ typedef struct  {
   //UnitStatus* unitStatusAfterMove;
 } MobileUnit;
 
+typedef struct {
+  MobileUnit* array;
+  int count;
+} MobileUnits;
+
 MobileUnits createMobileUnits(const UnitHealths unitHealths);
 
 #endif

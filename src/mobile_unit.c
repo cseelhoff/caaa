@@ -1,19 +1,29 @@
-#include "unit_status.h"
+#include "mobile_unit.h"
+#include "unit_health.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-UnitStatus* create_unit_statuses(const UnitHealth* unitHealths, int unitHealths_count,
-                                 int unitStatuses_count) {
-  UnitStatus* unitStatuses = malloc(unitStatuses_count * sizeof(UnitStatus));
-  if (unitStatuses == NULL) {
-    printf("Failed to allocate memory for unit statuses\n");
-    return NULL;
+MobileUnits createMobileUnits(const UnitHealths unitHealths) {
+  MobileUnits mobileUnits;
+  mobileUnits.count = 0;
+  for (int i = 0; i < unitHealths.count; i++) {
+    mobileUnits.count += unitHealths.array[i].unit_type->max_moves;
   }
-
-  for (int i = 0; i < unitHealths_count; i++) {
-    unitStatuses[i].unit_health = &unitHealths[i];
-    unitStatuses[i].moves_remaining = unitHealths[i].unit_type->max_moves;
+  mobileUnits.array = malloc(sizeof(MobileUnit) * mobileUnits.count);
+  if (!mobileUnits.array) {
+    printf("Memory allocation failed\n");
+    return mobileUnits;
   }
-
-  return unitStatuses;
+  int index = 0;
+  for (int i = 0; i < unitHealths.count; i++) {
+    for (int j = 0; j < unitHealths.array[i].unit_type->max_moves; j++) {
+      MobileUnit mu = mu;
+      mu.unit_health = &unitHealths.array[i];
+      mu.moves_remaining = j;
+      mobileUnits.array[index] = mu;
+      index++;
+    }
+  }
+  
+  return mobileUnits;
 }

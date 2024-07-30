@@ -25,7 +25,6 @@ Teams getTeamsFromJson(char* json_path, Players players) {
     Team t = t;
     t.name = getJsonString(cjson, "name", DEF_TEAM_NAME);
     cJSON* players_cjson = cJSON_GetObjectItemCaseSensitive(cjson, "players");
-    player_index = 0;
     cJSON_ArrayForEach(cjson, players_cjson) {
       char* player_name = cJSON_GetStringValue(cjson);
       Player* player = getPlayerByName(players, player_name);
@@ -41,6 +40,6 @@ Teams getTeamsFromJson(char* json_path, Players players) {
     index++;
   }
 
-  cJSON_Delete(unitTypes_cjson);
-  return unitTypes;
+  cJSON_Delete(teams_cjson);
+  return teams;
 }

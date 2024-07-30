@@ -1,8 +1,7 @@
 #ifndef TERRITORY_H
 #define TERRITORY_H
 
-#include "active_unit_stack.h"
-#include "inactive_unit_stack.h"
+#include "mobile_unit.h"
 #include "player.h"
 #include <stdint.h>
 
@@ -21,8 +20,8 @@ typedef struct Territory {
   unsigned int territory_index;
   Player* original_owner;
   Player* owner;
-  ActiveUnitStack* my_unit_stacks;      //[TOTAL_ACTIVE_UNIT_STATUS_TYPES];
-  InactiveUnitStack* inactive_armies;   //[TOTAL_PLAYERS]
+//  MobileUnits* mobile_units;      //[TOTAL_ACTIVE_UNIT_STATUS_TYPES];
+//  UnitHealths* inactive_stacks;   //[TOTAL_PLAYERS]
                                         //[TOTAL_INACTIVE_UNIT_STATUS_TYPES];
   struct Connection* water_connections; //[8];
   struct Territory* connected_land_territories; //[8];
@@ -43,7 +42,7 @@ typedef struct {
   unsigned int count;
 } Territories;
 
-Territory* getJsonTerritories(cJSON* json, int t_count, Players* players);
-Territory* getTerritoryByName(Territories* territories, char* name);
+Territories getTerritoriesFromJson(char* json_path, Players players);
+Territory* getTerritoryByName(Territories territories, char* name);
 
 #endif

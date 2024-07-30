@@ -18,7 +18,6 @@ typedef struct Connections {
   unsigned int count;
 } Connections;
 
-Connection* getJsonConnections(cJSON* connections_cjson, int connection_count,
-                               Territory* territories, int territory_count);
+Connections getConnectionsFromJson(char* json_path, Territories territories);
 
 #endif
