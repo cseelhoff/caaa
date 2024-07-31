@@ -1,29 +1,24 @@
 #include "unit_health.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-UnitHealths createUnitHealths(const UnitTypes unitTypes) {
-  UnitHealths unitHealths = {};
-  for (int i = 0; i < unitTypes.count; i++) {
-    unitHealths.count += unitTypes.array[i].max_hits;
+void createUnitHealths() {
+  unsigned int unitHealthsCount = 0;
+  for (int i = 0; i < UNIT_TYPES_COUNT; i++) {
+    unitHealthsCount += UnitTypes[i].max_hits;
   }
-  unitHealths.array = malloc(unitHealths.count * sizeof(UnitHealth));
-  if (unitHealths.array == NULL) {
-    printf("Failed to allocate memory for unit healths\n");
-    return unitHealths;
+  if (unitHealthsCount != UNIT_HEALTHS_COUNT) {
+    printf("Error: unitHealthsCount (%d) != UNIT_HEALTHS_COUNT (%d)\n",
+           unitHealthsCount, UNIT_HEALTHS_COUNT);
+    exit(1);
   }
-  // UnitHealth* graveyard = malloc(sizeof(UnitHealth));
   int index = 0;
-  for (int i = 0; i < unitTypes.count; i++) {
-    // UnitHealth* unitHealthAfterHit = graveyard;
-    for (int j = 0; j < unitTypes.array[i].max_hits; j++) {
-      unitHealths.array[index].unit_type = &unitTypes.array[i];
-      unitHealths.array[index].hits_remaining = j;
-      // unitHealths[unitHealthsIndex].unitHealthAfterHit = unitHealthAfterHit;
+  for (int i = 0; i < UNIT_TYPES_COUNT; i++) {
+    for (int j = UnitTypes[i].max_hits; j > 0; j--) {
+      UnitHealths[index].unit_type = UnitTypes[i];
+      UnitHealths[index].hits_remaining = j;
       index++;
-      // unitHealthAfterHit = &unitHealths[unitHealthsIndex];
     }
   }
-
-  return unitHealths;
 }

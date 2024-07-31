@@ -6,11 +6,12 @@
 #include <stdint.h>
 
 typedef struct {
-  const UnitType* unit_type;
+  UnitType unit_type;
   uint8_t hits_remaining;
 } UnitHealth;
 
 UnitHealth UnitHealths[UNIT_HEALTHS_COUNT];
-void loadUnitHealths();
+
+void createUnitHealths();
 
 #endif

@@ -5,13 +5,9 @@
 #include "player.h"
 #include <stdint.h>
 
-typedef struct team {
+typedef struct {
   char* name;
-  Player* players[MAX_TEAM_SIZE];
+  uint8_t players[MAX_TEAM_SIZE];
 } Team;
-
-Team* Teams[TEAMS_COUNT];
-
-void loadTeamsFromJson(char* json_path);
 
 #endif

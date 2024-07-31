@@ -15,9 +15,4 @@ typedef struct {
   bool has_blockade;
 } Sea;
 
-Sea Seas[SEAS_COUNT];
-
-//void loadSeaFromJson(char* json_path);
-//Sea* getSeaByName(char* name);
-
 #endif
