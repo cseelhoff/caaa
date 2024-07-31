@@ -19,4 +19,6 @@ typedef struct {
 
 Player* getPlayerByName(char* name);
 
+extern Player Players[PLAYERS_COUNT];
+
 #endif

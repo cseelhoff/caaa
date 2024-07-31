@@ -1,0 +1,11 @@
+#ifndef TRANSPORT_H
+#define TRANSPORT_H
+
+#define TRANSPORT_NAME "Transport"
+#define TRANSPORT_ATTACK 0
+#define TRANSPORT_DEFENSE 0
+#define TRANSPORT_MOVES_MAX 2
+#define TRANSPORT_COST 8
+#define TRANSPORT_CARRY_LAND 5
+
+#endif
