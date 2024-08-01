@@ -10,6 +10,7 @@ struct Territory;
 typedef struct {
   char* name;
   char* capital_name;
+  char* color;
   int capital_territory_index;
   uint8_t team;
   uint8_t money;
