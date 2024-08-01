@@ -165,7 +165,9 @@ typedef struct {
 extern char* phases[2];
 
 void initializeGameData();
-void setPrintableStatus(GameData* gameData, GameCache* cache, char* gameStatus);
-void buildCache(GameData* gameData, GameCache* cache);
+void setPrintableStatus();
+void buildCache();
+void setPrintableStatusLands();
+void setPrintableStatusSeas();
 
 #endif
