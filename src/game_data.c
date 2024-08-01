@@ -1,26 +1,38 @@
 #include "game_data.h"
+#include "cJSON.h"
 #include "config.h"
 #include "land.h"
 #include "player.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "serialize_data.h"
 
 char* phases[2] = {"Combat", "Landing, Purchase"};
 
 void initializeGameData() {
-  GameData gameData;
+  GameData gameData = {0};
+  cJSON* json;
+  //json = serialize_game_data_to_json(&gameData);
+  //write_json_to_file("game_data_0.json", json);
+  //cJSON_Delete(json);
+
+  json = read_json_from_file("game_data.json");
+  deserialize_game_data_from_json(&gameData, json);
+  cJSON_Delete(json);
+  
   GameCache cache;
-  char gameStatus[5000] = "";
+  char printableGameStatus[5000] = "";
   gameData.phase = 0;
-  setStaticTotals(&gameData, &cache);
+  buildCache(&gameData, &cache);
   if (Players[0].is_human) {
-    setGameStatus(&gameData, &cache, gameStatus);
-    printf("%s\n", gameStatus);
+    setPrintableStatus(&gameData, &cache, printableGameStatus);
+    printf("%s\n", printableGameStatus);
   }
 }
 
-void setStaticTotals(GameData* gameData, GameCache* cache) {
-  for (int i; i < LANDS_COUNT; i++) {
+void buildCache(GameData* gameData, GameCache* cache) {
+  for (int i = 0; i < LANDS_COUNT; i++) {
     UnitsLandStatic land_static = cache->units_land_static[i];
     UnitsLandMobile land_mobile =
         gameData->land_state[i].units_land.units_land_mobile;
@@ -56,7 +68,7 @@ void setStaticTotals(GameData* gameData, GameCache* cache) {
         cache->units_land_total[i][2] + cache->units_land_total[i][3] +
         cache->units_land_total[i][4];
   }
-  for (int i; i < SEAS_COUNT; i++) {
+  for (int i = 0; i < SEAS_COUNT; i++) {
     UnitsSeaMobileTotal units_sea_mobile_total =
         cache->units_sea_mobile_total[i];
     UnitsSeaMobile sea_mobile = gameData->units_sea[i].units_sea_mobile;
@@ -138,7 +150,8 @@ void setStaticTotals(GameData* gameData, GameCache* cache) {
   }
 }
 
-void setGameStatus(GameData* gameData, GameCache* cache, char* gameStatus) {
+void setPrintableStatus(GameData* gameData, GameCache* cache,
+                        char* gameStatus) {
   uint8_t player_index = gameData->player_index;
   Player player = Players[player_index];
   char* playerName = player.name;
@@ -175,7 +188,7 @@ void setGameStatus(GameData* gameData, GameCache* cache, char* gameStatus) {
     } else {
       strcat(gameStatus, "false\n");
     }
-    if(cache->units_land_grand_total[i] == 0) {
+    if (cache->units_land_grand_total[i] == 0) {
       strcat(gameStatus, "\033[0m");
       continue;
     }
