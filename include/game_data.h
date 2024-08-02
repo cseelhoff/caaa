@@ -1,11 +1,11 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#include "config.h"
-#include <stdint.h>
-#include <stdbool.h>
-#include <sys/types.h>
 #include "cJSON.h"
+#include "config.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64
 
@@ -89,7 +89,7 @@ typedef struct {
   uint8_t bombers;
 } UnitsSeaMobileTotal;
 
-typedef struct { //limited transports
+typedef struct { // limited transports
   uint8_t transports_empty_0;
   uint8_t transports_1i_0;
   uint8_t transports_1a_0;
@@ -103,7 +103,7 @@ typedef struct { //limited transports
   uint8_t battleships_damaged_0;
   uint8_t submarines_0;
   uint8_t fighters_0;
-  //uint8_t bombers_0;
+  // uint8_t bombers_0;
   uint8_t transports_empty_1;
   uint8_t transports_1i_1;
   uint8_t transports_1a_1;
@@ -125,6 +125,10 @@ typedef struct { //limited transports
   uint8_t transports_2i_2;
   uint8_t transports_1i_1a_2;
   uint8_t transports_1i_1t_2;
+  uint8_t transports_empty_s;
+  uint8_t transports_1i_s;
+  uint8_t transports_1a_s;
+  uint8_t transports_1t_s;
   uint8_t destroyers_2;
   uint8_t carriers_2;
   uint8_t battleships_2;
@@ -137,7 +141,7 @@ typedef struct { //limited transports
   uint8_t fighters_4;
   uint8_t bombers_4;
   uint8_t bombers_5;
-  //uint8_t bombers_6;
+  // uint8_t bombers_6;
 } UnitsSeaMobile;
 
 typedef struct {
@@ -150,7 +154,7 @@ typedef struct {
   uint8_t phase;
   uint8_t money[PLAYERS_COUNT];
   LandState land_state[LANDS_COUNT];
-  UnitsSea units_sea[SEAS_COUNT];  
+  UnitsSea units_sea[SEAS_COUNT];
 } GameData;
 
 typedef struct {
@@ -160,6 +164,7 @@ typedef struct {
   uint8_t units_sea_total[SEAS_COUNT][PLAYERS_COUNT];
   uint8_t units_land_grand_total[LANDS_COUNT];
   uint8_t units_sea_grand_total[SEAS_COUNT];
+  uint8_t income_per_turn[PLAYERS_COUNT];
 } GameCache;
 
 extern char* phases[2];
@@ -169,5 +174,22 @@ void setPrintableStatus();
 void buildCache();
 void setPrintableStatusLands();
 void setPrintableStatusSeas();
-
+void stage_transport_units();
+void move_land_units();
+void move_transport_units();
+void move_sea_units();
+void move_fighter_units();
+void move_bomber_units();
+void resolve_sea_battles();
+void unload_transports();
+void bomb_factories();
+void bombard_shores();
+void fire_aa_guns();
+void resolve_land_battles();
+void land_air_units();
+void move_aa_guns();
+void reset_units_fully();
+void buy_units();
+void crash_air_units();
+void collect_money();
 #endif

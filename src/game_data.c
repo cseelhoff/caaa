@@ -3,7 +3,7 @@
 #include "config.h"
 #include "land.h"
 #include "player.h"
-#include "sea.h"
+#include "sea_data.h"
 #include "serialize_data.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@ char buffer[STRING_BUFFER_SIZE];
 char threeCharStr[4];
 GameData gameData = {0};
 cJSON* json;
-GameCache cache;
+GameCache cache = {0};
 uint8_t player_index;
 Player player;
 char* playerName;
@@ -47,10 +47,28 @@ void initializeGameData() {
     setPrintableStatus(&gameData, &cache, printableGameStatus);
     printf("%s\n", printableGameStatus);
   }
+  move_land_units();
+  move_transport_units();
+  move_sea_units();
+  move_fighter_units();
+  move_bomber_units();
+  resolve_sea_battles();
+  unload_transports();
+  bomb_factories();
+  bombard_shores();
+  fire_aa_guns();
+  resolve_land_battles();
+  land_air_units();
+  move_aa_guns();
+  reset_units_fully();
+  buy_units();
+  crash_air_units();
+  collect_money();
 }
 
 void buildCache() {
   for (int i = 0; i < LANDS_COUNT; i++) {
+    cache.income_per_turn[Lands[i].original_owner_index] += Lands[i].land_value;
     land_static = cache.units_land_static[i];
     land_mobile = gameData.land_state[i].units_land.units_land_mobile;
     land_static.infantry = land_mobile.infantry_0 + land_mobile.infantry_1;
@@ -71,7 +89,7 @@ void buildCache() {
                                    cache.units_land_static[i].aa_guns +
                                    cache.units_land_static[i].fighters +
                                    cache.units_land_static[i].bombers;
-    for (int j; j < PLAYERS_COUNT - 1; j++) {
+    for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
       cache.units_land_total[i][j + 1] =
           gameData.land_state[i].units_land.units_land_static[j].infantry +
           gameData.land_state[i].units_land.units_land_static[j].artillery +
@@ -91,16 +109,20 @@ void buildCache() {
     units_sea_mobile_total.transports_empty =
         units_sea_mobile.transports_empty_0 +
         units_sea_mobile.transports_empty_1 +
-        units_sea_mobile.transports_empty_2;
+        units_sea_mobile.transports_empty_2 +
+        units_sea_mobile.transports_empty_s;
     units_sea_mobile_total.transports_1i = units_sea_mobile.transports_1i_0 +
                                            units_sea_mobile.transports_1i_1 +
-                                           units_sea_mobile.transports_1i_2;
+                                           units_sea_mobile.transports_1i_2+
+                                           units_sea_mobile.transports_1i_s;
     units_sea_mobile_total.transports_1a = units_sea_mobile.transports_1a_0 +
                                            units_sea_mobile.transports_1a_1 +
-                                           units_sea_mobile.transports_1a_2;
+                                           units_sea_mobile.transports_1a_2 +
+                                           units_sea_mobile.transports_1a_s;
     units_sea_mobile_total.transports_1t = units_sea_mobile.transports_1t_0 +
                                            units_sea_mobile.transports_1t_1 +
-                                           units_sea_mobile.transports_1t_2;
+                                           units_sea_mobile.transports_1t_2 +
+                                           units_sea_mobile.transports_1t_s;
     units_sea_mobile_total.transports_2i = units_sea_mobile.transports_2i_0 +
                                            units_sea_mobile.transports_2i_1 +
                                            units_sea_mobile.transports_2i_2;
@@ -323,35 +345,39 @@ void setPrintableStatusSeas() {
       units_sea_mobile_total = cache.units_sea_mobile_total[i];
       if (units_sea_mobile_total.transports_empty > 0) {
         snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Transports Empty: |%3d%3d%3d%3d\n", player.name,
+                 "%s Transports Empty: |%3d%3d%3d%3d%3d\n", player.name,
                  units_sea_mobile_total.transports_empty,
                  units_sea_mobile.transports_empty_0,
                  units_sea_mobile.transports_empty_1,
-                 units_sea_mobile.transports_empty_2);
+                 units_sea_mobile.transports_empty_2,
+                 units_sea_mobile.transports_empty_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_1i > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1i:   |%3d%3d%3d%3d\n",
+            buffer, STRING_BUFFER_SIZE, "%s Transports 1i:   |%3d%3d%3d%3d%3d\n",
             player.name, units_sea_mobile_total.transports_1i,
             units_sea_mobile.transports_1i_0, units_sea_mobile.transports_1i_1,
-            units_sea_mobile.transports_1i_2);
+            units_sea_mobile.transports_1i_2,
+            units_sea_mobile.transports_1i_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_1a > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1a:   |%3d%3d%3d%3d\n",
+            buffer, STRING_BUFFER_SIZE, "%s Transports 1a:   |%3d%3d%3d%3d%3d\n",
             player.name, units_sea_mobile_total.transports_1a,
             units_sea_mobile.transports_1a_0, units_sea_mobile.transports_1a_1,
-            units_sea_mobile.transports_1a_2);
+            units_sea_mobile.transports_1a_2,
+            units_sea_mobile.transports_1a_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_1t > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1t:   |%3d%3d%3d%3d\n",
+            buffer, STRING_BUFFER_SIZE, "%s Transports 1t:   |%3d%3d%3d%3d%3d\n",
             player.name, units_sea_mobile_total.transports_1t,
             units_sea_mobile.transports_1t_0, units_sea_mobile.transports_1t_1,
-            units_sea_mobile.transports_1t_2);
+            units_sea_mobile.transports_1t_2,
+            units_sea_mobile.transports_1t_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_2i > 0) {
@@ -506,8 +532,104 @@ void setPrintableStatusSeas() {
                    player.name, units_sea_static.fighters);
           strcat(printableGameStatus, buffer);
         }
-        strcat(printableGameStatus, "\033[0m");        
+        strcat(printableGameStatus, "\033[0m");
       }
     }
   }
 }
+
+void stage_transport_units() {
+  //loop through transports with 2 moves remaining that aren't full, start at sea 0 to n
+  //ask for destination start at sea 0 to n
+  //
+  //get actual destination based on pathing and movement remaining
+  //conduct movement -
+}
+
+void move_land_units() {
+      //foreach unit stack that the player owns
+    //loop through land units
+    // 1. no movement - set moves to 0
+    // 2. move 1 space, reduce movement, and ask again
+    //   a. if boarding, set movement remaining to receiving transports movement remaining
+    //   b. if not boarding ask:
+    //     1. 1 unit
+    //     2. 50% stack (rounded down)
+    //     3. 100% stack (rounded down)
+    // 3. (if adj to water and transports with moves still exist) wait
+}
+void move_transport_units() {
+      //---repeat until all transports done---
+    //loop through all transports
+    // 1. no movement
+    // 2. move 1 space
+    //loop through land units
+    // 1. load transport
+    //   a. set movement remaining to receiving transports movement remaining
+    // 2. (if adj to water and transports with moves still exist) wait
+    //---
+}
+void move_sea_units() {
+      //loop through all remaining sea units
+    // 1. no movement - set moves to 0
+    // 2. move 1 space, reduce movement, and ask again
+}
+void move_fighter_units() {
+      //loop through all fighter units (no kamakaze check yet)
+    // 1. (if available) no more movement
+    // 2. move 1 space, reduce movement, and ask again
+    // crash fighter if unsavable
+}
+void move_bomber_units() {
+      //loop through all bomber units (no kamakaze check yet)
+    // 1. (if available) no more movement - bomber mode
+    // 2. (if available) no more movement - attack mode
+    // 3. move 1 space, reduce movement, and ask again
+    // crash bomber if unsavable
+}
+void resolve_sea_battles() {}
+void unload_transports() {
+      //loop through all transports
+    // 1. (if available) no more movement
+    // 2. unload all units
+    // 3. (if adj to water and transports with moves still exist) wait
+
+    // old notes:
+    // 1. no unload
+    // 2. unload
+}
+void bomb_factories() {}
+void bombard_shores() {}
+void fire_aa_guns() {}
+void resolve_land_battles() {
+      //loop through all land units
+    // 1. (if available) no more movement
+    // 2. move 1 space, reduce movement, and ask again
+    // 3. (if adj to water and transports with moves still exist) wait
+
+    //old notes:
+        //land combat
+    // a. round with retreat option  
+}
+void land_air_units() {
+      //loop through all air units
+    // 1. (if available) no more movement
+    // 2. move 1 space, reduce movement, and ask again
+    // crash air unit if unsavable
+
+    //old notes:
+    //loop through all air units
+    // 1. no movement - set moves to 0
+    // 2. move 1 space, reduce movement, and ask again
+    // crash air unit if unsavable
+}
+void move_aa_guns() {
+  
+    //loop through all aa units
+    // 1. no movement - set moves to 0
+    // 2. move 1 space, reduce movement, and ask again
+}
+void reset_units_fully() {}
+void buy_units() {}
+void crash_air_units() {}
+void collect_money() {}
