@@ -5,13 +5,28 @@
 #include "player.h"
 #include "sea_data.h"
 #include "serialize_data.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 char* phases[2] = {"Combat", "Landing, Purchase"};
+char* LAND_UNIT_NAMES[LAND_UNIT_TYPES] = {"Fighters ", "Bombers ", "Infantry",
+                                          "Artillery", "Tanks   ", "AA Guns "};
+uint8_t move_max_land[LAND_UNIT_TYPES] = {4, 6, 1, 1, 2, 1};
+uint8_t move_states_land[LAND_UNIT_TYPES] = {5, 7, 2, 2, 3, 2};
+
+char* SEA_UNIT_NAMES[SEA_UNIT_TYPES] = {
+    "Fighters   ", "Trans Empty",  "Trans 1 Inf",  "Trans 1 Art", "Trans 1 Tnk",
+    "Trans 2 Inf", "Trans 1I 1A ", "Trans 1I 1T",  "Submarines ", "Destroyers ",
+    "Carriers   ", "Battleships",  "BS Damaged  ", "Bombers   "};
+uint8_t move_max_sea[SEA_UNIT_TYPES] = {4, 2, 2, 2, 2, 2, 2,
+                                        2, 2, 2, 2, 2, 2, 6};
+uint8_t move_states_sea[SEA_UNIT_TYPES] = {5, 4, 4, 4, 4, 3, 3,
+                                           3, 3, 3, 3, 3, 3, 6};
+
 char buffer[STRING_BUFFER_SIZE];
-char threeCharStr[4];
+char threeCharStr[5];
 GameData gameData = {0};
 cJSON* json;
 GameCache cache = {0};
@@ -19,6 +34,8 @@ uint8_t player_index;
 Player player;
 char* playerName;
 char printableGameStatus[5000] = "";
+uint8_t enemies[PLAYERS_COUNT - 1];
+uint8_t enemies_count;
 UnitsSeaMobileTotal units_sea_mobile_total;
 UnitsSeaMobile units_sea_mobile;
 UnitsSeaStatic units_sea_static;
@@ -26,6 +43,8 @@ UnitsSea units_sea;
 LandState land_state;
 UnitsLandStatic land_static;
 UnitsLandMobile land_mobile;
+int user_input;
+Land land;
 
 void initializeGameData() {
   // json = serialize_game_data_to_json(&gameData);
@@ -42,11 +61,8 @@ void initializeGameData() {
   player = Players[player_index];
   playerName = player.name;
   printableGameStatus[0] = '\0';
-  buildCache(&gameData, &cache);
-  if (Players[0].is_human) {
-    setPrintableStatus(&gameData, &cache, printableGameStatus);
-    printf("%s\n", printableGameStatus);
-  }
+  buildCache();
+  stage_transport_units();
   move_land_units();
   move_transport_units();
   move_sea_units();
@@ -67,131 +83,74 @@ void initializeGameData() {
 }
 
 void buildCache() {
-  for (int i = 0; i < LANDS_COUNT; i++) {
-    cache.income_per_turn[Lands[i].original_owner_index] += Lands[i].land_value;
-    land_static = cache.units_land_static[i];
-    land_mobile = gameData.land_state[i].units_land.units_land_mobile;
-    land_static.infantry = land_mobile.infantry_0 + land_mobile.infantry_1;
-    land_static.artillery = land_mobile.artillery_0 + land_mobile.artillery_1;
-    land_static.tanks =
-        land_mobile.tanks_0 + land_mobile.tanks_1 + land_mobile.tanks_2;
-    land_static.aa_guns = land_mobile.aa_guns_0 + land_mobile.aa_guns_1;
-    land_static.fighters = land_mobile.fighters_0 + land_mobile.fighters_1 +
-                           land_mobile.fighters_2 + land_mobile.fighters_3 +
-                           land_mobile.fighters_4;
-    land_static.bombers = land_mobile.bombers_0 + land_mobile.bombers_1 +
-                          land_mobile.bombers_2 + land_mobile.bombers_3 +
-                          land_mobile.bombers_4 + land_mobile.bombers_5 +
-                          land_mobile.bombers_6;
-    cache.units_land_total[i][0] = cache.units_land_static[i].infantry +
-                                   cache.units_land_static[i].artillery +
-                                   cache.units_land_static[i].tanks +
-                                   cache.units_land_static[i].aa_guns +
-                                   cache.units_land_static[i].fighters +
-                                   cache.units_land_static[i].bombers;
+  for (int i = 0; i < PLAYERS_COUNT; i++) {
+    // cache.income_per_turn[i] = 0;
+    // cache.enemies_count = 0;
+    uint8_t modPlayerIndex = (player_index + i) % PLAYERS_COUNT;
+    cache.player_names[i] = Players[modPlayerIndex].name;
+    cache.player_colors[i] = Players[modPlayerIndex].color;
     for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
-      cache.units_land_total[i][j + 1] =
-          gameData.land_state[i].units_land.units_land_static[j].infantry +
-          gameData.land_state[i].units_land.units_land_static[j].artillery +
-          gameData.land_state[i].units_land.units_land_static[j].tanks +
-          gameData.land_state[i].units_land.units_land_static[j].aa_guns +
-          gameData.land_state[i].units_land.units_land_static[j].fighters +
-          gameData.land_state[i].units_land.units_land_static[j].bombers;
+      if (player.is_allied[j] == false) {
+        cache.enemies[cache.enemies_count] = j;
+        cache.enemies_count++;
+      }
     }
-    cache.units_land_grand_total[i] =
-        cache.units_land_total[i][0] + cache.units_land_total[i][1] +
-        cache.units_land_total[i][2] + cache.units_land_total[i][3] +
-        cache.units_land_total[i][4];
+  }
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    LandState land_state = gameData.land_state[i];
+    cache.income_per_turn[land_state.owner_index] += Lands[i].land_value;
+    cache.units_land_ptr[i][FIGHTERS] = (uint8_t*)land_state.fighters;
+    cache.units_land_ptr[i][BOMBERS_LAND] = (uint8_t*)land_state.bombers;
+    cache.units_land_ptr[i][INFANTRY] = (uint8_t*)land_state.infantry;
+    cache.units_land_ptr[i][ARTILLERY] = (uint8_t*)land_state.artillery;
+    cache.units_land_ptr[i][TANKS] = (uint8_t*)land_state.tanks;
+    cache.units_land_ptr[i][AA_GUNS] = (uint8_t*)land_state.aa_guns;
+    cache.units_land_grand_total[i] = cache.units_land_player_total[i][0];
+    for (int j = 0; j < LAND_UNIT_TYPES; j++) {
+      for (int k = 0; k < move_states_land[j]; k++) {
+        cache.units_land_type_total[i][j] += cache.units_land_ptr[i][j][k];
+      }
+      cache.units_land_player_total[i][0] += cache.units_land_type_total[i][j];
+    }
+    cache.units_land_grand_total[i] = cache.units_land_player_total[i][0];
+    for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
+      for (int k = 0; k < LAND_UNIT_TYPES; k++) {
+        cache.units_land_player_total[i][j] +=
+            gameData.land_state[i].other_units[j][k];
+      }
+      cache.units_land_grand_total[i] += cache.units_land_player_total[i][j];
+    }
   }
   for (int i = 0; i < SEAS_COUNT; i++) {
-    units_sea_mobile_total = cache.units_sea_mobile_total[i];
-    units_sea_mobile = gameData.units_sea[i].units_sea_mobile;
-    units_sea_mobile_total.transports_empty =
-        units_sea_mobile.transports_empty_0 +
-        units_sea_mobile.transports_empty_1 +
-        units_sea_mobile.transports_empty_2 +
-        units_sea_mobile.transports_empty_s;
-    units_sea_mobile_total.transports_1i = units_sea_mobile.transports_1i_0 +
-                                           units_sea_mobile.transports_1i_1 +
-                                           units_sea_mobile.transports_1i_2+
-                                           units_sea_mobile.transports_1i_s;
-    units_sea_mobile_total.transports_1a = units_sea_mobile.transports_1a_0 +
-                                           units_sea_mobile.transports_1a_1 +
-                                           units_sea_mobile.transports_1a_2 +
-                                           units_sea_mobile.transports_1a_s;
-    units_sea_mobile_total.transports_1t = units_sea_mobile.transports_1t_0 +
-                                           units_sea_mobile.transports_1t_1 +
-                                           units_sea_mobile.transports_1t_2 +
-                                           units_sea_mobile.transports_1t_s;
-    units_sea_mobile_total.transports_2i = units_sea_mobile.transports_2i_0 +
-                                           units_sea_mobile.transports_2i_1 +
-                                           units_sea_mobile.transports_2i_2;
-    units_sea_mobile_total.transports_1i_1a =
-        units_sea_mobile.transports_1i_1a_0 +
-        units_sea_mobile.transports_1i_1a_1 +
-        units_sea_mobile.transports_1i_1a_2;
-    units_sea_mobile_total.transports_1i_1t =
-        units_sea_mobile.transports_1i_1t_0 +
-        units_sea_mobile.transports_1i_1t_1 +
-        units_sea_mobile.transports_1i_1t_2;
-    units_sea_mobile_total.destroyers = units_sea_mobile.destroyers_0 +
-                                        units_sea_mobile.destroyers_1 +
-                                        units_sea_mobile.destroyers_2;
-    units_sea_mobile_total.carriers = units_sea_mobile.carriers_0 +
-                                      units_sea_mobile.carriers_1 +
-                                      units_sea_mobile.carriers_2;
-    units_sea_mobile_total.battleships = units_sea_mobile.battleships_0 +
-                                         units_sea_mobile.battleships_1 +
-                                         units_sea_mobile.battleships_2;
-    units_sea_mobile_total.battleships_damaged =
-        units_sea_mobile.battleships_damaged_0 +
-        units_sea_mobile.battleships_damaged_1 +
-        units_sea_mobile.battleships_damaged_2;
-    units_sea_mobile_total.submarines = units_sea_mobile.submarines_0 +
-                                        units_sea_mobile.submarines_1 +
-                                        units_sea_mobile.submarines_2;
-    units_sea_mobile_total.fighters =
-        units_sea_mobile.fighters_0 + units_sea_mobile.fighters_1 +
-        units_sea_mobile.fighters_2 + units_sea_mobile.fighters_3 +
-        units_sea_mobile.fighters_4;
-    units_sea_mobile_total.bombers =
-        units_sea_mobile.bombers_1 + units_sea_mobile.bombers_2 +
-        units_sea_mobile.bombers_3 + units_sea_mobile.bombers_4 +
-        units_sea_mobile.bombers_5;
-    cache.units_sea_total[i][0] =
-        units_sea_mobile_total.transports_empty +
-        units_sea_mobile_total.transports_1i +
-        units_sea_mobile_total.transports_1a +
-        units_sea_mobile_total.transports_1t +
-        units_sea_mobile_total.transports_2i +
-        units_sea_mobile_total.transports_1i_1a +
-        units_sea_mobile_total.transports_1i_1t +
-        units_sea_mobile_total.destroyers + units_sea_mobile_total.carriers +
-        units_sea_mobile_total.battleships +
-        units_sea_mobile_total.battleships_damaged +
-        units_sea_mobile_total.submarines + units_sea_mobile_total.fighters +
-        units_sea_mobile_total.bombers;
-
-    for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
-      cache.units_sea_total[i][j + 1] =
-          gameData.units_sea[i].units_sea_static[j].transports_empty +
-          gameData.units_sea[i].units_sea_static[j].transports_1i +
-          gameData.units_sea[i].units_sea_static[j].transports_1a +
-          gameData.units_sea[i].units_sea_static[j].transports_1t +
-          gameData.units_sea[i].units_sea_static[j].transports_2i +
-          gameData.units_sea[i].units_sea_static[j].transports_1i_1a +
-          gameData.units_sea[i].units_sea_static[j].transports_1i_1t +
-          gameData.units_sea[i].units_sea_static[j].destroyers +
-          gameData.units_sea[i].units_sea_static[j].carriers +
-          gameData.units_sea[i].units_sea_static[j].battleships +
-          gameData.units_sea[i].units_sea_static[j].battleships_damaged +
-          gameData.units_sea[i].units_sea_static[j].submarines +
-          gameData.units_sea[i].units_sea_static[j].fighters;
+    UnitsSea units_sea = gameData.units_sea[i];
+    cache.units_sea_ptr[i][TRANS_EMPTY] = (uint8_t*)units_sea.trans_empty;
+    cache.units_sea_ptr[i][TRANS_1I] = (uint8_t*)units_sea.trans_1i;
+    cache.units_sea_ptr[i][TRANS_1A] = (uint8_t*)units_sea.trans_1a;
+    cache.units_sea_ptr[i][TRANS_1T] = (uint8_t*)units_sea.trans_1t;
+    cache.units_sea_ptr[i][TRANS_2I] = (uint8_t*)units_sea.trans_2i;
+    cache.units_sea_ptr[i][TRANS_1I_1A] = (uint8_t*)units_sea.trans_1i_1a;
+    cache.units_sea_ptr[i][TRANS_1I_1T] = (uint8_t*)units_sea.trans_1i_1t;
+    cache.units_sea_ptr[i][SUBMARINES] = (uint8_t*)units_sea.submarines;
+    cache.units_sea_ptr[i][DESTROYERS] = (uint8_t*)units_sea.destroyers;
+    cache.units_sea_ptr[i][CARRIERS] = (uint8_t*)units_sea.carriers;
+    cache.units_sea_ptr[i][BATTLESHIPS] = (uint8_t*)units_sea.battleships;
+    cache.units_sea_ptr[i][BS_DAMAGED] = (uint8_t*)units_sea.bs_damaged;
+    cache.units_sea_ptr[i][BOMBERS_SEA] = (uint8_t*)units_sea.bombers;
+    for (int j = 0; j < SEA_UNIT_TYPES; j++) {
+      cache.units_sea_ptr[i][j] = 0;
+      for (int k = 0; k < move_states_sea[j]; k++) {
+        cache.units_sea_type_total[i][j] += cache.units_sea_ptr[i][j][k];
+      }
+      cache.units_sea_player_total[i][0] += cache.units_sea_type_total[i][j];
     }
-    cache.units_sea_grand_total[i] =
-        cache.units_sea_total[i][0] + cache.units_sea_total[i][1] +
-        cache.units_sea_total[i][2] + cache.units_sea_total[i][3] +
-        cache.units_sea_total[i][4];
+    cache.units_sea_grand_total[i] = cache.units_sea_player_total[i][0];
+    for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
+      for (int k = 0; k < SEA_UNIT_TYPES; k++) {
+        cache.units_sea_player_total[i][j] +=
+            gameData.units_sea[i].other_units[j][k];
+      }
+      cache.units_sea_grand_total[i] += cache.units_sea_player_total[i][j];
+    }
   }
 }
 
@@ -204,16 +163,17 @@ void setPrintableStatus() {
   strcat(printableGameStatus, " with money ");
   sprintf(threeCharStr, "%d", gameData.money[player_index]);
   strcat(printableGameStatus, threeCharStr);
+  strcat(printableGameStatus, "\n");
   setPrintableStatusLands(gameData, cache, printableGameStatus);
   setPrintableStatusSeas(gameData, cache, printableGameStatus);
 }
 
 void setPrintableStatusLands() {
   for (int i = 0; i < LANDS_COUNT; i++) {
-    land_state = gameData.land_state[i];
-    land_mobile = land_state.units_land.units_land_mobile;
-    strcat(printableGameStatus, "\n");
+    LandState land_state = gameData.land_state[i];
     strcat(printableGameStatus, Players[land_state.owner_index].color);
+    sprintf(threeCharStr, "%d ", i);
+    strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, Lands[i].name);
     strcat(printableGameStatus, ": ");
     strcat(printableGameStatus, Players[land_state.owner_index].name);
@@ -237,95 +197,35 @@ void setPrintableStatusLands() {
       continue;
     }
     strcat(printableGameStatus, "             |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
-    if (cache.units_land_static[i].infantry > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE, "%s Infantry: |%3d%3d%3d\n",
-               player.name, cache.units_land_static[i].infantry,
-               land_mobile.infantry_0, land_mobile.infantry_1);
-      strcat(printableGameStatus, buffer);
-    }
-    if (cache.units_land_static[i].artillery > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE, "%s Artillery:|%3d%3d%3d\n",
-               player.name, cache.units_land_static[i].artillery,
-               land_mobile.artillery_0, land_mobile.artillery_1);
-      strcat(printableGameStatus, buffer);
-    }
-    if (cache.units_land_static[i].tanks > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE, "%s Tanks:    |%3d%3d%3d%3d\n",
-               player.name, cache.units_land_static[i].tanks,
-               land_mobile.tanks_0, land_mobile.tanks_1, land_mobile.tanks_2);
-      strcat(printableGameStatus, buffer);
-    }
-    if (cache.units_land_static[i].aa_guns > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE, "%s AA Guns:  |%3d%3d%3d\n",
-               player.name, cache.units_land_static[i].aa_guns,
-               land_mobile.aa_guns_0, land_mobile.aa_guns_1);
-      strcat(printableGameStatus, buffer);
-    }
-    if (cache.units_land_static[i].fighters > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE, "%s Fighters: |%3d%3d%3d%3d%3d%3d\n",
-               player.name, cache.units_land_static[i].fighters,
-               land_mobile.fighters_0, land_mobile.fighters_1,
-               land_mobile.fighters_2, land_mobile.fighters_3,
-               land_mobile.fighters_4);
-      strcat(printableGameStatus, buffer);
-    }
-    if (cache.units_land_static[i].bombers > 0) {
-      snprintf(buffer, STRING_BUFFER_SIZE,
-               "%s Bombers:  |%3d%3d%3d%3d%3d%3d%3d%3d\n", player.name,
-               cache.units_land_static[i].bombers, land_mobile.bombers_0,
-               land_mobile.bombers_1, land_mobile.bombers_2,
-               land_mobile.bombers_3, land_mobile.bombers_4,
-               land_mobile.bombers_5, land_mobile.bombers_6);
-      strcat(printableGameStatus, buffer);
+    for (int j = 0; j < LAND_UNIT_TYPES; j++) {
+      if (cache.units_land_type_total[i][j] > 0) {
+        strcat(printableGameStatus, player.name);
+        strcat(printableGameStatus, LAND_UNIT_NAMES[j]);
+        for (int k = 0; k < move_states_land[j]; k++) {
+          sprintf(threeCharStr, "%3d", cache.units_land_ptr[i][j][k]);
+          strcat(printableGameStatus, threeCharStr);
+        }
+        strcat(printableGameStatus, "\n");
+      }
     }
     strcat(printableGameStatus, "\033[0m");
     for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
-      player = Players[(player_index + j) % PLAYERS_COUNT];
-      land_static = gameData.land_state[i].units_land.units_land_static[j];
-      strcat(printableGameStatus, player.color);
-      if (land_static.infantry > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " Infantry: |");
-        sprintf(threeCharStr, "%3d", land_static.infantry);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
+      if (cache.units_land_player_total[i][j] > 0) {
+        strcat(printableGameStatus, cache.player_colors[j]);
+        for (int k = 0; k < LAND_UNIT_TYPES; k++) {
+          if (gameData.land_state[i].other_units[j][k] > 0) {
+            strcat(printableGameStatus, cache.player_names[j]);
+            strcat(printableGameStatus, LAND_UNIT_NAMES[k]);
+            for (int l = 0; l < move_states_land[k]; l++) {
+              sprintf(threeCharStr, "%3d",
+                      gameData.land_state[i].other_units[j][k]);
+              strcat(printableGameStatus, threeCharStr);
+            }
+            strcat(printableGameStatus, "\n");
+          }
+        }
+        strcat(printableGameStatus, "\033[0m");
       }
-      if (land_static.artillery > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " Artillery:|");
-        sprintf(threeCharStr, "%3d", land_static.artillery);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
-      }
-      if (land_static.tanks > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " Tanks:    |");
-        sprintf(threeCharStr, "%3d", land_static.tanks);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
-      }
-      if (land_static.aa_guns > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " AA Guns:  |");
-        sprintf(threeCharStr, "%3d", land_static.aa_guns);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
-      }
-      if (land_static.fighters > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " Fighters: |");
-        sprintf(threeCharStr, "%3d", land_static.fighters);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
-      }
-      if (land_static.bombers > 0) {
-        strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, " Bombers:  |");
-        sprintf(threeCharStr, "%3d", land_static.bombers);
-        strcat(printableGameStatus, threeCharStr);
-        strcat(printableGameStatus, "\n");
-      }
-      strcat(printableGameStatus, "\033[0m");
     }
   }
 }
@@ -337,12 +237,13 @@ void setPrintableStatusSeas() {
     }
     units_sea = gameData.units_sea[i];
     units_sea_mobile = units_sea.units_sea_mobile;
-    strcat(printableGameStatus, "\n");
+    sprintf(threeCharStr, "%d ", LANDS_COUNT + i);
+    strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, Seas[i].name);
     strcat(printableGameStatus, "             |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
     strcat(printableGameStatus, player.color);
-    if (cache.units_sea_total[i][0] > 0) {
-      units_sea_mobile_total = cache.units_sea_mobile_total[i];
+    if (cache.units_sea_player_total[i][0] > 0) {
+      units_sea_mobile_total = cache.units_sea_type_total[i];
       if (units_sea_mobile_total.transports_empty > 0) {
         snprintf(buffer, STRING_BUFFER_SIZE,
                  "%s Transports Empty: |%3d%3d%3d%3d%3d\n", player.name,
@@ -355,29 +256,29 @@ void setPrintableStatusSeas() {
       }
       if (units_sea_mobile_total.transports_1i > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1i:   |%3d%3d%3d%3d%3d\n",
-            player.name, units_sea_mobile_total.transports_1i,
+            buffer, STRING_BUFFER_SIZE,
+            "%s Transports 1i:   |%3d%3d%3d%3d%3d\n", player.name,
+            units_sea_mobile_total.transports_1i,
             units_sea_mobile.transports_1i_0, units_sea_mobile.transports_1i_1,
-            units_sea_mobile.transports_1i_2,
-            units_sea_mobile.transports_1i_s);
+            units_sea_mobile.transports_1i_2, units_sea_mobile.transports_1i_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_1a > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1a:   |%3d%3d%3d%3d%3d\n",
-            player.name, units_sea_mobile_total.transports_1a,
+            buffer, STRING_BUFFER_SIZE,
+            "%s Transports 1a:   |%3d%3d%3d%3d%3d\n", player.name,
+            units_sea_mobile_total.transports_1a,
             units_sea_mobile.transports_1a_0, units_sea_mobile.transports_1a_1,
-            units_sea_mobile.transports_1a_2,
-            units_sea_mobile.transports_1a_s);
+            units_sea_mobile.transports_1a_2, units_sea_mobile.transports_1a_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_1t > 0) {
         snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 1t:   |%3d%3d%3d%3d%3d\n",
-            player.name, units_sea_mobile_total.transports_1t,
+            buffer, STRING_BUFFER_SIZE,
+            "%s Transports 1t:   |%3d%3d%3d%3d%3d\n", player.name,
+            units_sea_mobile_total.transports_1t,
             units_sea_mobile.transports_1t_0, units_sea_mobile.transports_1t_1,
-            units_sea_mobile.transports_1t_2,
-            units_sea_mobile.transports_1t_s);
+            units_sea_mobile.transports_1t_2, units_sea_mobile.transports_1t_s);
         strcat(printableGameStatus, buffer);
       }
       if (units_sea_mobile_total.transports_2i > 0) {
@@ -538,96 +439,202 @@ void setPrintableStatusSeas() {
   }
 }
 
+void getUserInput() {
+  while (true) {
+    if (fgets(threeCharStr, 3, stdin) != NULL) {
+      if (sscanf(buffer, "%d", &user_input) == 1) {
+        break;
+      }
+    }
+  }
+}
+
+void moveAllTransports_S(uint8_t from_sea, uint8_t* transports_s,
+                         uint8_t* transports_2, uint8_t* transports_1,
+                         uint8_t* transports_0, char* transport_name) {
+  uint8_t actualDestination;
+  uint8_t nextSeaMovement;
+  uint8_t nextSeaMovement2;
+  uint8_t seaDistance;
+  while (transports_s > 0) {
+    if (player.is_human) {
+      setPrintableStatus();
+      strcat(printableGameStatus, "Staging Transport ");
+      strcat(printableGameStatus, transport_name);
+      strcat(printableGameStatus, " From: ");
+      strcat(printableGameStatus, Seas[from_sea].name);
+      strcat(printableGameStatus, " To: ");
+      printf("%s\n", printableGameStatus);
+      getUserInput();
+    } else {
+      // AI
+      getAIInput();
+    }
+    // what is the actual destination that is a max of 2 sea moves away?
+    actualDestination = seaMove2Destination[from_sea][user_input];
+    if (from_sea == actualDestination) {
+      transports_2++;
+      transports_s--;
+      continue;
+    }
+    // what is the actual sea distance between the two?
+    seaDistance = seaDistance[i, actualDestination];
+    // if the distance is 2, is the primary path blocked?
+    if (seaDistance == 2) {
+      nextSeaMovement = seaMove1Destination[from_sea][actualDestination];
+      // check if the next sea movement has enemy ships
+      bool hasEnemyShips = false;
+      for (int k = 0; k < cache.enemies_count; k++) {
+        if (cache.units_sea_blockade_total[nextSeaMovement][cache.enemies[k]] >
+            0) {
+          hasEnemyShips = true;
+          nextSeaMovement2 =
+              seaMove1DestinationAlt[nextSeaMovement][actualDestination];
+          break;
+        }
+      }
+      if (hasEnemyShips && nextSeaMovement2 != nextSeaMovement) {
+        // check if the next sea movement has enemy ships
+        hasEnemyShips = false;
+        for (int k = 0; k < cache.enemies_count; k++) {
+          if (cache.units_sea_blockade_total[nextSeaMovement2]
+                                            [cache.enemies[k]] > 0) {
+            hasEnemyShips = true;
+            break;
+          }
+        }
+      }
+      if (hasEnemyShips) {
+        actualDestination = nextSeaMovement;
+      }
+      gameData.units_sea[actualDestination]
+          .units_sea_mobile.transports_empty_0++;
+      cache.units_sea_type_total[actualDestination].transports_empty++;
+      cache.units_sea_player_total[actualDestination][0]++;
+      cache.units_sea_grand_total[actualDestination]++;
+      gameData.units_sea[from_sea].units_sea_mobile.transports_empty_s--;
+      cache.units_sea_type_total[from_sea].transports_empty--;
+      cache.units_sea_player_total[from_sea][0]--;
+      cache.units_sea_grand_total[from_sea]--;
+      continue;
+    }
+    // move 1 destination
+    gameData.units_sea[actualDestination].units_sea_mobile.transports_empty_1++;
+    cache.units_sea_type_total[actualDestination].transports_empty++;
+    cache.units_sea_player_total[actualDestination][0]++;
+    cache.units_sea_grand_total[actualDestination]++;
+    gameData.units_sea[from_sea].units_sea_mobile.transports_empty_s--;
+    cache.units_sea_type_total[from_sea].transports_empty--;
+    cache.units_sea_player_total[from_sea][0]--;
+    cache.units_sea_grand_total[from_sea]--;
+  }
+}
+
 void stage_transport_units() {
-  //loop through transports with 2 moves remaining that aren't full, start at sea 0 to n
-  //ask for destination start at sea 0 to n
-  //
-  //get actual destination based on pathing and movement remaining
-  //conduct movement -
+  // loop through transports with "3" moves remaining (that aren't full), start
+  // at sea 0 to n
+  // TODO: optimize with cache
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    if (cache.units_sea_grand_total[i] == 0) {
+      continue;
+    }
+    // ask for destination of all land and sea zones 0 to n
+    moveAllTransports_S(
+        i, &gameData.units_sea[i].units_sea_mobile.transports_empty_s,
+        &gameData.units_sea[i].units_sea_mobile.transports_empty_2,
+        &gameData.units_sea[i].units_sea_mobile.transports_empty_1,
+        &gameData.units_sea[i].units_sea_mobile.transports_empty_0, "Empty");
+  }
+
+  // move 1
+  // get actual destination based on pathing and movement remaining
+  // get distance between current and destination, subract movement
+  // accordingly conduct actual movement by decrementing one unit counter and
+  // incrementing another update caches accordingly
 }
 
 void move_land_units() {
-      //foreach unit stack that the player owns
-    //loop through land units
-    // 1. no movement - set moves to 0
-    // 2. move 1 space, reduce movement, and ask again
-    //   a. if boarding, set movement remaining to receiving transports movement remaining
-    //   b. if not boarding ask:
-    //     1. 1 unit
-    //     2. 50% stack (rounded down)
-    //     3. 100% stack (rounded down)
-    // 3. (if adj to water and transports with moves still exist) wait
+  // foreach unit stack that the player owns
+  // loop through land units
+  //  1. no movement - set moves to 0
+  //  2. move 1 space, reduce movement, and ask again
+  //    a. if boarding, set movement remaining to receiving transports
+  //    movement remaining b. if not boarding ask:
+  //      1. 1 unit
+  //      2. 50% stack (rounded down)
+  //      3. 100% stack (rounded down)
+  //  3. (if adj to water and transports with moves still exist) wait
 }
 void move_transport_units() {
-      //---repeat until all transports done---
-    //loop through all transports
-    // 1. no movement
-    // 2. move 1 space
-    //loop through land units
-    // 1. load transport
-    //   a. set movement remaining to receiving transports movement remaining
-    // 2. (if adj to water and transports with moves still exist) wait
-    //---
+  //---repeat until all transports done---
+  // loop through all transports
+  //  1. no movement
+  //  2. move 1 space
+  // loop through land units
+  //  1. load transport
+  //    a. set movement remaining to receiving transports movement remaining
+  //  2. (if adj to water and transports with moves still exist) wait
+  //---
 }
 void move_sea_units() {
-      //loop through all remaining sea units
-    // 1. no movement - set moves to 0
-    // 2. move 1 space, reduce movement, and ask again
+  // loop through all remaining sea units
+  // 1. no movement - set moves to 0
+  // 2. move 1 space, reduce movement, and ask again
 }
 void move_fighter_units() {
-      //loop through all fighter units (no kamakaze check yet)
-    // 1. (if available) no more movement
-    // 2. move 1 space, reduce movement, and ask again
-    // crash fighter if unsavable
+  // loop through all fighter units (no kamakaze check yet)
+  // 1. (if available) no more movement
+  // 2. move 1 space, reduce movement, and ask again
+  // crash fighter if unsavable
 }
 void move_bomber_units() {
-      //loop through all bomber units (no kamakaze check yet)
-    // 1. (if available) no more movement - bomber mode
-    // 2. (if available) no more movement - attack mode
-    // 3. move 1 space, reduce movement, and ask again
-    // crash bomber if unsavable
+  // loop through all bomber units (no kamakaze check yet)
+  // 1. (if available) no more movement - bomber mode
+  // 2. (if available) no more movement - attack mode
+  // 3. move 1 space, reduce movement, and ask again
+  // crash bomber if unsavable
 }
 void resolve_sea_battles() {}
 void unload_transports() {
-      //loop through all transports
-    // 1. (if available) no more movement
-    // 2. unload all units
-    // 3. (if adj to water and transports with moves still exist) wait
+  // loop through all transports
+  // 1. (if available) no more movement
+  // 2. unload all units
+  // 3. (if adj to water and transports with moves still exist) wait
 
-    // old notes:
-    // 1. no unload
-    // 2. unload
+  // old notes:
+  // 1. no unload
+  // 2. unload
 }
 void bomb_factories() {}
 void bombard_shores() {}
 void fire_aa_guns() {}
 void resolve_land_battles() {
-      //loop through all land units
-    // 1. (if available) no more movement
-    // 2. move 1 space, reduce movement, and ask again
-    // 3. (if adj to water and transports with moves still exist) wait
+  // loop through all land units
+  // 1. (if available) no more movement
+  // 2. move 1 space, reduce movement, and ask again
+  // 3. (if adj to water and transports with moves still exist) wait
 
-    //old notes:
-        //land combat
-    // a. round with retreat option  
+  // old notes:
+  // land combat
+  // a. round with retreat option
 }
 void land_air_units() {
-      //loop through all air units
-    // 1. (if available) no more movement
-    // 2. move 1 space, reduce movement, and ask again
-    // crash air unit if unsavable
+  // loop through all air units
+  // 1. (if available) no more movement
+  // 2. move 1 space, reduce movement, and ask again
+  // crash air unit if unsavable
 
-    //old notes:
-    //loop through all air units
-    // 1. no movement - set moves to 0
-    // 2. move 1 space, reduce movement, and ask again
-    // crash air unit if unsavable
+  // old notes:
+  // loop through all air units
+  //  1. no movement - set moves to 0
+  //  2. move 1 space, reduce movement, and ask again
+  //  crash air unit if unsavable
 }
 void move_aa_guns() {
-  
-    //loop through all aa units
-    // 1. no movement - set moves to 0
-    // 2. move 1 space, reduce movement, and ask again
+
+  // loop through all aa units
+  //  1. no movement - set moves to 0
+  //  2. move 1 space, reduce movement, and ask again
 }
 void reset_units_fully() {}
 void buy_units() {}
