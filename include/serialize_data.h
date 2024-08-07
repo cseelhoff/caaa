@@ -23,4 +23,7 @@ void deserialize_units_sea_mobile_from_json(UnitsSeaMobile* units_sea_mobile, cJ
 cJSON* serialize_units_sea_static_to_json(UnitsSeaStatic* units_sea_static);
 void deserialize_units_sea_static_from_json(UnitsSeaStatic* units_sea_static, cJSON* json);
 
+void set_land_state_field(cJSON* json, const char* key, uint8_t* field);
+void extract_and_assign(cJSON* json, const char* key, uint8_t* target_array);
+
 #endif
