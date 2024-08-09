@@ -25,6 +25,11 @@ uint8_t move_max_sea[SEA_UNIT_TYPES] = {4, 2, 2, 2, 2, 2, 2,
 uint8_t move_states_sea[SEA_UNIT_TYPES] = {5, 4, 4, 4, 4, 3, 3,
                                            3, 3, 3, 3, 3, 3, 6};
 
+uint8_t seaMove2Destination[SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t seaMove1Destination[SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t seaMove1DestinationAlt[SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t seaDistanceMap[SEAS_COUNT][SEAS_COUNT] = {0};
+
 char buffer[STRING_BUFFER_SIZE];
 char threeCharStr[5];
 GameData gameData = {0};
@@ -36,9 +41,7 @@ char* playerName;
 char printableGameStatus[5000] = "";
 uint8_t enemies[PLAYERS_COUNT - 1];
 uint8_t enemies_count;
-UnitsSeaMobileTotal units_sea_mobile_total;
 UnitsSeaMobile units_sea_mobile;
-UnitsSeaStatic units_sea_static;
 UnitsSea units_sea;
 LandState land_state;
 UnitsLandStatic land_static;
@@ -236,202 +239,37 @@ void setPrintableStatusSeas() {
       continue;
     }
     units_sea = gameData.units_sea[i];
-    units_sea_mobile = units_sea.units_sea_mobile;
     sprintf(threeCharStr, "%d ", LANDS_COUNT + i);
     strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, Seas[i].name);
+    strcat(printableGameStatus, SEAS[i].name);
     strcat(printableGameStatus, "             |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
     strcat(printableGameStatus, player.color);
     if (cache.units_sea_player_total[i][0] > 0) {
-      units_sea_mobile_total = cache.units_sea_type_total[i];
-      if (units_sea_mobile_total.transports_empty > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Transports Empty: |%3d%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.transports_empty,
-                 units_sea_mobile.transports_empty_0,
-                 units_sea_mobile.transports_empty_1,
-                 units_sea_mobile.transports_empty_2,
-                 units_sea_mobile.transports_empty_s);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_1i > 0) {
-        snprintf(
-            buffer, STRING_BUFFER_SIZE,
-            "%s Transports 1i:   |%3d%3d%3d%3d%3d\n", player.name,
-            units_sea_mobile_total.transports_1i,
-            units_sea_mobile.transports_1i_0, units_sea_mobile.transports_1i_1,
-            units_sea_mobile.transports_1i_2, units_sea_mobile.transports_1i_s);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_1a > 0) {
-        snprintf(
-            buffer, STRING_BUFFER_SIZE,
-            "%s Transports 1a:   |%3d%3d%3d%3d%3d\n", player.name,
-            units_sea_mobile_total.transports_1a,
-            units_sea_mobile.transports_1a_0, units_sea_mobile.transports_1a_1,
-            units_sea_mobile.transports_1a_2, units_sea_mobile.transports_1a_s);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_1t > 0) {
-        snprintf(
-            buffer, STRING_BUFFER_SIZE,
-            "%s Transports 1t:   |%3d%3d%3d%3d%3d\n", player.name,
-            units_sea_mobile_total.transports_1t,
-            units_sea_mobile.transports_1t_0, units_sea_mobile.transports_1t_1,
-            units_sea_mobile.transports_1t_2, units_sea_mobile.transports_1t_s);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_2i > 0) {
-        snprintf(
-            buffer, STRING_BUFFER_SIZE, "%s Transports 2i:   |%3d%3d%3d%3d\n",
-            player.name, units_sea_mobile_total.transports_2i,
-            units_sea_mobile.transports_2i_0, units_sea_mobile.transports_2i_1,
-            units_sea_mobile.transports_2i_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_1i_1a > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Transports 1i 1a:|%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.transports_1i_1a,
-                 units_sea_mobile.transports_1i_1a_0,
-                 units_sea_mobile.transports_1i_1a_1,
-                 units_sea_mobile.transports_1i_1a_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.transports_1i_1t > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Transports 1i 1t:|%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.transports_1i_1t,
-                 units_sea_mobile.transports_1i_1t_0,
-                 units_sea_mobile.transports_1i_1t_1,
-                 units_sea_mobile.transports_1i_1t_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.destroyers > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Destroyers:      |%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.destroyers,
-                 units_sea_mobile.destroyers_0, units_sea_mobile.destroyers_1,
-                 units_sea_mobile.destroyers_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.carriers > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Carriers:        |%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.carriers, units_sea_mobile.carriers_0,
-                 units_sea_mobile.carriers_1, units_sea_mobile.carriers_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.battleships > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Battleships:     |%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.battleships,
-                 units_sea_mobile.battleships_0, units_sea_mobile.battleships_1,
-                 units_sea_mobile.battleships_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.battleships_damaged > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s BS Damaged:      |%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.battleships_damaged,
-                 units_sea_mobile.battleships_damaged_0,
-                 units_sea_mobile.battleships_damaged_1,
-                 units_sea_mobile.battleships_damaged_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.submarines > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Submarines:      |%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.submarines,
-                 units_sea_mobile.submarines_0, units_sea_mobile.submarines_1,
-                 units_sea_mobile.submarines_2);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.fighters > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Fighters:        |%3d%3d%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.fighters, units_sea_mobile.fighters_0,
-                 units_sea_mobile.fighters_1, units_sea_mobile.fighters_2,
-                 units_sea_mobile.fighters_3, units_sea_mobile.fighters_4);
-        strcat(printableGameStatus, buffer);
-      }
-      if (units_sea_mobile_total.bombers > 0) {
-        snprintf(buffer, STRING_BUFFER_SIZE,
-                 "%s Bombers:        |%3d%3d%3d%3d%3d%3d%3d%3d\n", player.name,
-                 units_sea_mobile_total.bombers, 0, units_sea_mobile.bombers_1,
-                 units_sea_mobile.bombers_2, units_sea_mobile.bombers_3,
-                 units_sea_mobile.bombers_4, units_sea_mobile.bombers_5, 0);
-        strcat(printableGameStatus, buffer);
+      uint8_t* units_sea_mobile_total = cache.units_sea_type_total[i];
+      for (int j = 0; j < SEA_UNIT_TYPES; j++) {
+        if (units_sea_mobile_total[j] > 0) {
+          strcat(printableGameStatus, player.name);
+          strcat(printableGameStatus, SEA_UNIT_NAMES[j]);
+          for (int k = 0; k < move_states_sea[j]; k++) {
+            sprintf(threeCharStr, "%3d", cache.units_sea_ptr[i][j][k]);
+            strcat(printableGameStatus, threeCharStr);
+          }
+          strcat(printableGameStatus, "\n");
+        }
       }
       strcat(printableGameStatus, "\033[0m");
       for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
         player = Players[(player_index + j) % PLAYERS_COUNT];
-        units_sea_static = units_sea.units_sea_static[j];
+        uint8_t* units_sea_static = units_sea.other_units[j];
         strcat(printableGameStatus, player.color);
-        if (units_sea_static.transports_empty > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports Empty: |%3d\n",
-                   player.name, units_sea_static.transports_empty);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_1i > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 1i:   |%3d\n",
-                   player.name, units_sea_static.transports_1i);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_1a > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 1a:   |%3d\n",
-                   player.name, units_sea_static.transports_1a);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_1t > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 1t:   |%3d\n",
-                   player.name, units_sea_static.transports_1t);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_2i > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 2i:   |%3d\n",
-                   player.name, units_sea_static.transports_2i);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_1i_1a > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 1i 1a:|%3d\n",
-                   player.name, units_sea_static.transports_1i_1a);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.transports_1i_1t > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Transports 1i 1t:|%3d\n",
-                   player.name, units_sea_static.transports_1i_1t);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.destroyers > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Destroyers:      |%3d\n",
-                   player.name, units_sea_static.destroyers);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.carriers > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Carriers:        |%3d\n",
-                   player.name, units_sea_static.carriers);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.battleships > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Battleships:     |%3d\n",
-                   player.name, units_sea_static.battleships);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.battleships_damaged > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s BS Damaged:      |%3d\n",
-                   player.name, units_sea_static.battleships_damaged);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.submarines > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Submarines:      |%3d\n",
-                   player.name, units_sea_static.submarines);
-          strcat(printableGameStatus, buffer);
-        }
-        if (units_sea_static.fighters > 0) {
-          snprintf(buffer, STRING_BUFFER_SIZE, "%s Fighters:        |%3d\n",
-                   player.name, units_sea_static.fighters);
-          strcat(printableGameStatus, buffer);
+        for (int k = 0; k < SEA_UNIT_TYPES; k++) {
+          if (units_sea_static[k] > 0) {
+            strcat(printableGameStatus, player.name);
+            strcat(printableGameStatus, SEA_UNIT_NAMES[k]);
+            sprintf(threeCharStr, "%3d", units_sea_static[k]);
+            strcat(printableGameStatus, threeCharStr);
+            strcat(printableGameStatus, "\n");
+          }
         }
         strcat(printableGameStatus, "\033[0m");
       }
@@ -449,20 +287,24 @@ void getUserInput() {
   }
 }
 
-void moveAllTransports_S(uint8_t from_sea, uint8_t* transports_s,
-                         uint8_t* transports_2, uint8_t* transports_1,
-                         uint8_t* transports_0, char* transport_name) {
+void getAIInput() {
+  user_input = 0;
+  return;
+}
+
+void moveAllTransports_S(uint8_t from_sea, uint8_t transport_index) {
   uint8_t actualDestination;
   uint8_t nextSeaMovement;
-  uint8_t nextSeaMovement2;
+  uint8_t nextSeaMovementAlt;
   uint8_t seaDistance;
-  while (transports_s > 0) {
+  uint8_t* transport_array = cache.units_sea_ptr[from_sea][transport_index];
+  while (transport_array[3] > 0) {
     if (player.is_human) {
       setPrintableStatus();
       strcat(printableGameStatus, "Staging Transport ");
-      strcat(printableGameStatus, transport_name);
+      strcat(printableGameStatus, SEA_UNIT_NAMES[transport_index]);
       strcat(printableGameStatus, " From: ");
-      strcat(printableGameStatus, Seas[from_sea].name);
+      strcat(printableGameStatus, SEAS[from_sea].name);
       strcat(printableGameStatus, " To: ");
       printf("%s\n", printableGameStatus);
       getUserInput();
@@ -473,12 +315,12 @@ void moveAllTransports_S(uint8_t from_sea, uint8_t* transports_s,
     // what is the actual destination that is a max of 2 sea moves away?
     actualDestination = seaMove2Destination[from_sea][user_input];
     if (from_sea == actualDestination) {
-      transports_2++;
-      transports_s--;
+      cache.units_sea_ptr[actualDestination][transport_index][2]++;
+      cache.units_sea_ptr[from_sea][transport_index][3]--;
       continue;
     }
     // what is the actual sea distance between the two?
-    seaDistance = seaDistance[i, actualDestination];
+    seaDistance = seaDistanceMap[from_sea][actualDestination];
     // if the distance is 2, is the primary path blocked?
     if (seaDistance == 2) {
       nextSeaMovement = seaMove1Destination[from_sea][actualDestination];
@@ -488,43 +330,33 @@ void moveAllTransports_S(uint8_t from_sea, uint8_t* transports_s,
         if (cache.units_sea_blockade_total[nextSeaMovement][cache.enemies[k]] >
             0) {
           hasEnemyShips = true;
-          nextSeaMovement2 =
+          nextSeaMovementAlt =
               seaMove1DestinationAlt[nextSeaMovement][actualDestination];
           break;
         }
       }
-      if (hasEnemyShips && nextSeaMovement2 != nextSeaMovement) {
+      if (hasEnemyShips && nextSeaMovementAlt != nextSeaMovement) {
         // check if the next sea movement has enemy ships
         hasEnemyShips = false;
         for (int k = 0; k < cache.enemies_count; k++) {
-          if (cache.units_sea_blockade_total[nextSeaMovement2]
+          if (cache.units_sea_blockade_total[nextSeaMovementAlt]
                                             [cache.enemies[k]] > 0) {
             hasEnemyShips = true;
             break;
           }
         }
       }
+      // if both paths are blocked, move 1 space closer (where enemies are)
       if (hasEnemyShips) {
         actualDestination = nextSeaMovement;
       }
-      gameData.units_sea[actualDestination]
-          .units_sea_mobile.transports_empty_0++;
-      cache.units_sea_type_total[actualDestination].transports_empty++;
-      cache.units_sea_player_total[actualDestination][0]++;
-      cache.units_sea_grand_total[actualDestination]++;
-      gameData.units_sea[from_sea].units_sea_mobile.transports_empty_s--;
-      cache.units_sea_type_total[from_sea].transports_empty--;
-      cache.units_sea_player_total[from_sea][0]--;
-      cache.units_sea_grand_total[from_sea]--;
-      continue;
     }
-    // move 1 destination
-    gameData.units_sea[actualDestination].units_sea_mobile.transports_empty_1++;
-    cache.units_sea_type_total[actualDestination].transports_empty++;
+    gameData.units_sea[actualDestination].trans_empty[2 - seaDistance]++;
+    cache.units_sea_type_total[actualDestination][TRANS_EMPTY]++;
     cache.units_sea_player_total[actualDestination][0]++;
     cache.units_sea_grand_total[actualDestination]++;
-    gameData.units_sea[from_sea].units_sea_mobile.transports_empty_s--;
-    cache.units_sea_type_total[from_sea].transports_empty--;
+    gameData.units_sea[from_sea].trans_empty[3]--;
+    cache.units_sea_type_total[from_sea][TRANS_EMPTY]--;
     cache.units_sea_player_total[from_sea][0]--;
     cache.units_sea_grand_total[from_sea]--;
   }
@@ -535,15 +367,15 @@ void stage_transport_units() {
   // at sea 0 to n
   // TODO: optimize with cache
   for (int i = 0; i < SEAS_COUNT; i++) {
-    if (cache.units_sea_grand_total[i] == 0) {
+    if (cache.units_sea_grand_total[i] == 0 || cache.units_sea_player_total[i][0] == 0) {
       continue;
     }
     // ask for destination of all land and sea zones 0 to n
-    moveAllTransports_S(
-        i, &gameData.units_sea[i].units_sea_mobile.transports_empty_s,
-        &gameData.units_sea[i].units_sea_mobile.transports_empty_2,
-        &gameData.units_sea[i].units_sea_mobile.transports_empty_1,
-        &gameData.units_sea[i].units_sea_mobile.transports_empty_0, "Empty");
+    moveAllTransports_S(i, TRANS_EMPTY);
+    moveAllTransports_S(i,TRANS_1A);
+    moveAllTransports_S(i,TRANS_1A);
+    moveAllTransports_S(i,TRANS_1T);
+    
   }
 
   // move 1

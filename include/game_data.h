@@ -1,7 +1,6 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#include "cJSON.h"
 #include "config.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -131,8 +130,8 @@ typedef struct {
   uint8_t trans_1i[4];
   uint8_t trans_1a[4];
   uint8_t trans_1t[4];
-  uint8_t trans_2i[3];
-  uint8_t trans_1i_1a[3]; // move remain 0,1,2
+  uint8_t trans_2i[3]; // move remain 0,1,2
+  uint8_t trans_1i_1a[3];
   uint8_t trans_1i_1t[3];
   uint8_t submarines[3];
   uint8_t destroyers[3];
@@ -170,6 +169,7 @@ typedef struct {
 
 extern char* phases[2];
 void getUserInput();
+void getAIInput();
 void initializeGameData();
 void setPrintableStatus();
 void buildCache();

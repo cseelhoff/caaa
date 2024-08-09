@@ -15,6 +15,6 @@ typedef struct {
 //  bool has_blockade;
 } Sea;
 
-extern Sea Seas[SEAS_COUNT];
+extern Sea SEAS[SEAS_COUNT];
 
 #endif
