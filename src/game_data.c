@@ -10,25 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* phases[2] = {"Combat", "Landing, Purchase"};
-char* LAND_UNIT_NAMES[LAND_UNIT_TYPES] = {"Fighters ", "Bombers ", "Infantry",
-                                          "Artillery", "Tanks   ", "AA Guns "};
-uint8_t move_max_land[LAND_UNIT_TYPES] = {4, 6, 1, 1, 2, 1};
-uint8_t move_states_land[LAND_UNIT_TYPES] = {5, 7, 2, 2, 3, 2};
-
-char* SEA_UNIT_NAMES[SEA_UNIT_TYPES] = {
-    "Fighters   ", "Trans Empty",  "Trans 1 Inf",  "Trans 1 Art", "Trans 1 Tnk",
-    "Trans 2 Inf", "Trans 1I 1A ", "Trans 1I 1T",  "Submarines ", "Destroyers ",
-    "Carriers   ", "Battleships",  "BS Damaged  ", "Bombers   "};
-uint8_t move_max_sea[SEA_UNIT_TYPES] = {4, 2, 2, 2, 2, 2, 2,
-                                        2, 2, 2, 2, 2, 2, 6};
-uint8_t move_states_sea[SEA_UNIT_TYPES] = {5, 4, 4, 4, 4, 3, 3,
-                                           3, 3, 3, 3, 3, 3, 6};
-
-uint8_t seaMove2Destination[SEAS_COUNT][SEAS_COUNT] = {0};
-uint8_t seaMove1Destination[SEAS_COUNT][SEAS_COUNT] = {0};
-uint8_t seaMove1DestinationAlt[SEAS_COUNT][SEAS_COUNT] = {0};
-uint8_t seaDistanceMap[SEAS_COUNT][SEAS_COUNT] = {0};
 
 char buffer[STRING_BUFFER_SIZE];
 char threeCharStr[5];
@@ -41,18 +22,15 @@ char* playerName;
 char printableGameStatus[5000] = "";
 uint8_t enemies[PLAYERS_COUNT - 1];
 uint8_t enemies_count;
-UnitsSeaMobile units_sea_mobile;
 UnitsSea units_sea;
 LandState land_state;
-UnitsLandStatic land_static;
-UnitsLandMobile land_mobile;
 int user_input;
 Land land;
 
 void initializeGameData() {
-  // json = serialize_game_data_to_json(&gameData);
-  // write_json_to_file("game_data_0.json", json);
-  // cJSON_Delete(json);
+  //json = serialize_game_data_to_json(&gameData);
+  //write_json_to_file("game_data_0.json", json);
+  //cJSON_Delete(json);
 
   json = read_json_from_file("game_data.json");
   deserialize_game_data_from_json(&gameData, json);
@@ -100,17 +78,17 @@ void buildCache() {
     }
   }
   for (int i = 0; i < LANDS_COUNT; i++) {
-    LandState land_state = gameData.land_state[i];
-    cache.income_per_turn[land_state.owner_index] += Lands[i].land_value;
-    cache.units_land_ptr[i][FIGHTERS] = (uint8_t*)land_state.fighters;
-    cache.units_land_ptr[i][BOMBERS_LAND] = (uint8_t*)land_state.bombers;
-    cache.units_land_ptr[i][INFANTRY] = (uint8_t*)land_state.infantry;
-    cache.units_land_ptr[i][ARTILLERY] = (uint8_t*)land_state.artillery;
-    cache.units_land_ptr[i][TANKS] = (uint8_t*)land_state.tanks;
-    cache.units_land_ptr[i][AA_GUNS] = (uint8_t*)land_state.aa_guns;
+//    LandState land_state = gameData.land_state[i];
+    cache.income_per_turn[gameData.land_state[i].owner_index] += Lands[i].land_value;
+    cache.units_land_ptr[i][FIGHTERS] = (uint8_t*)gameData.land_state[i].fighters;
+    cache.units_land_ptr[i][BOMBERS_LAND] = (uint8_t*)gameData.land_state[i].bombers;
+    cache.units_land_ptr[i][INFANTRY] = (uint8_t*)gameData.land_state[i].infantry;
+    cache.units_land_ptr[i][ARTILLERY] = (uint8_t*)gameData.land_state[i].artillery;
+    cache.units_land_ptr[i][TANKS] = (uint8_t*)gameData.land_state[i].tanks;
+    cache.units_land_ptr[i][AA_GUNS] = (uint8_t*)gameData.land_state[i].aa_guns;
     cache.units_land_grand_total[i] = cache.units_land_player_total[i][0];
     for (int j = 0; j < LAND_UNIT_TYPES; j++) {
-      for (int k = 0; k < move_states_land[j]; k++) {
+      for (int k = 0; k < STATES_MOVE_LAND[j]; k++) {
         cache.units_land_type_total[i][j] += cache.units_land_ptr[i][j][k];
       }
       cache.units_land_player_total[i][0] += cache.units_land_type_total[i][j];
@@ -125,23 +103,23 @@ void buildCache() {
     }
   }
   for (int i = 0; i < SEAS_COUNT; i++) {
-    UnitsSea units_sea = gameData.units_sea[i];
-    cache.units_sea_ptr[i][TRANS_EMPTY] = (uint8_t*)units_sea.trans_empty;
-    cache.units_sea_ptr[i][TRANS_1I] = (uint8_t*)units_sea.trans_1i;
-    cache.units_sea_ptr[i][TRANS_1A] = (uint8_t*)units_sea.trans_1a;
-    cache.units_sea_ptr[i][TRANS_1T] = (uint8_t*)units_sea.trans_1t;
-    cache.units_sea_ptr[i][TRANS_2I] = (uint8_t*)units_sea.trans_2i;
-    cache.units_sea_ptr[i][TRANS_1I_1A] = (uint8_t*)units_sea.trans_1i_1a;
-    cache.units_sea_ptr[i][TRANS_1I_1T] = (uint8_t*)units_sea.trans_1i_1t;
-    cache.units_sea_ptr[i][SUBMARINES] = (uint8_t*)units_sea.submarines;
-    cache.units_sea_ptr[i][DESTROYERS] = (uint8_t*)units_sea.destroyers;
-    cache.units_sea_ptr[i][CARRIERS] = (uint8_t*)units_sea.carriers;
-    cache.units_sea_ptr[i][BATTLESHIPS] = (uint8_t*)units_sea.battleships;
-    cache.units_sea_ptr[i][BS_DAMAGED] = (uint8_t*)units_sea.bs_damaged;
-    cache.units_sea_ptr[i][BOMBERS_SEA] = (uint8_t*)units_sea.bombers;
+    cache.units_sea_ptr[i][FIGHTERS] = (uint8_t*)gameData.units_sea[i].fighters;
+    cache.units_sea_ptr[i][TRANS_EMPTY] = (uint8_t*)gameData.units_sea[i].trans_empty;
+    cache.units_sea_ptr[i][TRANS_1I] = (uint8_t*)gameData.units_sea[i].trans_1i;
+    cache.units_sea_ptr[i][TRANS_1A] = (uint8_t*)gameData.units_sea[i].trans_1a;
+    cache.units_sea_ptr[i][TRANS_1T] = (uint8_t*)gameData.units_sea[i].trans_1t;
+    cache.units_sea_ptr[i][TRANS_2I] = (uint8_t*)gameData.units_sea[i].trans_2i;
+    cache.units_sea_ptr[i][TRANS_1I_1A] = (uint8_t*)gameData.units_sea[i].trans_1i_1a;
+    cache.units_sea_ptr[i][TRANS_1I_1T] = (uint8_t*)gameData.units_sea[i].trans_1i_1t;
+    cache.units_sea_ptr[i][SUBMARINES] = (uint8_t*)gameData.units_sea[i].submarines;
+    cache.units_sea_ptr[i][DESTROYERS] = (uint8_t*)gameData.units_sea[i].destroyers;
+    cache.units_sea_ptr[i][CARRIERS] = (uint8_t*)gameData.units_sea[i].carriers;
+    cache.units_sea_ptr[i][BATTLESHIPS] = (uint8_t*)gameData.units_sea[i].battleships;
+    cache.units_sea_ptr[i][BS_DAMAGED] = (uint8_t*)gameData.units_sea[i].bs_damaged;
+    cache.units_sea_ptr[i][BOMBERS_SEA] = (uint8_t*)gameData.units_sea[i].bombers;
     for (int j = 0; j < SEA_UNIT_TYPES; j++) {
-      cache.units_sea_ptr[i][j] = 0;
-      for (int k = 0; k < move_states_sea[j]; k++) {
+      cache.units_sea_type_total[i][j] = 0;
+      for (int k = 0; k < STATES_MOVE_SEA[j]; k++) {
         cache.units_sea_type_total[i][j] += cache.units_sea_ptr[i][j][k];
       }
       cache.units_sea_player_total[i][0] += cache.units_sea_type_total[i][j];
@@ -162,7 +140,7 @@ void setPrintableStatus() {
   strcat(printableGameStatus, playerName);
   strcat(printableGameStatus, "\033[0m");
   strcat(printableGameStatus, " is in phase ");
-  strcat(printableGameStatus, phases[gameData.phase]);
+  strcat(printableGameStatus, PHASES[gameData.phase]);
   strcat(printableGameStatus, " with money ");
   sprintf(threeCharStr, "%d", gameData.money[player_index]);
   strcat(printableGameStatus, threeCharStr);
@@ -173,24 +151,24 @@ void setPrintableStatus() {
 
 void setPrintableStatusLands() {
   for (int i = 0; i < LANDS_COUNT; i++) {
-    LandState land_state = gameData.land_state[i];
-    strcat(printableGameStatus, Players[land_state.owner_index].color);
+//    LandState land_state = gameData.land_state[i];
+    strcat(printableGameStatus, Players[gameData.land_state[i].owner_index].color);
     sprintf(threeCharStr, "%d ", i);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, Lands[i].name);
     strcat(printableGameStatus, ": ");
-    strcat(printableGameStatus, Players[land_state.owner_index].name);
+    strcat(printableGameStatus, Players[gameData.land_state[i].owner_index].name);
     strcat(printableGameStatus, " ");
-    sprintf(threeCharStr, "%d", land_state.builds_left);
+    sprintf(threeCharStr, "%d", gameData.land_state[i].builds_left);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", land_state.factory_hp);
+    sprintf(threeCharStr, "%d", gameData.land_state[i].factory_hp);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", land_state.factory_max);
+    sprintf(threeCharStr, "%d", gameData.land_state[i].factory_max);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, " Conquered: ");
-    if (land_state.conquered) {
+    if (gameData.land_state[i].conquered) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
@@ -203,8 +181,8 @@ void setPrintableStatusLands() {
     for (int j = 0; j < LAND_UNIT_TYPES; j++) {
       if (cache.units_land_type_total[i][j] > 0) {
         strcat(printableGameStatus, player.name);
-        strcat(printableGameStatus, LAND_UNIT_NAMES[j]);
-        for (int k = 0; k < move_states_land[j]; k++) {
+        strcat(printableGameStatus, NAMES_UNIT_LAND[j]);
+        for (int k = 0; k < STATES_MOVE_LAND[j]; k++) {
           sprintf(threeCharStr, "%3d", cache.units_land_ptr[i][j][k]);
           strcat(printableGameStatus, threeCharStr);
         }
@@ -218,8 +196,8 @@ void setPrintableStatusLands() {
         for (int k = 0; k < LAND_UNIT_TYPES; k++) {
           if (gameData.land_state[i].other_units[j][k] > 0) {
             strcat(printableGameStatus, cache.player_names[j]);
-            strcat(printableGameStatus, LAND_UNIT_NAMES[k]);
-            for (int l = 0; l < move_states_land[k]; l++) {
+            strcat(printableGameStatus, NAMES_UNIT_LAND[k]);
+            for (int l = 0; l < STATES_MOVE_LAND[k]; l++) {
               sprintf(threeCharStr, "%3d",
                       gameData.land_state[i].other_units[j][k]);
               strcat(printableGameStatus, threeCharStr);
@@ -245,12 +223,12 @@ void setPrintableStatusSeas() {
     strcat(printableGameStatus, "             |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
     strcat(printableGameStatus, player.color);
     if (cache.units_sea_player_total[i][0] > 0) {
-      uint8_t* units_sea_mobile_total = cache.units_sea_type_total[i];
+//      uint8_t* units_sea_mobile_total = cache.units_sea_type_total[i];
       for (int j = 0; j < SEA_UNIT_TYPES; j++) {
-        if (units_sea_mobile_total[j] > 0) {
+        if (cache.units_sea_type_total[i][j] > 0) {
           strcat(printableGameStatus, player.name);
           strcat(printableGameStatus, SEA_UNIT_NAMES[j]);
-          for (int k = 0; k < move_states_sea[j]; k++) {
+          for (int k = 0; k < STATES_MOVE_SEA[j]; k++) {
             sprintf(threeCharStr, "%3d", cache.units_sea_ptr[i][j][k]);
             strcat(printableGameStatus, threeCharStr);
           }
@@ -260,13 +238,13 @@ void setPrintableStatusSeas() {
       strcat(printableGameStatus, "\033[0m");
       for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
         player = Players[(player_index + j) % PLAYERS_COUNT];
-        uint8_t* units_sea_static = units_sea.other_units[j];
+//        uint8_t* units_sea_static = units_sea.other_units[j];
         strcat(printableGameStatus, player.color);
         for (int k = 0; k < SEA_UNIT_TYPES; k++) {
-          if (units_sea_static[k] > 0) {
+          if (units_sea.other_units[j][k] > 0) {
             strcat(printableGameStatus, player.name);
             strcat(printableGameStatus, SEA_UNIT_NAMES[k]);
-            sprintf(threeCharStr, "%3d", units_sea_static[k]);
+            sprintf(threeCharStr, "%3d", units_sea.other_units[j][k]);
             strcat(printableGameStatus, threeCharStr);
             strcat(printableGameStatus, "\n");
           }
@@ -297,8 +275,7 @@ void moveAllTransports_S(uint8_t from_sea, uint8_t transport_index) {
   uint8_t nextSeaMovement;
   uint8_t nextSeaMovementAlt;
   uint8_t seaDistance;
-  uint8_t* transport_array = cache.units_sea_ptr[from_sea][transport_index];
-  while (transport_array[3] > 0) {
+  while (cache.units_sea_ptr[from_sea][transport_index][3] > 0) {
     if (player.is_human) {
       setPrintableStatus();
       strcat(printableGameStatus, "Staging Transport ");

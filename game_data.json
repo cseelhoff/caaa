@@ -39,5 +39,10 @@
 			"factory_hp": 8,
 			"factory_max": 8
 		}
+	],
+	"units_sea":[
+		{
+			"trans_empty":	[0, 0, 0, 1]
+		}
 	]
 }
