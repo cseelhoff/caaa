@@ -5,43 +5,56 @@
 #include "player.h"
 #include "sea.h"
 #include "team.h"
+#include "units/aa_gun.h"
+#include "units/artillery.h"
+#include "units/battleship.h"
+#include "units/bomber.h"
+#include "units/carrier.h"
+#include "units/cruiser.h"
+#include "units/destroyer.h"
+#include "units/fighter.h"
+#include "units/infantry.h"
+#include "units/sub.h"
+#include "units/tank.h"
+#include "units/transport.h"
 #include "units/units.h"
 
 #define STRING_BUFFER_SIZE 64
 
-const char* PHASES[2] = {"Combat", "Landing, Purchase"};
+// const char* PHASES[2] = {"Combat", "Landing, Purchase"};
 
 typedef struct {
   uint8_t owner_index; // rotates
   uint8_t builds_left; // resets
   uint8_t factory_hp;
   uint8_t factory_max;
-  bool conquered;                                          // resets
-  uint8_t fighters[FIGHTER_MOVES_MAX + 1];                 // rotates
-  uint8_t bombers[BOMBER_MOVES_MAX + 1];                   // rotates
-  uint8_t infantry[INFANTRY_MOVES_MAX + 1];                // rotates
-  uint8_t artillery[ARTILLERY_MOVES_MAX + 1];              // rotates
-  uint8_t tanks[TANK_MOVES_MAX + 1];                       // rotates
-  uint8_t aa_guns[AA_GUN_MOVES_MAX + 1];                   // rotates
+  bool bombarded;                                          // conquered/bombarded, resets
+  uint8_t fighters[FIGHTER_STATES];                        // rotates
+  uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
+  uint8_t infantry[INFANTRY_STATES];                       // rotates
+  uint8_t artillery[ARTILLERY_STATES];                     // rotates
+  uint8_t tanks[TANK_STATES];                              // rotates
+  uint8_t aa_guns[AA_GUN_STATES];                          // rotates
   uint8_t other_units[PLAYERS_COUNT - 1][LAND_UNIT_TYPES]; // rotates
 } LandState;
 
 typedef struct {
-  uint8_t fighters[FIGHTER_MOVES_MAX + 1];
-  uint8_t trans_empty[TRANSPORT_MOVES_MAX + 2]; // move remain 0,1,2,s
-  uint8_t trans_1i[TRANSPORT_MOVES_MAX + 2];
-  uint8_t trans_1a[TRANSPORT_MOVES_MAX + 2];
-  uint8_t trans_1t[TRANSPORT_MOVES_MAX + 2];
-  uint8_t trans_2i[TRANSPORT_MOVES_MAX + 1]; // move remain 0,1,2
-  uint8_t trans_1i_1a[TRANSPORT_MOVES_MAX + 1];
-  uint8_t trans_1i_1t[TRANSPORT_MOVES_MAX + 1];
-  uint8_t submarines[SUB_MOVES_MAX + 1];
-  uint8_t destroyers[DESTROYER_MOVES_MAX + 1];
-  uint8_t carriers[CARRIER_MOVES_MAX + 1];
-  uint8_t battleships[BATTLESHIP_MOVES_MAX + 1];
-  uint8_t bs_damaged[BATTLESHIP_MOVES_MAX + 1];
-  uint8_t
-      bombers[6]; // move remain 1,2,3,4,5 (also including 0 for easier coding)
+  uint8_t fighters[FIGHTER_STATES];
+  // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging/unload
+  uint8_t trans_empty[TRANS_EMPTY_STATES];
+  uint8_t trans_1i[TRANS_1I_STATES];
+  uint8_t trans_1a[TRANS_1A_STATES];
+  uint8_t trans_1t[TRANS_1T_STATES];
+  uint8_t trans_2i[TRANS_2I_STATES];
+  uint8_t trans_1i_1a[TRANS_1I_1A_STATES];
+  uint8_t trans_1i_1t[TRANS_1I_1T_STATES];
+  uint8_t submarines[SUB_STATES];
+  uint8_t destroyers[DESTROYER_STATES];
+  uint8_t cruisers[CRUISER_STATES];
+  uint8_t carriers[CARRIER_STATES];
+  uint8_t battleships[BATTLESHIP_STATES];
+  uint8_t bs_damaged[BATTLESHIP_STATES];
+  uint8_t bombers[BOMBER_SEA_STATES]; // move remain 1,2,3,4,5
   uint8_t other_units[PLAYERS_COUNT - 1]
                      [SEA_UNIT_TYPES - 1]; // no parking bombers at sea
 } UnitsSea;

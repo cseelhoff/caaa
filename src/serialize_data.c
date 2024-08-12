@@ -119,12 +119,12 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   set_land_state_field(json, "builds_left", &land_state->builds_left);
   set_land_state_field(json, "factory_hp", &land_state->factory_hp);
   set_land_state_field(json, "factory_max", &land_state->factory_max);
-  extract_and_assign(json, "fighters", land_state->fighters);
-  extract_and_assign(json, "bombers", land_state->bombers);
-  extract_and_assign(json, "infantry", land_state->infantry);
-  extract_and_assign(json, "artillery", land_state->artillery);
-  extract_and_assign(json, "tanks", land_state->tanks);
-  extract_and_assign(json, "aa_guns", land_state->aa_guns);
+  extract_and_assign(json, FIGHTER_NAME, land_state->fighters);
+  extract_and_assign(json, BOMBER_NAME, land_state->bombers);
+  extract_and_assign(json, INFANTRY_NAME, land_state->infantry);
+  extract_and_assign(json, ARTILLERY_NAME, land_state->artillery);
+  extract_and_assign(json, TANK_NAME, land_state->tanks);
+  extract_and_assign(json, AA_GUN_NAME, land_state->aa_guns);
 
   cJSON* other_units_array = cJSON_GetObjectItem(json, "other_units");
   if (cJSON_IsArray(other_units_array)) {
@@ -204,20 +204,34 @@ void add_array_to_json(cJSON* json, const char* key, uint8_t* array, int size) {
 cJSON* serialize_units_sea_to_json(UnitsSea* units_sea) {
   cJSON* json = cJSON_CreateObject();
 
-  add_array_to_json(json, "fighters", units_sea->fighters, 5);
-  add_array_to_json(json, "trans_empty", units_sea->trans_empty, 4);
-  add_array_to_json(json, "trans_1i", units_sea->trans_1i, 4);
-  add_array_to_json(json, "trans_1a", units_sea->trans_1a, 4);
-  add_array_to_json(json, "trans_1t", units_sea->trans_1t, 4);
-  add_array_to_json(json, "trans_2i", units_sea->trans_2i, 3);
-  add_array_to_json(json, "trans_1i_1a", units_sea->trans_1i_1a, 3);
-  add_array_to_json(json, "trans_1i_1t", units_sea->trans_1i_1t, 3);
-  add_array_to_json(json, "submarines", units_sea->submarines, 3);
-  add_array_to_json(json, "destroyers", units_sea->destroyers, 3);
-  add_array_to_json(json, "carriers", units_sea->carriers, 3);
-  add_array_to_json(json, "battleships", units_sea->battleships, 3);
-  add_array_to_json(json, "bs_damaged", units_sea->bs_damaged, 3);
-  add_array_to_json(json, "bombers", units_sea->bombers, 6);
+  add_array_to_json(json, NAMES_UNIT_SEA[0], units_sea->fighters,
+                    STATES_MOVE_SEA[0]);
+  add_array_to_json(json, NAMES_UNIT_SEA[1], units_sea->trans_empty,
+                    STATES_MOVE_SEA[1]);
+  add_array_to_json(json, NAMES_UNIT_SEA[2], units_sea->trans_1i,
+                    STATES_MOVE_SEA[2]);
+  add_array_to_json(json, NAMES_UNIT_SEA[3], units_sea->trans_1a,
+                    STATES_MOVE_SEA[3]);
+  add_array_to_json(json, NAMES_UNIT_SEA[4], units_sea->trans_1t,
+                    STATES_MOVE_SEA[4]);
+  add_array_to_json(json, NAMES_UNIT_SEA[5], units_sea->trans_2i,
+                    STATES_MOVE_SEA[5]);
+  add_array_to_json(json, NAMES_UNIT_SEA[6], units_sea->trans_1i_1a,
+                    STATES_MOVE_SEA[6]);
+  add_array_to_json(json, NAMES_UNIT_SEA[7], units_sea->trans_1i_1t,
+                    STATES_MOVE_SEA[7]);
+  add_array_to_json(json, NAMES_UNIT_SEA[8], units_sea->submarines,
+                    STATES_MOVE_SEA[8]);
+  add_array_to_json(json, NAMES_UNIT_SEA[9], units_sea->destroyers,
+                    STATES_MOVE_SEA[9]);
+  add_array_to_json(json, NAMES_UNIT_SEA[10], units_sea->carriers,
+                    STATES_MOVE_SEA[10]);
+  add_array_to_json(json, NAMES_UNIT_SEA[11], units_sea->battleships,
+                    STATES_MOVE_SEA[11]);
+  add_array_to_json(json, NAMES_UNIT_SEA[12], units_sea->bs_damaged,
+                    STATES_MOVE_SEA[12]);
+  add_array_to_json(json, NAMES_UNIT_SEA[13], units_sea->bombers,
+                    STATES_MOVE_SEA[13]);
 
   cJSON* other_units_array = cJSON_CreateArray();
   for (int i = 0; i < PLAYERS_COUNT - 1; i++) {
@@ -239,20 +253,20 @@ void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
     return;
   }
 
-  extract_and_assign(json, "fighters", units_sea->fighters);
-  extract_and_assign(json, "trans_empty", units_sea->trans_empty);
-  extract_and_assign(json, "trans_1i", units_sea->trans_1i);
-  extract_and_assign(json, "trans_1a", units_sea->trans_1a);
-  extract_and_assign(json, "trans_1t", units_sea->trans_1t);
-  extract_and_assign(json, "trans_2i", units_sea->trans_2i);
-  extract_and_assign(json, "trans_1i_1a", units_sea->trans_1i_1a);
-  extract_and_assign(json, "trans_1i_1t", units_sea->trans_1i_1t);
-  extract_and_assign(json, "submarines", units_sea->submarines);
-  extract_and_assign(json, "destroyers", units_sea->destroyers);
-  extract_and_assign(json, "carriers", units_sea->carriers);
-  extract_and_assign(json, "battleships", units_sea->battleships);
-  extract_and_assign(json, "bs_damaged", units_sea->bs_damaged);
-  extract_and_assign(json, "bombers", units_sea->bombers);
+  extract_and_assign(json, NAMES_UNIT_SEA[0], units_sea->fighters);
+  extract_and_assign(json, NAMES_UNIT_SEA[1], units_sea->trans_empty);
+  extract_and_assign(json, NAMES_UNIT_SEA[2], units_sea->trans_1i);
+  extract_and_assign(json, NAMES_UNIT_SEA[3], units_sea->trans_1a);
+  extract_and_assign(json, NAMES_UNIT_SEA[4], units_sea->trans_1t);
+  extract_and_assign(json, NAMES_UNIT_SEA[5], units_sea->trans_2i);
+  extract_and_assign(json, NAMES_UNIT_SEA[6], units_sea->trans_1i_1a);
+  extract_and_assign(json, NAMES_UNIT_SEA[7], units_sea->trans_1i_1t);
+  extract_and_assign(json, NAMES_UNIT_SEA[8], units_sea->submarines);
+  extract_and_assign(json, NAMES_UNIT_SEA[9], units_sea->destroyers);
+  extract_and_assign(json, NAMES_UNIT_SEA[10], units_sea->carriers);
+  extract_and_assign(json, NAMES_UNIT_SEA[11], units_sea->battleships);
+  extract_and_assign(json, NAMES_UNIT_SEA[12], units_sea->bs_damaged);
+  extract_and_assign(json, NAMES_UNIT_SEA[13], units_sea->bombers);
 
   cJSON* other_units_array = cJSON_GetObjectItem(json, "other_units");
   if (cJSON_IsArray(other_units_array)) {
@@ -282,12 +296,18 @@ cJSON* serialize_land_state_to_json(LandState* land_state) {
   cJSON_AddNumberToObject(json, "factory_hp", land_state->factory_hp);
   cJSON_AddNumberToObject(json, "factory_max", land_state->factory_max);
 
-  add_array_to_json(json, NAMES_UNIT_LAND[0], land_state->fighters, STATES_MOVE_LAND[0]);
-  add_array_to_json(json, NAMES_UNIT_LAND[1], land_state->bombers, STATES_MOVE_LAND[1]);
-  add_array_to_json(json, NAMES_UNIT_LAND[2], land_state->infantry, STATES_MOVE_LAND[2]);
-  add_array_to_json(json, NAMES_UNIT_LAND[3], land_state->artillery, STATES_MOVE_LAND[3]);
-  add_array_to_json(json, NAMES_UNIT_LAND[4], land_state->tanks, STATES_MOVE_LAND[4]);
-  add_array_to_json(json, NAMES_UNIT_LAND[5], land_state->aa_guns, STATES_MOVE_LAND[5]);
+  add_array_to_json(json, NAMES_UNIT_LAND[0], land_state->fighters,
+                    STATES_MOVE_LAND[0]);
+  add_array_to_json(json, NAMES_UNIT_LAND[1], land_state->bombers,
+                    STATES_MOVE_LAND[1]);
+  add_array_to_json(json, NAMES_UNIT_LAND[2], land_state->infantry,
+                    STATES_MOVE_LAND[2]);
+  add_array_to_json(json, NAMES_UNIT_LAND[3], land_state->artillery,
+                    STATES_MOVE_LAND[3]);
+  add_array_to_json(json, NAMES_UNIT_LAND[4], land_state->tanks,
+                    STATES_MOVE_LAND[4]);
+  add_array_to_json(json, NAMES_UNIT_LAND[5], land_state->aa_guns,
+                    STATES_MOVE_LAND[5]);
 
   cJSON* other_units_array = cJSON_CreateArray();
   for (int i = 0; i < PLAYERS_COUNT - 1; i++) {

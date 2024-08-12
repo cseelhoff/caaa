@@ -8,5 +8,6 @@
 #define AA_GUN_COST 5
 #define AA_GUN_AA_STRENGTH 1
 #define AA_GUN_WEIGHT 6
+#define AA_GUN_STATES AA_GUN_MOVES_MAX + 1
 
 #endif
