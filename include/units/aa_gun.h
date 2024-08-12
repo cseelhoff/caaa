@@ -1,7 +1,7 @@
 #ifndef AA_GUN_H
 #define AA_GUN_H
 
-#define AA_GUN_NAME "AA Gun"
+#define AA_GUN_NAME "aa_guns"
 #define AA_GUN_ATTACK 0
 #define AA_GUN_DEFENSE 0
 #define AA_GUN_MOVES_MAX 1

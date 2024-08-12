@@ -1,31 +1,40 @@
 #ifndef LAND_H
 #define LAND_H
 
-#include "config.h"
-#include "player.h"
 #include <stdint.h>
 
-struct Connection;
+#define LANDS_COUNT 5
+#define MAX_LAND_TO_SEA_CONNECTIONS 4
+#define MAX_LAND_TO_LAND_CONNECTIONS 6
 
 typedef struct {
   char* name;
-  unsigned int original_owner_index;
-//  unsigned int owner_index;
+  uint8_t original_owner_index;
   uint8_t land_value;
   uint8_t sea_conn_count;
   uint8_t land_conn_count;
-  unsigned int connected_sea_index[MAX_LAND_TO_SEA_CONNECTIONS];
-  unsigned int connected_land_index[MAX_LAND_TO_LAND_CONNECTIONS];
-//  uint8_t factory_max;
-//  uint8_t factory_hp;
-//  uint8_t builds_left;
-//  bool is_owned_by_current_player;
-//  bool is_ally_owned;
-//  bool newly_conquered;
+  uint8_t connected_sea_index[MAX_LAND_TO_SEA_CONNECTIONS];
+  uint8_t connected_land_index[MAX_LAND_TO_LAND_CONNECTIONS];
 } Land;
 
-Land* getLandByName(char* name);
+//  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
 
-extern Land Lands[LANDS_COUNT];
+Land Lands[LANDS_COUNT] = {
+  "Washington", 4, 8, 2, 0, //owner, money, sea_con, land_conn
+  {0, 1, 0, 0}, //sea
+  {0, 0, 0, 0, 0, 0}, //land
+  "London", 2, 8, 2, 0, 
+  {1, 2, 0, 0}, 
+  {0, 0, 0, 0, 0, 0},
+  "Berlin", 1, 8, 1, 1,
+  {2, 0, 0, 0}, 
+  {3, 0, 0, 0, 0, 0},
+  "Moscow", 0, 8, 0, 2, 
+  {0, 0, 0, 0}, 
+  {2, 4, 0, 0, 0, 0},
+  "Japan", 3, 8, 1, 1,
+  {0, 0, 0, 0}, 
+  {2, 4, 0, 0, 0, 0}  
+};
 
 #endif

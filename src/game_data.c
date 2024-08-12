@@ -1,9 +1,4 @@
 #include "game_data.h"
-#include "cJSON.h"
-#include "config.h"
-#include "land.h"
-#include "player.h"
-#include "sea_data.h"
 #include "serialize_data.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -227,7 +222,7 @@ void setPrintableStatusSeas() {
       for (int j = 0; j < SEA_UNIT_TYPES; j++) {
         if (cache.units_sea_type_total[i][j] > 0) {
           strcat(printableGameStatus, player.name);
-          strcat(printableGameStatus, SEA_UNIT_NAMES[j]);
+          strcat(printableGameStatus, NAMES_UNIT_SEA[j]);
           for (int k = 0; k < STATES_MOVE_SEA[j]; k++) {
             sprintf(threeCharStr, "%3d", cache.units_sea_ptr[i][j][k]);
             strcat(printableGameStatus, threeCharStr);
@@ -243,7 +238,7 @@ void setPrintableStatusSeas() {
         for (int k = 0; k < SEA_UNIT_TYPES; k++) {
           if (units_sea.other_units[j][k] > 0) {
             strcat(printableGameStatus, player.name);
-            strcat(printableGameStatus, SEA_UNIT_NAMES[k]);
+            strcat(printableGameStatus, NAMES_UNIT_SEA[k]);
             sprintf(threeCharStr, "%3d", units_sea.other_units[j][k]);
             strcat(printableGameStatus, threeCharStr);
             strcat(printableGameStatus, "\n");
@@ -279,7 +274,7 @@ void moveAllTransports_S(uint8_t from_sea, uint8_t transport_index) {
     if (player.is_human) {
       setPrintableStatus();
       strcat(printableGameStatus, "Staging Transport ");
-      strcat(printableGameStatus, SEA_UNIT_NAMES[transport_index]);
+      strcat(printableGameStatus, NAMES_UNIT_SEA[transport_index]);
       strcat(printableGameStatus, " From: ");
       strcat(printableGameStatus, SEAS[from_sea].name);
       strcat(printableGameStatus, " To: ");

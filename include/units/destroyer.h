@@ -1,7 +1,7 @@
 #ifndef DESTROYER_H
 #define DESTROYER_H
 
-#define DESTROYER_NAME "Destroyer"
+#define DESTROYER_NAME "destroyers"
 #define DESTROYER_ATTACK 2
 #define DESTROYER_DEFENSE 2
 #define DESTROYER_MOVES_MAX 2

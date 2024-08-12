@@ -1,7 +1,7 @@
 #ifndef INFANTRY_H
 #define INFANTRY_H
 
-#define INFANTRY_NAME "Infantry"
+#define INFANTRY_NAME "infantry"
 #define INFANTRY_ATTACK 1
 #define INFANTRY_DEFENSE 2
 #define INFANTRY_MOVES_MAX 1

@@ -1,8 +1,8 @@
 #ifndef SERIALIZE_DATA_H
 #define SERIALIZE_DATA_H
 
-#include "config.h"
 #include "cJSON.h"
+#include "game_data.h"
 
 cJSON* read_json_from_file(const char *filename);
 void write_json_to_file(const char *filename, cJSON *json);

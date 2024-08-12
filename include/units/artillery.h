@@ -1,7 +1,7 @@
 #ifndef ARTILLERY_H
 #define ARTILLERY_H
 
-#define ARTILLERY_NAME "Artillery"
+#define ARTILLERY_NAME "artillery"
 #define ARTILLERY_ATTACK 2
 #define ARTILLERY_DEFENSE 2
 #define ARTILLERY_MOVES_MAX 1
