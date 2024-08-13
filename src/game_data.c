@@ -1,7 +1,10 @@
 #include "game_data.h"
 #include "fighter.h"
 #include "land.h"
+#include "sea.h"
 #include "serialize_data.h"
+#include "units/fighter.h"
+#include "units/transport.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +25,12 @@ UnitsSea units_sea;
 LandState land_state;
 int user_input;
 Land land;
+uint8_t total_air_distance[TOTAL_VERTICES][TOTAL_VERTICES] = {0};
+uint8_t total_land_distance[LANDS_COUNT][LANDS_COUNT] = {0};
+uint8_t total_sea_distance[SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t seaMove2Destination[SEAS_COUNT][SEAS_COUNT] = {255};
+uint8_t seaMove1Destination[SEAS_COUNT][SEAS_COUNT] = {255};
+uint8_t seaMove1DestinationAlt[SEAS_COUNT][SEAS_COUNT] = {255};
 
 void initializeGameData() {
   // json = serialize_game_data_to_json(&gameData);
@@ -38,6 +47,12 @@ void initializeGameData() {
   player = Players[player_index];
   playerName = player.name;
   printableGameStatus[0] = '\0';
+  build_total_air_distance();
+  build_total_land_distance();
+  build_total_sea_distance();
+  build_seaMove2Destination();
+  build_seaMove1Destination();
+  build_seaMove1DestinationAlt();
   buildCache();
   stage_transport_units();
   move_land_units();
@@ -59,6 +74,196 @@ void initializeGameData() {
   collect_money();
 }
 
+void build_seaMove2Destination() {
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
+      if (total_sea_distance[i][j] <= 2) {
+        seaMove2Destination[i][j] = j;
+        continue;
+      }
+
+      // If no direct path within two moves is found, return the closest sea
+      int min_distance = INFINITY;
+      for (int k = 0; k < SEAS[i].sea_conn_count; k++) {
+        int intermediate = SEAS[i].connected_sea_index[k];
+        for (int l = 0; l < SEAS[intermediate].sea_conn_count; l++) {
+          int intermediate2 = SEAS[intermediate].connected_sea_index[l];
+          if (total_sea_distance[intermediate2][j] < min_distance) {
+            min_distance = total_sea_distance[intermediate2][j];
+            seaMove2Destination[i][j] = intermediate2;
+          }
+        }
+      }
+    }
+  }
+}
+
+void build_seaMove1Destination() {
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
+      if (total_sea_distance[i][j] <= 1) {
+        seaMove1Destination[i][j] = j;
+        continue;
+      }
+
+      // If no direct path within two moves is found, return the closest sea
+      int min_distance = INFINITY;
+      for (int k = 0; k < SEAS[i].sea_conn_count; k++) {
+        int intermediate = SEAS[i].connected_sea_index[k];
+        if (total_sea_distance[intermediate][j] < min_distance) {
+          min_distance = total_sea_distance[intermediate][j];
+          seaMove1Destination[i][j] = intermediate;
+        }
+      }
+    }
+  }
+}
+
+void build_seaMove1DestinationAlt() {
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
+      if (total_sea_distance[i][j] <= 1) {
+        seaMove1DestinationAlt[i][j] = j;
+        continue;
+      }
+
+      // If no direct path within two moves is found, return the closest sea
+      int min_distance = INFINITY;
+      for (int k = SEAS[i].sea_conn_count - 1; k >= 0; k--) {
+        int intermediate = SEAS[i].connected_sea_index[k];
+        if (total_sea_distance[intermediate][j] < min_distance) {
+          min_distance = total_sea_distance[intermediate][j];
+          seaMove1DestinationAlt[i][j] = intermediate;
+        }
+      }
+    }
+  }
+}
+
+void build_total_air_distance() {
+  // Initialize the total_air_distance array
+  for (int i = 0; i < TOTAL_VERTICES; i++) {
+    for (int j = 0; j < TOTAL_VERTICES; j++) {
+      if (i != j) {
+        total_air_distance[i][j] = INFINITY;
+      } // else {
+        // total_air_distance[i][j] = 0;
+      //}
+    }
+  }
+
+  // Populate initial distances based on connected_sea_index and
+  // connected_land_index
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    for (int j = 0; j < LANDS[i].sea_conn_count; j++) {
+      int sea_index = LANDS[i].connected_sea_index[j] + LANDS_COUNT;
+      total_air_distance[i][sea_index] = 1;
+      total_air_distance[sea_index][i] = 1;
+    }
+    for (int j = 0; j < LANDS[i].land_conn_count; j++) {
+      int land_index = LANDS[i].connected_land_index[j];
+      total_air_distance[i][land_index] = 1;
+      total_air_distance[land_index][i] = 1;
+    }
+  }
+
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS[i].sea_conn_count; j++) {
+      int sea_index = SEAS[i].connected_sea_index[j] + LANDS_COUNT;
+      total_air_distance[i + LANDS_COUNT][sea_index] = 1;
+      total_air_distance[sea_index][i + LANDS_COUNT] = 1;
+    }
+    for (int j = 0; j < SEAS[i].land_conn_count; j++) {
+      int land_index = SEAS[i].connected_land_index[j];
+      total_air_distance[i + LANDS_COUNT][land_index] = 1;
+      total_air_distance[land_index][i + LANDS_COUNT] = 1;
+    }
+  }
+
+  // Floyd-Warshall algorithm to compute shortest paths
+  for (int k = 0; k < TOTAL_VERTICES; k++) {
+    for (int i = 0; i < TOTAL_VERTICES; i++) {
+      for (int j = 0; j < TOTAL_VERTICES; j++) {
+        if (total_air_distance[i][k] + total_air_distance[k][j] <
+            total_air_distance[i][j]) {
+          total_air_distance[i][j] =
+              total_air_distance[i][k] + total_air_distance[k][j];
+        }
+      }
+    }
+  }
+}
+
+void build_total_land_distance() {
+  // Initialize the total_land_distance array
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    for (int j = 0; j < LANDS_COUNT; j++) {
+      if (i != j) {
+        total_land_distance[i][j] = INFINITY;
+      } // else {
+        // total_land_distance[i][j] = 0;
+      //}
+    }
+  }
+
+  // Populate initial distances based on connected_sea_index
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    for (int j = 0; j < LANDS[i].land_conn_count; j++) {
+      int land_index = LANDS[i].connected_land_index[j];
+      total_land_distance[i][land_index] = 1;
+      total_land_distance[land_index][i] = 1;
+    }
+  }
+
+  // Floyd-Warshall algorithm to compute shortest paths
+  for (int k = 0; k < LANDS_COUNT; k++) {
+    for (int i = 0; i < LANDS_COUNT; i++) {
+      for (int j = 0; j < LANDS_COUNT; j++) {
+        if (total_land_distance[i][k] + total_land_distance[k][j] <
+            total_land_distance[i][j]) {
+          total_land_distance[i][j] =
+              total_land_distance[i][k] + total_land_distance[k][j];
+        }
+      }
+    }
+  }
+}
+
+void build_total_sea_distance() {
+  // Initialize the total_sea_distance array
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
+      if (i != j) {
+        total_sea_distance[i][j] = INFINITY;
+      } // else {
+        // total_sea_distance[i][j] = 0;
+      //}
+    }
+  }
+
+  // Populate initial distances based on connected_sea_index
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    for (int j = 0; j < SEAS[i].sea_conn_count; j++) {
+      int sea_index = SEAS[i].connected_sea_index[j];
+      total_sea_distance[i][sea_index] = 1;
+      total_sea_distance[sea_index][i] = 1;
+    }
+  }
+
+  // Floyd-Warshall algorithm to compute shortest paths
+  for (int k = 0; k < SEAS_COUNT; k++) {
+    for (int i = 0; i < SEAS_COUNT; i++) {
+      for (int j = 0; j < SEAS_COUNT; j++) {
+        if (total_sea_distance[i][k] + total_sea_distance[k][j] <
+            total_sea_distance[i][j]) {
+          total_sea_distance[i][j] =
+              total_sea_distance[i][k] + total_sea_distance[k][j];
+        }
+      }
+    }
+  }
+}
+
 void buildCache() {
   for (int i = 0; i < PLAYERS_COUNT; i++) {
     // cache.income_per_turn[i] = 0;
@@ -76,7 +281,11 @@ void buildCache() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     //    LandState land_state = gameData.land_state[i];
     cache.income_per_turn[gameData.land_state[i].owner_index] +=
-        Lands[i].land_value;
+        LANDS[i].land_value;
+    cache.units_air_ptr[i][FIGHTERS] =
+        (uint8_t*)gameData.land_state[i].fighters;
+    cache.units_air_ptr[i][BOMBERS_LAND] =
+        (uint8_t*)gameData.land_state[i].bombers;
     cache.units_land_ptr[i][FIGHTERS] =
         (uint8_t*)gameData.land_state[i].fighters;
     cache.units_land_ptr[i][BOMBERS_LAND] =
@@ -104,6 +313,10 @@ void buildCache() {
     }
   }
   for (int i = 0; i < SEAS_COUNT; i++) {
+    cache.units_air_ptr[i + LANDS_COUNT][FIGHTERS] =
+        (uint8_t*)gameData.units_sea[i].fighters;
+    cache.units_air_ptr[i + LANDS_COUNT][BOMBERS_LAND] =
+        (uint8_t*)gameData.units_sea[i].bombers;
     cache.units_sea_ptr[i][FIGHTERS] = (uint8_t*)gameData.units_sea[i].fighters;
     cache.units_sea_ptr[i][TRANS_EMPTY] =
         (uint8_t*)gameData.units_sea[i].trans_empty;
@@ -149,7 +362,7 @@ void setPrintableStatus() {
   strcat(printableGameStatus, playerName);
   strcat(printableGameStatus, "\033[0m");
   strcat(printableGameStatus, " is in phase ");
-  strcat(printableGameStatus, PHASES[gameData.phase]);
+  //  strcat(printableGameStatus, PHASES[gameData.phase]);
   strcat(printableGameStatus, " with money ");
   sprintf(threeCharStr, "%d", gameData.money[player_index]);
   strcat(printableGameStatus, threeCharStr);
@@ -165,7 +378,7 @@ void setPrintableStatusLands() {
            Players[gameData.land_state[i].owner_index].color);
     sprintf(threeCharStr, "%d ", i);
     strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, Lands[i].name);
+    strcat(printableGameStatus, LANDS[i].name);
     strcat(printableGameStatus, ": ");
     strcat(printableGameStatus,
            Players[gameData.land_state[i].owner_index].name);
@@ -178,8 +391,8 @@ void setPrintableStatusLands() {
     strcat(printableGameStatus, "/");
     sprintf(threeCharStr, "%d", gameData.land_state[i].factory_max);
     strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, " Conquered: ");
-    if (gameData.land_state[i].conquered) {
+    strcat(printableGameStatus, " Bombarded: ");
+    if (gameData.land_state[i].bombarded) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
@@ -296,7 +509,7 @@ void stage_transport_units() {
       continue;
     }
     for (int j = TRANS_EMPTY; j <= TRANS_1T; j++) {
-      while (cache.units_sea_ptr[i][j][3] > 0) {
+      while (cache.units_sea_ptr[i][j][TRANSPORT_MOVES_MAX + 1] > 0) {
         if (player.is_human) {
           setPrintableStatus();
           strcat(printableGameStatus, "Staging ");
@@ -313,12 +526,12 @@ void stage_transport_units() {
         // what is the actual destination that is a max of 2 sea moves away?
         actualDestination = seaMove2Destination[i][user_input];
         if (i == actualDestination) {
-          cache.units_sea_ptr[actualDestination][j][2]++;
-          cache.units_sea_ptr[i][j][3]--;
+          cache.units_sea_ptr[actualDestination][j][TRANSPORT_MOVES_MAX]++;
+          cache.units_sea_ptr[i][j][TRANSPORT_MOVES_MAX + 1]--;
           continue;
         }
         // what is the actual sea distance between the two?
-        seaDistance = seaDistanceMap[i][actualDestination];
+        seaDistance = total_sea_distance[i][actualDestination];
         // if the distance is 2, is the primary path blocked?
         if (seaDistance == 2) {
           nextSeaMovement = seaMove1Destination[i][actualDestination];
@@ -349,11 +562,12 @@ void stage_transport_units() {
             actualDestination = nextSeaMovement;
           }
         }
-        cache.units_sea_ptr[actualDestination][j][2 - seaDistance]++;
+        cache.units_sea_ptr[actualDestination][j]
+                           [TRANSPORT_MOVES_MAX - seaDistance]++;
         cache.units_sea_type_total[actualDestination][j]++;
         cache.units_sea_player_total[actualDestination][0]++;
         cache.units_sea_grand_total[actualDestination]++;
-        cache.units_sea_ptr[actualDestination][j][3]--;
+        cache.units_sea_ptr[actualDestination][j][TRANSPORT_MOVES_MAX + 1]--;
         cache.units_sea_type_total[i][j]--;
         cache.units_sea_player_total[i][0]--;
         cache.units_sea_grand_total[i]--;
@@ -363,6 +577,8 @@ void stage_transport_units() {
 }
 
 void move_land_units() {
+
+  build_allowed_air_moves();
   for (int i = 0; i < LANDS_COUNT; i++) {
     if (cache.units_land_grand_total[i] == 0 ||
         cache.units_land_player_total[i][0] == 0) {
@@ -372,12 +588,14 @@ void move_land_units() {
   }
 }
 
+void build_allowed_air_moves() {}
+
 void move_fighters(int i) {
-  while (cache.units_land_ptr[i][FIGHTERS][j] > 0) {
+  while (cache.units_air_ptr[i][FIGHTERS][j] > 0) {
     if (player.is_human) {
       setPrintableStatus();
       strcat(printableGameStatus, "Moving Fighter From: ");
-      strcat(printableGameStatus, Lands[i].name);
+      strcat(printableGameStatus, LANDS[i].name);
       strcat(printableGameStatus, " To: ");
       printf("%s\n", printableGameStatus);
       getUserInput();
@@ -385,12 +603,37 @@ void move_fighters(int i) {
       // AI
       getAIInput();
     }
-    if (user_input == 0) {
-      cache.units_land_ptr[i][FIGHTERS][0]++;
-      cache.units_land_ptr[i][FIGHTERS][FIGHTER_MOVES_MAX]--;
+    // what is the actual destination that is a max of 4 air moves away?
+    uint8_t actualDestination = airMove4Destination[i][user_input];
+    // if the actual destination is not water and is not ally owned, and has no
+    // enemy units, then set actual destination to i
+    if (actualDestination <= LANDS_COUNT &&
+        !player.is_allied[gameData.land_state[actualDestination].owner_index] &&
+        cache.units_land_grand_total[actualDestination] == 0) {
+      actualDestination = i;
+    }
+    if (i == actualDestination) {
+      cache.units_air_ptr[i][FIGHTERS][0]++;
+      cache.units_air_ptr[i][FIGHTERS][FIGHTER_MOVES_MAX]--;
+      continue;
     } else {
-      cache.units_land_ptr[i][FIGHTERS][j]--;
-      cache.units_land_ptr[i][FIGHTERS][FIGHTER_STATES]++;
+      // what is the actual air distance between the two?
+      uint8_t airDistance = total_air_distance[i][actualDestination];
+      if (airDistance == 4) {
+        if (!canFighterLandHere(actualDestination)) {
+          actualDestination = airMove3Destination[i][user_input];
+          airDistance = 3;
+        }
+      }
+      if (airDistance == 3) {
+        if (!canFighterLandIn1Move(actualDestination)) {
+          actualDestination = airMove2Destination[i][user_input];
+          airDistance = 2;
+        }
+      }
+      cache.units_air_ptr[actualDestination][FIGHTERS]
+                         [FIGHTER_MOVES_MAX - airDistance]++;
+      cache.units_air_ptr[i][FIGHTERS][FIGHTER_MOVES_MAX]--;
     }
   }
 }

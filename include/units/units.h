@@ -40,6 +40,8 @@
 #define TANKS 4
 #define AA_GUNS 5
 
+#define AIR_UNIT_TYPES 2
+
 extern const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES];
 const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES] = {FIGHTER_NAME,  BOMBER_NAME,
                                                 INFANTRY_NAME, ARTILLERY_NAME,

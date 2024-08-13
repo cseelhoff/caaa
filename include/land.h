@@ -19,7 +19,7 @@ typedef struct {
 
 //  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
 
-Land Lands[LANDS_COUNT] = {
+Land LANDS[LANDS_COUNT] = {
   "Washington", 4, 8, 2, 0, //owner, money, sea_con, land_conn
   {0, 1, 0, 0}, //sea
   {0, 0, 0, 0, 0, 0}, //land

@@ -20,6 +20,8 @@
 #include "units/units.h"
 
 #define STRING_BUFFER_SIZE 64
+#define TOTAL_VERTICES LANDS_COUNT + SEAS_COUNT
+#define INFINITY 255
 
 // const char* PHASES[2] = {"Combat", "Landing, Purchase"};
 
@@ -77,6 +79,7 @@ typedef struct {
   uint8_t units_sea_blockade_total[SEAS_COUNT][PLAYERS_COUNT];
   uint8_t units_sea_grand_total[SEAS_COUNT];
   uint8_t* units_sea_ptr[SEAS_COUNT][SEA_UNIT_TYPES];
+  uint8_t* units_air_ptr[LANDS_COUNT + SEAS_COUNT][AIR_UNIT_TYPES];
   uint8_t income_per_turn[PLAYERS_COUNT];
   uint8_t enemies[PLAYERS_COUNT - 1];
   uint8_t enemies_count;
@@ -84,6 +87,12 @@ typedef struct {
   char* player_colors[PLAYERS_COUNT];
 } GameCache;
 
+void build_seaMove2Destination();
+void build_seaMove1Destination();
+void build_seaMove1DestinationAlt();
+void build_total_air_distance();
+void build_total_land_distance();
+void build_total_sea_distance();
 void getUserInput();
 void getAIInput();
 void initializeGameData();
