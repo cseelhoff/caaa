@@ -45,20 +45,22 @@ typedef struct {
 
 typedef struct {
   uint8_t fighters[FIGHTER_STATES];
-  // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging/unload
+  // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
   uint8_t trans_empty[TRANS_EMPTY_STATES];
+  // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left, 4 = needs staging
   uint8_t trans_1i[TRANS_1I_STATES];
   uint8_t trans_1a[TRANS_1A_STATES];
   uint8_t trans_1t[TRANS_1T_STATES];
+   // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
   uint8_t trans_2i[TRANS_2I_STATES];
   uint8_t trans_1i_1a[TRANS_1I_1A_STATES];
   uint8_t trans_1i_1t[TRANS_1I_1T_STATES];
   uint8_t submarines[SUB_STATES];
   uint8_t destroyers[DESTROYER_STATES];
-  uint8_t cruisers[CRUISER_STATES];// 0=no att, 1=0 mov, can bombard, 2 = 1 mov, 3 = 2 mov
+  uint8_t cruisers[CRUISER_STATES];// 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
   uint8_t carriers[CARRIER_STATES];
-  uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov, can bombard, 2 = 1 mov, 3 = 2 mov
-  uint8_t bs_damaged[BATTLESHIP_STATES];// 0=no att, 1=0 mov, can bombard, 2 = 1 mov, 3 = 2 mov
+  uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
+  uint8_t bs_damaged[BATTLESHIP_STATES];// 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
   uint8_t bombers[BOMBER_SEA_STATES]; // move remain 1,2,3,4,5
   uint8_t other_units[PLAYERS_COUNT - 1]
                      [SEA_UNIT_TYPES - 1]; // no parking bombers at sea
@@ -121,6 +123,8 @@ void move_sea_units();
 void move_fighter_units();
 void move_bomber_units();
 void move_tanks();
+void move_artillery();
+void move_infantry();
 void resolve_sea_battles();
 void unload_transports();
 void bomb_factories();

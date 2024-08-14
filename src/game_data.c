@@ -3,6 +3,7 @@
 #include "land.h"
 #include "player.h"
 #include "serialize_data.h"
+#include "units/transport.h"
 #include "units/units.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -81,24 +82,26 @@ void initializeGameData() {
   build_airMove5Destination();
   build_airMove6Destination();
   buildCache();
-  stage_transport_units();
   move_fighter_units();
   move_bomber_units();
+  stage_transport_units();
   move_tanks();
+  move_artillery();
+  move_infantry();
   move_transport_units();
   move_sea_units();
-  resolve_sea_battles_ask_retreat();
+  resolve_sea_battles();
   unload_transports();
   bombard_shores();
   // fire_strat_aa_guns();
-  bomb_factories_safely_land_bombers();
+  bomb_factories();
   // fire_tactical_aa_guns();
-  resolve_land_battles_ask_retreat();
-  land_air_units();
+  resolve_land_battles();
   move_aa_guns();
-  reset_units_fully();
+  land_air_units();
   buy_units();
   crash_air_units();
+  reset_units_fully();
   collect_money();
 }
 
@@ -149,7 +152,6 @@ void build_airMove3Destination() {
     }
   }
 }
-
 void build_airMove4Destination() {
   for (int i = 0; i < AIRS_COUNT; i++) {
     for (int j = 0; j < AIRS_COUNT; j++) {
@@ -178,7 +180,6 @@ void build_airMove4Destination() {
     }
   }
 }
-
 void build_airMove5Destination() {
   for (int i = 0; i < AIRS_COUNT; i++) {
     for (int j = 0; j < AIRS_COUNT; j++) {
@@ -210,7 +211,6 @@ void build_airMove5Destination() {
     }
   }
 }
-
 void build_airMove6Destination() {
   for (int i = 0; i < AIRS_COUNT; i++) {
     for (int j = 0; j < AIRS_COUNT; j++) {
@@ -245,7 +245,6 @@ void build_airMove6Destination() {
     }
   }
 }
-
 void build_seaMove2Destination() {
   for (int i = 0; i < SEAS_COUNT; i++) {
     for (int j = 0; j < SEAS_COUNT; j++) {
@@ -270,7 +269,6 @@ void build_seaMove2Destination() {
     }
   }
 }
-
 void build_seaMove1Destination() {
   for (int i = 0; i < SEAS_COUNT; i++) {
     for (int j = 0; j < SEAS_COUNT; j++) {
@@ -291,7 +289,6 @@ void build_seaMove1Destination() {
     }
   }
 }
-
 void build_seaMove1DestinationAlt() {
   for (int i = 0; i < SEAS_COUNT; i++) {
     for (int j = 0; j < SEAS_COUNT; j++) {
@@ -312,7 +309,6 @@ void build_seaMove1DestinationAlt() {
     }
   }
 }
-
 void build_landMove2Destination() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     for (int j = 0; j < LANDS_COUNT; j++) {
@@ -336,7 +332,6 @@ void build_landMove2Destination() {
     }
   }
 }
-
 void build_landMove1Destination() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     for (int j = 0; j < LANDS_COUNT; j++) {
@@ -357,7 +352,6 @@ void build_landMove1Destination() {
     }
   }
 }
-
 void build_landMove1DestinationAlt() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     for (int j = 0; j < LANDS_COUNT; j++) {
@@ -444,7 +438,6 @@ void build_total_air_distance() {
     }
   }
 }
-
 void build_total_land_distance() {
   // Initialize the total_land_distance array
   for (int i = 0; i < LANDS_COUNT; i++) {
@@ -484,7 +477,6 @@ void build_total_land_distance() {
     }
   }
 }
-
 void build_total_sea_distance() {
   for (int i = 0; i < CANAL_STATES; i++) {
     // Initialize the total_sea_distance array
@@ -541,7 +533,87 @@ void build_total_sea_distance() {
     }
   }
 }
-
+void build_canBomberLandHere() {
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    // is allied owned and not recently conquered?
+    canBomberLandHere[i] = (is_allied[gameData.land_state[i].owner_index] &&
+                            !gameData.land_state[i].recently_conquered);
+  }
+}
+void build_canBomberLandIn1Move() {
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    canBomberLandIn1Move[i] = false;
+    for (int j = 0; j < LANDS[i].land_conn_count; j++) {
+      if (canBomberLandHere[LANDS[i].connected_land_index[j]]) {
+        canBomberLandIn1Move[i] = true;
+        break;
+      }
+    }
+  }
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    canBomberLandIn1Move[LANDS_COUNT + i] = false;
+    for (int j = 0; j < SEAS[i].land_conn_count; j++) {
+      if (canBomberLandHere[SEAS[i].connected_land_index[j]]) {
+        canBomberLandIn1Move[LANDS_COUNT + i] = true;
+        break;
+      }
+    }
+  }
+}
+void build_canBomberLandIn2Moves() {
+  for (int i = 0; i < AIRS_COUNT; i++) {
+    canBomberLandIn2Moves[i] = false;
+    for (int j = 0; j < AIR_CONNECTIONS_COUNT[i]; j++) {
+      if (canBomberLandIn1Move[AIR_CONNECTIONS[i][j]]) {
+        canBomberLandIn2Moves[i] = true;
+        break;
+      }
+    }
+  }
+}
+void build_canFighterLandHere() {
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    // is allied owned and not recently conquered?
+    canFighterLandHere[i] = (is_allied[gameData.land_state[i].owner_index] &&
+                             !gameData.land_state[i].recently_conquered);
+    // check for possiblity to build carrier under fighter
+    if (gameData.land_state[i].factory_max > 0 &&
+        gameData.land_state[i].owner_index == player_index) {
+      for (int j = 0; j < LANDS[i].sea_conn_count; j++) {
+        canFighterLandHere[LANDS_COUNT + LANDS[i].connected_sea_index[j]] =
+            true;
+      }
+    }
+  }
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    if (allied_carriers[i] > 0) {
+      canFighterLandHere[i] = true;
+      // if player owns these carriers, then landing area is 2 spaces away
+      if (cache.units_sea_ptr[i][CARRIERS][CARRIER_MOVES_MAX] > 0) {
+        for (int j = 0; j < SEAS[i].sea_conn_count; j++) {
+          uint8_t connected_sea1 = SEAS[i].connected_sea_index[j];
+          canFighterLandHere[LANDS_COUNT + connected_sea1] = true;
+          for (int k = 0; k < SEAS[connected_sea1].sea_conn_count; k++) {
+            canFighterLandHere[LANDS_COUNT +
+                               SEAS[connected_sea1].connected_sea_index[k]] =
+                true;
+          }
+        }
+      }
+    }
+  }
+}
+void build_canFighterLandIn1Move() {
+  for (int i = 0; i < AIRS_COUNT; i++) {
+    canFighterLandIn1Move[i] = false;
+    for (int j = 0; j < AIR_CONNECTIONS_COUNT[i]; j++) {
+      if (canFighterLandHere[AIR_CONNECTIONS[i][j]]) {
+        canFighterLandIn1Move[i] = true;
+        break;
+      }
+    }
+  }
+}
 void buildCache() {
   for (int i = 0; i < PLAYERS_COUNT; i++) {
     // cache.income_per_turn[i] = 0;
@@ -654,7 +726,6 @@ void buildCache() {
   }
   cache.canal_state = canal_state;
 }
-
 void setPrintableStatus() {
   strcat(printableGameStatus, player.color);
   strcat(printableGameStatus, playerName);
@@ -668,7 +739,6 @@ void setPrintableStatus() {
   setPrintableStatusLands(gameData, cache, printableGameStatus);
   setPrintableStatusSeas(gameData, cache, printableGameStatus);
 }
-
 void setPrintableStatusLands() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     //    LandState land_state = gameData.land_state[i];
@@ -732,7 +802,6 @@ void setPrintableStatusLands() {
     }
   }
 }
-
 void setPrintableStatusSeas() {
   for (int i = 0; i < SEAS_COUNT; i++) {
     if (cache.units_sea_grand_total[i] == 0) {
@@ -783,7 +852,6 @@ void setPrintableStatusSeas() {
     }
   }
 }
-
 void getUserInput() {
   while (true) {
     if (fgets(threeCharStr, 3, stdin) != NULL) {
@@ -793,12 +861,10 @@ void getUserInput() {
     }
   }
 }
-
 void getAIInput() {
   user_input = 0;
   return;
 }
-
 void stage_transport_units() {
   // loop through transports with "3" moves remaining (that aren't full), start
   // at sea 0 to n
@@ -877,51 +943,6 @@ void stage_transport_units() {
     }
   }
 }
-
-void build_canFighterLandHere() {
-  for (int i = 0; i < LANDS_COUNT; i++) {
-    // is allied owned and not recently conquered?
-    canFighterLandHere[i] = (is_allied[gameData.land_state[i].owner_index] &&
-                             !gameData.land_state[i].recently_conquered);
-    // check for possiblity to build carrier under fighter
-    if (gameData.land_state[i].factory_max > 0 &&
-        gameData.land_state[i].owner_index == player_index) {
-      for (int j = 0; j < LANDS[i].sea_conn_count; j++) {
-        canFighterLandHere[LANDS_COUNT + LANDS[i].connected_sea_index[j]] =
-            true;
-      }
-    }
-  }
-  for (int i = 0; i < SEAS_COUNT; i++) {
-    if (allied_carriers[i] > 0) {
-      canFighterLandHere[i] = true;
-      // if player owns these carriers, then landing area is 2 spaces away
-      if (cache.units_sea_ptr[i][CARRIERS][CARRIER_MOVES_MAX] > 0) {
-        for (int j = 0; j < SEAS[i].sea_conn_count; j++) {
-          uint8_t connected_sea1 = SEAS[i].connected_sea_index[j];
-          canFighterLandHere[LANDS_COUNT + connected_sea1] = true;
-          for (int k = 0; k < SEAS[connected_sea1].sea_conn_count; k++) {
-            canFighterLandHere[LANDS_COUNT +
-                               SEAS[connected_sea1].connected_sea_index[k]] =
-                true;
-          }
-        }
-      }
-    }
-  }
-}
-
-void build_canFighterLandIn1Move() {
-  for (int i = 0; i < AIRS_COUNT; i++) {
-    canFighterLandIn1Move[i] = false;
-    for (int j = 0; j < AIR_CONNECTIONS_COUNT[i]; j++) {
-      if (canFighterLandHere[AIR_CONNECTIONS[i][j]]) {
-        canFighterLandIn1Move[i] = true;
-        break;
-      }
-    }
-  }
-}
 void move_fighter_units() {
   build_canFighterLandHere();
   build_canFighterLandIn1Move();
@@ -984,7 +1005,6 @@ void move_fighter_units() {
     }
   }
 }
-
 void move_bomber_units() {
   build_canBomberLandHere();
   build_canBomberLandIn1Move();
@@ -1071,48 +1091,6 @@ void move_bomber_units() {
     }
   }
 }
-
-void build_canBomberLandHere() {
-  for (int i = 0; i < LANDS_COUNT; i++) {
-    // is allied owned and not recently conquered?
-    canBomberLandHere[i] = (is_allied[gameData.land_state[i].owner_index] &&
-                            !gameData.land_state[i].recently_conquered);
-  }
-}
-
-void build_canBomberLandIn1Move() {
-  for (int i = 0; i < LANDS_COUNT; i++) {
-    canBomberLandIn1Move[i] = false;
-    for (int j = 0; j < LANDS[i].land_conn_count; j++) {
-      if (canBomberLandHere[LANDS[i].connected_land_index[j]]) {
-        canBomberLandIn1Move[i] = true;
-        break;
-      }
-    }
-  }
-  for (int i = 0; i < SEAS_COUNT; i++) {
-    canBomberLandIn1Move[LANDS_COUNT + i] = false;
-    for (int j = 0; j < SEAS[i].land_conn_count; j++) {
-      if (canBomberLandHere[SEAS[i].connected_land_index[j]]) {
-        canBomberLandIn1Move[LANDS_COUNT + i] = true;
-        break;
-      }
-    }
-  }
-}
-
-void build_canBomberLandIn2Moves() {
-  for (int i = 0; i < AIRS_COUNT; i++) {
-    canBomberLandIn2Moves[i] = false;
-    for (int j = 0; j < AIR_CONNECTIONS_COUNT[i]; j++) {
-      if (canBomberLandIn1Move[AIR_CONNECTIONS[i][j]]) {
-        canBomberLandIn2Moves[i] = true;
-        break;
-      }
-    }
-  }
-}
-
 void move_tanks() {
   for (int i = 0; i < LANDS_COUNT; i++) {
     while (cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX] > 0) {
@@ -1175,14 +1153,46 @@ void move_tanks() {
       if (actualDestination >= LANDS_COUNT) {
         uint8_t seaDestination = actualDestination - LANDS_COUNT;
         // try to board transport
-        if (cache.units_sea_ptr[seaDestination][TRANS_1I][2] > 0) {
-          cache.units_sea_ptr[seaDestination][TRANS_1I_1T][2]++;
-          cache.units_sea_player_total[seaDestination][0]++;
-          cache.units_sea_grand_total[seaDestination]++;
-          cache.units_sea_ptr[seaDestination][TRANS_1I][2]--;
-          cache.units_land_player_total[i][0]--;
-          cache.units_land_grand_total[i]--;
-          cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
+        bool loaded_successfully = false;
+        uint8_t k =
+            TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
+        while (
+            !loaded_successfully &&
+            k >=
+                (TRANS_1I_STATES -
+                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
+          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1I_1T][k]++;
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
+        while (!loaded_successfully &&
+               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
+          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1T]
+                               [k + (TRANS_1T_STATES -
+                                     TRANS_EMPTY_STATES)]++; // +1 because the
+                                                             // difference of
+                                                             // state counts
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        if (loaded_successfully) {
           continue;
         }
         // boarding was unsuccessful, move to land
@@ -1204,66 +1214,220 @@ void move_tanks() {
       cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
     }
   }
+}
+void move_artillery() {
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    while (cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX] > 0) {
+      if (player.is_human) {
+        setPrintableStatus();
+        strcat(printableGameStatus, "Moving Artillery From: ");
+        strcat(printableGameStatus, LANDS[i].name);
+        strcat(printableGameStatus, " To: ");
+        printf("%s\n", printableGameStatus);
+        getUserInput();
+      } else {
+        // AI
+        getAIInput();
+      }
+      // what is the actual destination that is a max of 1 land move away?
+      uint8_t actualDestination = landMove1Destination[i][user_input];
 
-  void move_transport_units() {
-    //---repeat until all transports done---
-    // loop through all transports
-    //  1. no movement
-    //  2. move 1 space
-    // loop through land units
-    //  1. load transport
-    //    a. set movement remaining to receiving transports movement remaining
-    //  2. (if adj to water and transports with moves still exist) wait
-    //---
+      if (i == actualDestination) {
+        cache.units_land_ptr[i][ARTILLERY][0]++;
+        cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+        continue;
+      }
+      if (actualDestination >= LANDS_COUNT) {
+        uint8_t seaDestination = actualDestination - LANDS_COUNT;
+        // try to board transport
+        bool loaded_successfully = false;
+        uint8_t k =
+            TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
+        while (
+            !loaded_successfully &&
+            k >=
+                (TRANS_1I_STATES -
+                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
+          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1I_1A][k]++;
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
+        while (!loaded_successfully &&
+               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
+          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1A]
+                               [k + (TRANS_1A_STATES -
+                                     TRANS_EMPTY_STATES)]++; // +1 because the
+                                                             // difference of
+                                                             // state counts
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        if (loaded_successfully) {
+          continue;
+        }
+        // failed move distance of 1, so stay put
+        cache.units_land_ptr[i][ARTILLERY][0]++;
+        cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+        continue;
+      }
+      cache.units_land_ptr[actualDestination][ARTILLERY]
+                          [ARTILLERY_MOVES_MAX - 1]++;
+      cache.units_land_player_total[actualDestination][0]++;
+      cache.units_land_grand_total[actualDestination]++;
+      cache.units_land_player_total[i][0]--;
+      cache.units_land_grand_total[i]--;
+      cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+    }
   }
-  void move_sea_units() {
-    // loop through all remaining sea units
-    // 1. no movement - set moves to 0
-    // 2. move 1 space, reduce movement, and ask again
-  }
-  void resolve_sea_battles() {}
-  void unload_transports() {
-    // loop through all transports
-    // 1. (if available) no more movement
-    // 2. unload all units
-    // 3. (if adj to water and transports with moves still exist) wait
+}
+void move_infantry() {
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    while (cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX] > 0) {
+      if (player.is_human) {
+        setPrintableStatus();
+        strcat(printableGameStatus, "Moving Infantry From: ");
+        strcat(printableGameStatus, LANDS[i].name);
+        strcat(printableGameStatus, " To: ");
+        printf("%s\n", printableGameStatus);
+        getUserInput();
+      } else {
+        // AI
+        getAIInput();
+      }
+      // what is the actual destination that is a max of 1 land move away?
+      uint8_t actualDestination = landMove1Destination[i][user_input];
 
-    // old notes:
-    // 1. no unload
-    // 2. unload
+      if (i == actualDestination) {
+        cache.units_land_ptr[i][INFANTRY][0]++;
+        cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+        continue;
+      }
+      if (actualDestination >= LANDS_COUNT) {
+        uint8_t seaDestination = actualDestination - LANDS_COUNT;
+        // try to board transport
+        bool loaded_successfully = false;
+        uint8_t k =
+            TRANS_1T_STATES - 1; // -1 to exclude the "needs staging" state
+        while (
+            !loaded_successfully &&
+            k >=
+                (TRANS_1I_1T_STATES -
+                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
+          if (cache.units_sea_ptr[seaDestination][TRANS_1T][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1I_1T][k]++;
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_1T][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        k = TRANS_1A_STATES - 1; // -1 to exclude the "needs staging" state
+        while (
+            !loaded_successfully &&
+            k >=
+                (TRANS_1I_1A_STATES -
+                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
+          if (cache.units_sea_ptr[seaDestination][TRANS_1A][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1I_1A][k]++;
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_1A][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        k = TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
+        while (
+            !loaded_successfully &&
+            k >=
+                (TRANS_1I_STATES -
+                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
+          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_2I][k]++;
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
+        while (!loaded_successfully &&
+               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
+          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
+            cache.units_sea_ptr[seaDestination][TRANS_1I]
+                               [k + (TRANS_1I_STATES -
+                                     TRANS_EMPTY_STATES)]++; // +1 because the
+                                                             // difference of
+                                                             // state counts
+            cache.units_sea_player_total[seaDestination][0]++;
+            cache.units_sea_grand_total[seaDestination]++;
+            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
+            cache.units_land_player_total[i][0]--;
+            cache.units_land_grand_total[i]--;
+            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+            loaded_successfully = true;
+          }
+          k--;
+        }
+        if (loaded_successfully) {
+          continue;
+        }
+        // failed move distance of 1, so stay put
+        cache.units_land_ptr[i][INFANTRY][0]++;
+        cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+        continue;
+      }
+      cache.units_land_ptr[actualDestination][INFANTRY]
+                          [INFANTRY_MOVES_MAX - 1]++;
+      cache.units_land_player_total[actualDestination][0]++;
+      cache.units_land_grand_total[actualDestination]++;
+      cache.units_land_player_total[i][0]--;
+      cache.units_land_grand_total[i]--;
+      cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+    }
   }
-  void bomb_factories() {}
-  void bombard_shores() {}
-  void fire_aa_guns() {}
-  void resolve_land_battles() {
-    // loop through all land units
-    // 1. (if available) no more movement
-    // 2. move 1 space, reduce movement, and ask again
-    // 3. (if adj to water and transports with moves still exist) wait
+}
+void move_transport_units() {
 
-    // old notes:
-    // land combat
-    // a. round with retreat option
-  }
-  void land_air_units() {
-    // loop through all air units
-    // 1. (if available) no more movement
-    // 2. move 1 space, reduce movement, and ask again
-    // crash air unit if unsavable
-
-    // old notes:
-    // loop through all air units
-    //  1. no movement - set moves to 0
-    //  2. move 1 space, reduce movement, and ask again
-    //  crash air unit if unsavable
-  }
-  void move_aa_guns() {
-
-    // loop through all aa units
-    //  1. no movement - set moves to 0
-    //  2. move 1 space, reduce movement, and ask again
-  }
-  void reset_units_fully() {}
-  void buy_units() {}
-  void crash_air_units() {}
-  void collect_money() {}
+}
+void move_sea_units() {}
+void resolve_sea_battles() {}
+void unload_transports() {}
+void bomb_factories() {}
+void bombard_shores() {}
+void fire_aa_guns() {}
+void resolve_land_battles() {}
+void land_air_units() {}
+void move_aa_guns() {}
+void reset_units_fully() {}
+void buy_units() {}
+void crash_air_units() {}
+void collect_money() {}
