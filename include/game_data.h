@@ -87,10 +87,13 @@ typedef struct {
   uint8_t income_per_turn[PLAYERS_COUNT];
   uint8_t enemies[PLAYERS_COUNT - 1];
   uint8_t enemies_count;
+  uint8_t canal_state;
   char* player_names[PLAYERS_COUNT];
   char* player_colors[PLAYERS_COUNT];
 } GameCache;
-
+void build_landMove2Destination() ;
+void build_landMove1Destination();
+void build_landMove1DestinationAlt();
 void build_seaMove2Destination();
 void build_seaMove1Destination();
 void build_seaMove1DestinationAlt();
