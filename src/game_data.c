@@ -2,6 +2,7 @@
 #include "canal.h"
 #include "land.h"
 #include "player.h"
+#include "sea.h"
 #include "serialize_data.h"
 #include "units/transport.h"
 #include "units/units.h"
@@ -870,9 +871,11 @@ void stage_transport_units() {
   // at sea 0 to n
   // TODO: optimize with cache - only loop through regions with transports
   for (int i = TRANS_EMPTY; i <= TRANS_1T; i++) {
+    uint8_t staging_state = STATES_MOVE_SEA[i] - 1;
+    uint8_t staging_state_minus_one = staging_state - 1;
     // TODO CHECKPOINT
     for (int j = 0; j < SEAS_COUNT; j++) {
-      while (cache.units_sea_ptr[j][i][TRANSPORT_MOVES_MAX + 1] > 0) {
+      while (cache.units_sea_ptr[j][i][staging_state] > 0) {
         if (player.is_human) {
           setPrintableStatus();
           strcat(printableGameStatus, "Staging ");
@@ -890,8 +893,8 @@ void stage_transport_units() {
         uint8_t actualDestination =
             seaMove2Destination[canal_state][j][user_input];
         if (j == actualDestination) {
-          cache.units_sea_ptr[actualDestination][i][TRANSPORT_MOVES_MAX]++;
-          cache.units_sea_ptr[j][i][TRANSPORT_MOVES_MAX + 1]--;
+          cache.units_sea_ptr[actualDestination][i][staging_state_minus_one]++;
+          cache.units_sea_ptr[j][i][staging_state]--;
           continue;
         }
         // what is the actual sea distance between the two?
@@ -931,11 +934,11 @@ void stage_transport_units() {
           }
         }
         cache.units_sea_ptr[actualDestination][i]
-                           [TRANSPORT_MOVES_MAX - seaDistance]++;
+                           [staging_state_minus_one - seaDistance]++;
         // cache.units_sea_type_total[actualDestination][i]++;
         cache.units_sea_player_total[actualDestination][0]++;
         cache.units_sea_grand_total[actualDestination]++;
-        cache.units_sea_ptr[actualDestination][i][TRANSPORT_MOVES_MAX + 1]--;
+        cache.units_sea_ptr[actualDestination][i][staging_state]--;
         // cache.units_sea_type_total[j][i]--;
         cache.units_sea_player_total[j][0]--;
         cache.units_sea_grand_total[j]--;
@@ -1154,43 +1157,23 @@ void move_tanks() {
         uint8_t seaDestination = actualDestination - LANDS_COUNT;
         // try to board transport
         bool loaded_successfully = false;
-        uint8_t k =
-            TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
-        while (
-            !loaded_successfully &&
-            k >=
-                (TRANS_1I_STATES -
-                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
-          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1I_1T][k]++;
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
-            loaded_successfully = true;
+        int j = TRANS_1I;
+        while (!loaded_successfully && j >= TRANS_EMPTY) {
+          uint8_t k = STATES_MOVE_SEA[j] - STATES_STAGING[j];
+          while (!loaded_successfully && k >= STATES_UNLOADING[j]) {
+            if (cache.units_sea_ptr[seaDestination][j][k] > 0) {
+              cache.units_sea_ptr[seaDestination][LOAD_TANK[j]][k]++;
+              cache.units_sea_player_total[seaDestination][0]++;
+              cache.units_sea_grand_total[seaDestination]++;
+              cache.units_sea_ptr[seaDestination][j][k]--;
+              cache.units_land_player_total[i][0]--;
+              cache.units_land_grand_total[i]--;
+              cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
+              loaded_successfully = true;
+            }
+            k--;
           }
-          k--;
-        }
-        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
-        while (!loaded_successfully &&
-               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
-          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1T]
-                               [k + (TRANS_1T_STATES -
-                                     TRANS_EMPTY_STATES)]++; // +1 because the
-                                                             // difference of
-                                                             // state counts
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
-            loaded_successfully = true;
-          }
-          k--;
+          j--;
         }
         if (loaded_successfully) {
           continue;
@@ -1241,43 +1224,23 @@ void move_artillery() {
         uint8_t seaDestination = actualDestination - LANDS_COUNT;
         // try to board transport
         bool loaded_successfully = false;
-        uint8_t k =
-            TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
-        while (
-            !loaded_successfully &&
-            k >=
-                (TRANS_1I_STATES -
-                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
-          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1I_1A][k]++;
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
-            loaded_successfully = true;
+        int j = TRANS_1I;
+        while (!loaded_successfully && j >= TRANS_EMPTY) {
+          uint8_t k = STATES_MOVE_SEA[j] - STATES_STAGING[j];
+          while (!loaded_successfully && k >= STATES_UNLOADING[j]) {
+            if (cache.units_sea_ptr[seaDestination][j][k] > 0) {
+              cache.units_sea_ptr[seaDestination][LOAD_ARTILLERY[j]][k]++;
+              cache.units_sea_player_total[seaDestination][0]++;
+              cache.units_sea_grand_total[seaDestination]++;
+              cache.units_sea_ptr[seaDestination][j][k]--;
+              cache.units_land_player_total[i][0]--;
+              cache.units_land_grand_total[i]--;
+              cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
+              loaded_successfully = true;
+            }
+            k--;
           }
-          k--;
-        }
-        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
-        while (!loaded_successfully &&
-               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
-          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1A]
-                               [k + (TRANS_1A_STATES -
-                                     TRANS_EMPTY_STATES)]++; // +1 because the
-                                                             // difference of
-                                                             // state counts
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
-            loaded_successfully = true;
-          }
-          k--;
+          j--;
         }
         if (loaded_successfully) {
           continue;
@@ -1323,79 +1286,23 @@ void move_infantry() {
         uint8_t seaDestination = actualDestination - LANDS_COUNT;
         // try to board transport
         bool loaded_successfully = false;
-        uint8_t k =
-            TRANS_1T_STATES - 1; // -1 to exclude the "needs staging" state
-        while (
-            !loaded_successfully &&
-            k >=
-                (TRANS_1I_1T_STATES -
-                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
-          if (cache.units_sea_ptr[seaDestination][TRANS_1T][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1I_1T][k]++;
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_1T][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
-            loaded_successfully = true;
+        int j = TRANS_1T;
+        while (!loaded_successfully && j >= TRANS_EMPTY) {
+          uint8_t k = STATES_MOVE_SEA[j] - STATES_STAGING[j];
+          while (!loaded_successfully && k >= STATES_UNLOADING[j]) {
+            if (cache.units_sea_ptr[seaDestination][j][k] > 0) {
+              cache.units_sea_ptr[seaDestination][LOAD_INFANTRY[j]][k]++;
+              cache.units_sea_player_total[seaDestination][0]++;
+              cache.units_sea_grand_total[seaDestination]++;
+              cache.units_sea_ptr[seaDestination][j][k]--;
+              cache.units_land_player_total[i][0]--;
+              cache.units_land_grand_total[i]--;
+              cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
+              loaded_successfully = true;
+            }
+            k--;
           }
-          k--;
-        }
-        k = TRANS_1A_STATES - 1; // -1 to exclude the "needs staging" state
-        while (
-            !loaded_successfully &&
-            k >=
-                (TRANS_1I_1A_STATES -
-                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
-          if (cache.units_sea_ptr[seaDestination][TRANS_1A][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1I_1A][k]++;
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_1A][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
-            loaded_successfully = true;
-          }
-          k--;
-        }
-        k = TRANS_1I_STATES - 1; // -1 to exclude the "needs staging" state
-        while (
-            !loaded_successfully &&
-            k >=
-                (TRANS_1I_STATES -
-                 TRANS_EMPTY_STATES)) { // -1 to exclude the "done moving" state
-          if (cache.units_sea_ptr[seaDestination][TRANS_1I][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_2I][k]++;
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_1I][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
-            loaded_successfully = true;
-          }
-          k--;
-        }
-        k = TRANS_EMPTY_STATES - 1; // -1 to exclude the "needs staging" state
-        while (!loaded_successfully &&
-               k >= (TRANS_EMPTY_STATES - TRANS_EMPTY_STATES)) {
-          if (cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k] > 0) {
-            cache.units_sea_ptr[seaDestination][TRANS_1I]
-                               [k + (TRANS_1I_STATES -
-                                     TRANS_EMPTY_STATES)]++; // +1 because the
-                                                             // difference of
-                                                             // state counts
-            cache.units_sea_player_total[seaDestination][0]++;
-            cache.units_sea_grand_total[seaDestination]++;
-            cache.units_sea_ptr[seaDestination][TRANS_EMPTY][k]--;
-            cache.units_land_player_total[i][0]--;
-            cache.units_land_grand_total[i]--;
-            cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
-            loaded_successfully = true;
-          }
-          k--;
+          j--;
         }
         if (loaded_successfully) {
           continue;
@@ -1416,7 +1323,81 @@ void move_infantry() {
   }
 }
 void move_transport_units() {
-
+  for (int i = TRANS_1I; i <= TRANS_1I_1T; i++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
+      for (int k = 2; k < 4; k++) {
+        // TODO CHECKPOINT
+        while (cache.units_sea_ptr[j][i][MAX_MOVE_SEA[i] + 1] > 0) {
+          if (player.is_human) {
+            setPrintableStatus();
+            strcat(printableGameStatus, "Moving ");
+            strcat(printableGameStatus, NAMES_UNIT_SEA[i]);
+            strcat(printableGameStatus, " From: ");
+            strcat(printableGameStatus, SEAS[j].name);
+            strcat(printableGameStatus, " To: ");
+            printf("%s\n", printableGameStatus);
+            getUserInput();
+          } else {
+            // AI
+            getAIInput();
+          }
+          // what is the actual destination that is a max of 2 sea moves away?
+          uint8_t actualDestination =
+              seaMove2Destination[canal_state][j][user_input];
+          if (j == actualDestination) {
+            cache.units_sea_ptr[actualDestination][i][MAX_MOVE_SEA[i]]++;
+            cache.units_sea_ptr[j][i][MAX_MOVE_SEA[i] + 1]--;
+            continue;
+          }
+          // what is the actual sea distance between the two?
+          uint8_t seaDistance =
+              total_sea_distance[canal_state][j][actualDestination];
+          // if the distance is 2, is the primary path blocked?
+          if (seaDistance == 2) {
+            uint8_t nextSeaMovement =
+                seaMove1Destination[canal_state][j][actualDestination];
+            uint8_t nextSeaMovementAlt = nextSeaMovement;
+            // check if the next sea movement has enemy ships
+            bool hasEnemyShips = false;
+            for (int k = 0; k < cache.enemies_count; k++) {
+              if (cache.units_sea_blockade_total[nextSeaMovement]
+                                                [cache.enemies[k]] > 0) {
+                hasEnemyShips = true;
+                nextSeaMovement =
+                    seaMove1DestinationAlt[canal_state][j][actualDestination];
+                break;
+              }
+            }
+            if (hasEnemyShips && nextSeaMovementAlt != nextSeaMovement) {
+              // check if the next sea movement has enemy ships
+              hasEnemyShips = false;
+              for (int k = 0; k < cache.enemies_count; k++) {
+                if (cache.units_sea_blockade_total[nextSeaMovement]
+                                                  [cache.enemies[k]] > 0) {
+                  hasEnemyShips = true;
+                  break;
+                }
+              }
+            }
+            // if both paths are blocked, or dest is land
+            // then move 1 space closer (where enemies are)
+            if (hasEnemyShips || actualDestination < LANDS_COUNT) {
+              actualDestination = nextSeaMovement;
+            }
+          }
+          cache.units_sea_ptr[actualDestination][i]
+                             [MAX_MOVE_SEA[i] - seaDistance]++;
+          // cache.units_sea_type_total[actualDestination][i]++;
+          cache.units_sea_player_total[actualDestination][0]++;
+          cache.units_sea_grand_total[actualDestination]++;
+          cache.units_sea_ptr[actualDestination][i][MAX_MOVE_SEA[i] + 1]--;
+          // cache.units_sea_type_total[j][i]--;
+          cache.units_sea_player_total[j][0]--;
+          cache.units_sea_grand_total[j]--;
+        }
+      }
+    }
+  }
 }
 void move_sea_units() {}
 void resolve_sea_battles() {}

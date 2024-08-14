@@ -117,4 +117,91 @@ const uint8_t COST_UNIT_SEA[SEA_UNIT_TYPES] = {
     SUB_COST,        DESTROYER_COST,  CRUISER_COST,   CARRIER_COST,
     BATTLESHIP_COST, BATTLESHIP_COST, BOMBER_COST};
 
+extern const uint8_t STATES_STAGING[SEA_UNIT_TYPES];
+const uint8_t STATES_STAGING[SEA_UNIT_TYPES] = {0,
+                                                TRANS_EMPTY_STAGING_STATES,
+                                                TRANS_1I_STAGING_STATES,
+                                                TRANS_1A_STAGING_STATES,
+                                                TRANS_1T_STAGING_STATES,
+                                                TRANS_2I_STAGING_STATES,
+                                                TRANS_1I_1A_STAGING_STATES,
+                                                TRANS_1I_1T_STAGING_STATES,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0};
+
+extern const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES];
+const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES] = {0,
+                                                TRANS_EMPTY_UNLOADING_STATES,
+                                                TRANS_1I_UNLOADING_STATES,
+                                                TRANS_1A_UNLOADING_STATES,
+                                                TRANS_1T_UNLOADING_STATES,
+                                                TRANS_2I_UNLOADING_STATES,
+                                                TRANS_1I_1A_UNLOADING_STATES,
+                                                TRANS_1I_1T_UNLOADING_STATES,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                0};
+
+extern const uint8_t LOAD_TANK[SEA_UNIT_TYPES];
+const uint8_t LOAD_TANK[SEA_UNIT_TYPES] = {255,
+                                                TRANS_1T,
+                                                TRANS_1I_1T,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255};
+
+extern const uint8_t LOAD_ARTILLERY[SEA_UNIT_TYPES];
+const uint8_t LOAD_ARTILLERY[SEA_UNIT_TYPES] = {255,
+                                                TRANS_1A,
+                                                TRANS_1I_1A,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255};
+
+extern const uint8_t LOAD_INFANTRY[SEA_UNIT_TYPES];
+const uint8_t LOAD_INFANTRY[SEA_UNIT_TYPES] = {255,
+                                                TRANS_1I,
+                                                TRANS_2I,
+                                                TRANS_1I_1A,
+                                                TRANS_1I_1T,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255,
+                                                255};
+
+
+
 #endif
