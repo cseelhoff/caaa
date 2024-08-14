@@ -1,6 +1,7 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
+#include "canal.h"
 #include "land.h"
 #include "player.h"
 #include "sea.h"
@@ -31,7 +32,8 @@ typedef struct {
   uint8_t builds_left; // resets
   uint8_t factory_hp;
   uint8_t factory_max;
-  uint8_t bombard_max;                                     // conquered/bombarded, resets
+  uint8_t bombard_max;                                     // bombarded, resets
+  bool recently_conquered;                                 // resets
   uint8_t fighters[FIGHTER_STATES];                        // rotates
   uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
   uint8_t infantry[INFANTRY_STATES];                       // rotates
@@ -98,6 +100,11 @@ void build_total_sea_distance();
 void build_airMove2Destination();
 void build_airMove3Destination();
 void build_airMove4Destination();
+void build_airMove5Destination();
+void build_airMove6Destination();
+void build_canBomberLandHere();
+void build_canBomberLandIn1Move();
+void build_canBomberLandIn2Moves();
 void getUserInput();
 void getAIInput();
 void initializeGameData();
@@ -106,11 +113,11 @@ void buildCache();
 void setPrintableStatusLands();
 void setPrintableStatusSeas();
 void stage_transport_units();
-void move_land_units();
 void move_transport_units();
 void move_sea_units();
 void move_fighter_units();
 void move_bomber_units();
+void move_tanks();
 void resolve_sea_battles();
 void unload_transports();
 void bomb_factories();

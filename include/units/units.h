@@ -34,7 +34,7 @@
 #define BOMBERS_SEA 14
 
 #define LAND_UNIT_TYPES 6
-#define BOMBERS_LAND 1
+#define BOMBERS_LAND_AIR 1
 #define INFANTRY 2
 #define ARTILLERY 3
 #define TANKS 4
