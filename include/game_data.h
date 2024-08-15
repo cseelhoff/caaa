@@ -23,9 +23,6 @@
 #define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
 #define MAX_AIR_TO_AIR_CONNECTIONS 7
-#define INFINITY 255
-
-// const char* PHASES[2] = {"Combat", "Landing, Purchase"};
 
 typedef struct {
   uint8_t owner_index; // rotates
@@ -93,12 +90,11 @@ typedef struct {
   char* player_names[PLAYERS_COUNT];
   char* player_colors[PLAYERS_COUNT];
 } GameCache;
+void build_airMoveAllDestination();
+void build_seaMoveAllDestination();
 void build_landMove2Destination() ;
 void build_landMove1Destination();
 void build_landMove1DestinationAlt();
-void build_seaMove2Destination();
-void build_seaMove1Destination();
-void build_seaMove1DestinationAlt();
 void build_total_air_distance();
 void build_total_land_distance();
 void build_total_sea_distance();

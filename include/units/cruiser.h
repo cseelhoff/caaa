@@ -6,6 +6,8 @@
 #define CRUISER_DEFENSE 3
 #define CRUISER_MOVES_MAX 2
 #define CRUISER_COST 10
+#define CRUISER_DONE_MOVING 1
+#define CRUISER_UNMOVED 2
 #define CRUISER_STATES 3
 
 #endif
