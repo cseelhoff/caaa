@@ -57,10 +57,10 @@ typedef struct {
   uint8_t trans_1i_1t[TRANS_1I_1T_STATES];
   uint8_t submarines[SUB_STATES];
   uint8_t destroyers[DESTROYER_STATES];
-  uint8_t cruisers[CRUISER_STATES];// 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
   uint8_t carriers[CARRIER_STATES];
-  uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
-  uint8_t bs_damaged[BATTLESHIP_STATES];// 0=no att, 1=0 mov can bombard, 2 = 1 mov, 3 = 2 mov
+  uint8_t cruisers[CRUISER_STATES];// 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t bs_damaged[BATTLESHIP_STATES];// 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t bombers[BOMBER_SEA_STATES]; // move remain 1,2,3,4,5
   uint8_t other_units[PLAYERS_COUNT - 1]
                      [SEA_UNIT_TYPES - 1]; // no parking bombers at sea
@@ -119,7 +119,8 @@ void setPrintableStatusLands();
 void setPrintableStatusSeas();
 void stage_transport_units();
 void move_transport_units();
-void move_sea_units();
+void move_subs();
+void move_destroyers_battleships();
 void move_fighter_units();
 void move_bomber_units();
 void move_tanks();

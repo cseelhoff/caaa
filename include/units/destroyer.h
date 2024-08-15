@@ -6,6 +6,6 @@
 #define DESTROYER_DEFENSE 2
 #define DESTROYER_MOVES_MAX 2
 #define DESTROYER_COST 8
-#define DESTROYER_STATES DESTROYER_MOVES_MAX + 1
+#define DESTROYER_STATES 2 // 0 = done moving, 1 = 2 mov left
 
 #endif

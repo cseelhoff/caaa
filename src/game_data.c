@@ -4,6 +4,7 @@
 #include "player.h"
 #include "sea.h"
 #include "serialize_data.h"
+#include "units/sub.h"
 #include "units/transport.h"
 #include "units/units.h"
 #include <stdint.h>
@@ -22,6 +23,7 @@ Player player;
 char* playerName;
 char printableGameStatus[5000] = "";
 uint8_t enemies[PLAYERS_COUNT - 1];
+uint8_t enemies_offset[PLAYERS_COUNT - 1];
 uint8_t enemies_count;
 bool is_allied[PLAYERS_COUNT];
 UnitsSea units_sea;
@@ -90,7 +92,8 @@ void initializeGameData() {
   move_artillery();
   move_infantry();
   move_transport_units();
-  move_sea_units();
+  move_subs();
+  move_destroyers_battleships();
   resolve_sea_battles();
   unload_transports();
   bombard_shores();
@@ -622,12 +625,15 @@ void buildCache() {
     uint8_t modPlayerIndex = (player_index_plus_one + i) % PLAYERS_COUNT;
     cache.player_names[i] = Players[modPlayerIndex].name;
     cache.player_colors[i] = Players[modPlayerIndex].color;
-    for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
-      if (player.is_allied[j] == false) {
-        cache.enemies[cache.enemies_count] = j;
-        cache.enemies_count++;
-      }
+    // for (int j = 0; j < PLAYERS_COUNT - 1; j++) {
+    if (player.is_allied[i] == false) {
+      cache.enemies[cache.enemies_count] = i;
+      enemies_offset[cache.enemies_count] =
+          (player_index_plus_one + i) %
+          PLAYERS_COUNT; // TODO: Fix Enemy Cache offset perhaps?
+      cache.enemies_count++;
     }
+    //}
   }
   for (int i = 0; i < LANDS_COUNT; i++) {
     //    LandState land_state = gameData.land_state[i];
@@ -772,7 +778,14 @@ void setPrintableStatusLands() {
     }
     strcat(printableGameStatus, "             |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
     for (int j = 0; j < LAND_UNIT_TYPES; j++) {
-      if (cache.units_land_type_total[i][j] > 0) {
+      bool units_present = false;
+      for (int k = 0; k < STATES_MOVE_LAND[j]; k++) {
+        if (cache.units_land_ptr[i][j][k] > 0) {
+          units_present = true;
+          break;
+        }
+      }
+      if (units_present) {
         strcat(printableGameStatus, player.name);
         strcat(printableGameStatus, NAMES_UNIT_LAND[j]);
         for (int k = 0; k < STATES_MOVE_LAND[j]; k++) {
@@ -872,7 +885,7 @@ void stage_transport_units() {
   // TODO: optimize with cache - only loop through regions with transports
   for (int i = TRANS_EMPTY; i <= TRANS_1T; i++) {
     uint8_t staging_state = STATES_MOVE_SEA[i] - 1;
-    uint8_t staging_state_minus_one = staging_state - 1;
+    uint8_t done_staging = staging_state - 1;
     // TODO CHECKPOINT
     for (int j = 0; j < SEAS_COUNT; j++) {
       while (cache.units_sea_ptr[j][i][staging_state] > 0) {
@@ -892,8 +905,8 @@ void stage_transport_units() {
         // what is the actual destination that is a max of 2 sea moves away?
         uint8_t actualDestination =
             seaMove2Destination[canal_state][j][user_input];
-        if (j == actualDestination) {
-          cache.units_sea_ptr[actualDestination][i][staging_state_minus_one]++;
+        if (j == actualDestination || actualDestination == INFINITY) {
+          cache.units_sea_ptr[j][i][done_staging]++;
           cache.units_sea_ptr[j][i][staging_state]--;
           continue;
         }
@@ -909,7 +922,8 @@ void stage_transport_units() {
           bool hasEnemyShips = false;
           for (int k = 0; k < cache.enemies_count; k++) {
             if (cache.units_sea_blockade_total[nextSeaMovement]
-                                              [cache.enemies[k]] > 0) {
+                                              [cache.enemies[k]] >
+                0) { // TODO: Fix Enemy Cache offset perhaps?
               hasEnemyShips = true;
               nextSeaMovement =
                   seaMove1DestinationAlt[canal_state][j][actualDestination];
@@ -921,7 +935,8 @@ void stage_transport_units() {
             hasEnemyShips = false;
             for (int k = 0; k < cache.enemies_count; k++) {
               if (cache.units_sea_blockade_total[nextSeaMovement]
-                                                [cache.enemies[k]] > 0) {
+                                                [cache.enemies[k]] >
+                  0) { // TODO: Fix Enemy Cache offset perhaps?
                 hasEnemyShips = true;
                 break;
               }
@@ -933,8 +948,12 @@ void stage_transport_units() {
             actualDestination = nextSeaMovement;
           }
         }
-        cache.units_sea_ptr[actualDestination][i]
-                           [staging_state_minus_one - seaDistance]++;
+        if (actualDestination < LANDS_COUNT) {
+          cache.units_sea_ptr[j][i][done_staging]++;
+          cache.units_sea_ptr[j][i][staging_state]--;
+          continue;
+        }
+        cache.units_sea_ptr[actualDestination][i][done_staging - seaDistance]++;
         // cache.units_sea_type_total[actualDestination][i]++;
         cache.units_sea_player_total[actualDestination][0]++;
         cache.units_sea_grand_total[actualDestination]++;
@@ -1039,13 +1058,12 @@ void move_bomber_units() {
           actualDestination = i;
         } else {
           for (int j = 0; j < cache.enemies_count; j++) {
-            if (cache.units_sea_blockade_total[actualDestination][enemies[j]] ==
-                0) {
+            if (cache.units_sea_blockade_total[actualDestination][enemies[j]] >
+                0) { // TODO: Fix Enemy Cache offset perhaps?
               actualDestination = i;
               break;
             }
           }
-          actualDestination = i;
         }
       }
       if (i == actualDestination) {
@@ -1111,7 +1129,7 @@ void move_tanks() {
       // what is the actual destination that is a max of 2 land moves away?
       uint8_t actualDestination = landMove2Destination[i][user_input];
 
-      if (i == actualDestination) {
+      if (i == actualDestination || actualDestination == INFINITY) {
         cache.units_land_ptr[i][TANKS][0]++;
         cache.units_land_ptr[i][TANKS][TANK_MOVES_MAX]--;
         continue;
@@ -1124,24 +1142,26 @@ void move_tanks() {
         // space closer
         uint8_t nextLandMovement = landMove1Destination[i][user_input];
         uint8_t nextLandMovementAlt = nextLandMovement;
-        // check if the next sea movement has enemy ships
+        // check if the next sea movement has EnemyBlockers
         bool hasEnemyBlockers = false;
         for (int k = 0; k < cache.enemies_count; k++) {
           if (cache.units_land_player_total[nextLandMovement]
                                            [cache.enemies[k]] > 0 ||
-              gameData.land_state[nextLandMovement].factory_max > 0) {
+              gameData.land_state[nextLandMovement].factory_max >
+                  0) { // TODO: Fix Enemy Cache offset perhaps?
             hasEnemyBlockers = true;
             nextLandMovement = landMove1DestinationAlt[i][actualDestination];
             break;
           }
         }
         if (hasEnemyBlockers && nextLandMovementAlt != nextLandMovement) {
-          // check if the next sea movement has enemy ships
+          // check if the next sea movement has EnemyBlockers
           hasEnemyBlockers = false;
           for (int k = 0; k < cache.enemies_count; k++) {
             if (cache.units_land_player_total[nextLandMovement]
                                              [cache.enemies[k]] > 0 ||
-                gameData.land_state[nextLandMovement].factory_max > 0) {
+                gameData.land_state[nextLandMovement].factory_max >
+                    0) { // TODO: Fix Enemy Cache offset perhaps?
               hasEnemyBlockers = true;
               break;
             }
@@ -1215,7 +1235,7 @@ void move_artillery() {
       // what is the actual destination that is a max of 1 land move away?
       uint8_t actualDestination = landMove1Destination[i][user_input];
 
-      if (i == actualDestination) {
+      if (i == actualDestination || actualDestination == INFINITY) {
         cache.units_land_ptr[i][ARTILLERY][0]++;
         cache.units_land_ptr[i][ARTILLERY][ARTILLERY_MOVES_MAX]--;
         continue;
@@ -1277,7 +1297,7 @@ void move_infantry() {
       // what is the actual destination that is a max of 1 land move away?
       uint8_t actualDestination = landMove1Destination[i][user_input];
 
-      if (i == actualDestination) {
+      if (i == actualDestination || actualDestination == INFINITY) {
         cache.units_land_ptr[i][INFANTRY][0]++;
         cache.units_land_ptr[i][INFANTRY][INFANTRY_MOVES_MAX]--;
         continue;
@@ -1323,11 +1343,15 @@ void move_infantry() {
   }
 }
 void move_transport_units() {
-  for (int i = TRANS_1I; i <= TRANS_1I_1T; i++) {
+  for (int i = TRANS_EMPTY; i <= TRANS_1I_1T; i++) {
+    int max_index = STATES_MOVE_SEA[i] - STATES_STAGING[i];
+    int done_moving = STATES_UNLOADING[i];
+    int min_index = STATES_UNLOADING[i] + 1;
+    // TODO CHECKPOINT
     for (int j = 0; j < SEAS_COUNT; j++) {
-      for (int k = 2; k < 4; k++) {
-        // TODO CHECKPOINT
-        while (cache.units_sea_ptr[j][i][MAX_MOVE_SEA[i] + 1] > 0) {
+      for (int k = max_index; k >= min_index; k--) {
+        int moves_remaining = k - STATES_UNLOADING[i];
+        while (cache.units_sea_ptr[j][i][k] > 0) {
           if (player.is_human) {
             setPrintableStatus();
             strcat(printableGameStatus, "Moving ");
@@ -1341,12 +1365,17 @@ void move_transport_units() {
             // AI
             getAIInput();
           }
-          // what is the actual destination that is a max of 2 sea moves away?
-          uint8_t actualDestination =
-              seaMove2Destination[canal_state][j][user_input];
-          if (j == actualDestination) {
-            cache.units_sea_ptr[actualDestination][i][MAX_MOVE_SEA[i]]++;
-            cache.units_sea_ptr[j][i][MAX_MOVE_SEA[i] + 1]--;
+          uint8_t actualDestination;
+          if (moves_remaining == 2) {
+            // what is the actual destination that is a max of 2 sea moves away?
+            actualDestination = seaMove2Destination[canal_state][j][user_input];
+          } else {
+            // what is the actual destination that is a max of 1 sea moves away?
+            actualDestination = seaMove1Destination[canal_state][j][user_input];
+          }
+          if (j == actualDestination || actualDestination == INFINITY) {
+            cache.units_sea_ptr[actualDestination][i][done_moving]++;
+            cache.units_sea_ptr[j][i][k]--;
             continue;
           }
           // what is the actual sea distance between the two?
@@ -1359,9 +1388,10 @@ void move_transport_units() {
             uint8_t nextSeaMovementAlt = nextSeaMovement;
             // check if the next sea movement has enemy ships
             bool hasEnemyShips = false;
-            for (int k = 0; k < cache.enemies_count; k++) {
+            for (int l = 0; l < cache.enemies_count; l++) {
               if (cache.units_sea_blockade_total[nextSeaMovement]
-                                                [cache.enemies[k]] > 0) {
+                                                [cache.enemies[l]] >
+                  0) { // TODO: Fix Enemy Cache offset perhaps?
                 hasEnemyShips = true;
                 nextSeaMovement =
                     seaMove1DestinationAlt[canal_state][j][actualDestination];
@@ -1371,9 +1401,10 @@ void move_transport_units() {
             if (hasEnemyShips && nextSeaMovementAlt != nextSeaMovement) {
               // check if the next sea movement has enemy ships
               hasEnemyShips = false;
-              for (int k = 0; k < cache.enemies_count; k++) {
+              for (int l = 0; l < cache.enemies_count; l++) {
                 if (cache.units_sea_blockade_total[nextSeaMovement]
-                                                  [cache.enemies[k]] > 0) {
+                                                  [cache.enemies[l]] >
+                    0) { // TODO: Fix Enemy Cache offset perhaps?
                   hasEnemyShips = true;
                   break;
                 }
@@ -1385,12 +1416,16 @@ void move_transport_units() {
               actualDestination = nextSeaMovement;
             }
           }
-          cache.units_sea_ptr[actualDestination][i]
-                             [MAX_MOVE_SEA[i] - seaDistance]++;
+          if (actualDestination < LANDS_COUNT) {
+            cache.units_sea_ptr[j][i][done_moving]++;
+            cache.units_sea_ptr[j][i][k]--;
+            continue;
+          }
+          cache.units_sea_ptr[actualDestination][i][done_moving]++;
           // cache.units_sea_type_total[actualDestination][i]++;
           cache.units_sea_player_total[actualDestination][0]++;
           cache.units_sea_grand_total[actualDestination]++;
-          cache.units_sea_ptr[actualDestination][i][MAX_MOVE_SEA[i] + 1]--;
+          cache.units_sea_ptr[actualDestination][i][k]--;
           // cache.units_sea_type_total[j][i]--;
           cache.units_sea_player_total[j][0]--;
           cache.units_sea_grand_total[j]--;
@@ -1399,7 +1434,93 @@ void move_transport_units() {
     }
   }
 }
-void move_sea_units() {}
+void move_subs() {
+  // for (int i = TRANS_EMPTY; i <= TRANS_1I_1T; i++) {
+  int i = SUBMARINES;
+  int max_index2 = 2;
+  int done_moving2 = 1;
+  for (int j = 0; j < SEAS_COUNT; j++) {
+    int k2 = 2;
+    int moves_remaining2 = 2;
+    while (cache.units_sea_ptr[j][i][SUB_UNMOVED] > 0) {
+      if (player.is_human) {
+        setPrintableStatus();
+        strcat(printableGameStatus, "Moving ");
+        strcat(printableGameStatus, NAMES_UNIT_SEA[i]);
+        strcat(printableGameStatus, " From: ");
+        strcat(printableGameStatus, SEAS[j].name);
+        strcat(printableGameStatus, " To: ");
+        printf("%s\n", printableGameStatus);
+        getUserInput();
+      } else {
+        // AI
+        getAIInput();
+      }
+      uint8_t actualDestination;
+      // what is the actual destination that is a max of 2 sea moves away?
+      actualDestination = seaMove2Destination[canal_state][j][user_input];
+
+      if (j == actualDestination || actualDestination == INFINITY) {
+        cache.units_sea_ptr[actualDestination][i][SUB_DONE_MOVING]++;
+        cache.units_sea_ptr[j][i][SUB_UNMOVED]--;
+        continue;
+      }
+      // what is the actual sea distance between the two?
+      uint8_t seaDistance =
+          total_sea_distance[canal_state][j][actualDestination];
+      // if the distance is 2, is the primary path blocked?
+      if (seaDistance == 2) {
+        uint8_t nextSeaMovement =
+            seaMove1Destination[canal_state][j][actualDestination];
+        uint8_t nextSeaMovementAlt = nextSeaMovement;
+        // check if the next sea movement has enemy ships
+        bool hasEnemyShips = false;
+        for (int l = 0; l < cache.enemies_count; l++) {
+          if (gameData.units_sea[nextSeaMovement]
+                  .other_units[cache.enemies[l]][DESTROYERS] >
+              0) { // TODO: Fix Enemy Cache offset perhaps?
+            hasEnemyShips = true;
+            nextSeaMovement =
+                seaMove1DestinationAlt[canal_state][j][actualDestination];
+            break;
+          }
+        }
+        if (hasEnemyShips && nextSeaMovementAlt != nextSeaMovement) {
+          // check if the next sea movement has enemy ships
+          hasEnemyShips = false;
+          for (int l = 0; l < cache.enemies_count; l++) {
+            if (gameData.units_sea[nextSeaMovement]
+                    .other_units[cache.enemies[l]][DESTROYERS] >
+                0) { // TODO: Fix Enemy Cache offset perhaps?
+              hasEnemyShips = true;
+              break;
+            }
+          }
+        }
+        // if both paths are blocked, or dest is land
+        // then move 1 space closer (where enemies are)
+        if (hasEnemyShips || actualDestination < LANDS_COUNT) {
+          actualDestination = nextSeaMovement;
+        }
+      }
+      if (actualDestination < LANDS_COUNT) {
+        cache.units_sea_ptr[j][i][SUB_DONE_MOVING]++;
+        cache.units_sea_ptr[j][i][SUB_UNMOVED]--;
+        continue;
+      }
+      cache.units_sea_ptr[actualDestination][i][SUB_DONE_MOVING]++;
+      // cache.units_sea_type_total[actualDestination][i]++;
+      cache.units_sea_player_total[actualDestination][0]++;
+      cache.units_sea_grand_total[actualDestination]++;
+      cache.units_sea_ptr[actualDestination][i][SUB_UNMOVED]--;
+      // cache.units_sea_type_total[j][i]--;
+      cache.units_sea_player_total[j][0]--;
+      cache.units_sea_grand_total[j]--;
+    }
+  }
+}
+}
+void move_destroyers_battleships() {}
 void resolve_sea_battles() {}
 void unload_transports() {}
 void bomb_factories() {}
