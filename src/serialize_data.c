@@ -115,7 +115,7 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   if (cJSON_IsBool(conquered)) {
     land_state->conquered = cJSON_IsTrue(conquered);
   }
-  set_land_state_field(json, "owner_index", &land_state->owner_index);
+  set_land_state_field(json, "owner_index", &land_state->owner_idx);
   set_land_state_field(json, "builds_left", &land_state->builds_left);
   set_land_state_field(json, "factory_hp", &land_state->factory_hp);
   set_land_state_field(json, "factory_max", &land_state->factory_max);
@@ -291,7 +291,7 @@ void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
 cJSON* serialize_land_state_to_json(LandState* land_state) {
   cJSON* json = cJSON_CreateObject();
 
-  cJSON_AddNumberToObject(json, "owner_index", land_state->owner_index);
+  cJSON_AddNumberToObject(json, "owner_index", land_state->owner_idx);
   cJSON_AddNumberToObject(json, "builds_left", land_state->builds_left);
   cJSON_AddNumberToObject(json, "factory_hp", land_state->factory_hp);
   cJSON_AddNumberToObject(json, "factory_max", land_state->factory_max);
