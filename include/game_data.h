@@ -121,6 +121,7 @@ void move_subs();
 void move_destroyers_battleships();
 void move_fighter_units();
 void move_bomber_units();
+void move_land_unit_type(uint8_t unit_type);
 void move_tanks();
 void move_artillery();
 void move_infantry();

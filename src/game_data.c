@@ -60,6 +60,7 @@ bool is_allied[PLAYERS_COUNT];
 char* LAND_NAMES[LANDS_COUNT] = {0};
 char* SEA_NAMES[SEAS_COUNT] = {0};
 char* AIR_NAMES[AIRS_COUNT] = {0};
+uint8_t LAND_VALUE[LANDS_COUNT] = {0};
 uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {INFINITY};
 uint8_t AIR_CONN_COUNT[AIRS_COUNT] = {0};
 uint8_t AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {0};
@@ -95,7 +96,8 @@ uint8_t AIR_WITHIN_5_MOVES_COUNT[AIRS_COUNT] = {0};
 uint8_t AIR_WITHIN_6_MOVES[AIRS_COUNT][AIRS_COUNT - 1] = {0};
 uint8_t AIR_WITHIN_6_MOVES_COUNT[AIRS_COUNT] = {0};
 uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {INFINITY};
-uint8_t sea_dist[SEAS_COUNT][AIRS_COUNT] = {INFINITY};
+uint8_t sea_dist[SEAS_COUNT][AIRS_COUNT] = {
+    INFINITY}; // TODO optimize sea_count rather than air_count
 uint8_t SEA_PATH[SEA_MOVE_SIZE][CANAL_STATES][SEAS_COUNT][AIRS_COUNT] = {INFINITY};
 uint8_t SEA_PATH_ALT[CANAL_STATES][SEAS_COUNT][AIRS_COUNT] = {INFINITY};
 uint8_t sea_path1[SEAS_COUNT][AIRS_COUNT] = {INFINITY};
@@ -121,7 +123,7 @@ uint8_t owner_idx[LANDS_COUNT];
 uint8_t builds_left[LANDS_COUNT];
 uint8_t factory_max[LANDS_COUNT];
 uint8_t factory_hp[LANDS_COUNT];
-uint8_t no_airstrip[LANDS_COUNT];
+bool no_airstrip[LANDS_COUNT];
 uint8_t other_land_units[LANDS_COUNT][PLAYERS_COUNT][LAND_UNIT_TYPES];
 uint8_t other_sea_units[SEAS_COUNT][PLAYERS_COUNT][SEA_UNIT_TYPES - 1];
 bool transports_with_large_cargo_space[SEAS_COUNT];
@@ -197,12 +199,12 @@ void initializeGameData() {
 void generate_total_land_distance() {
   // Initialize the total_land_distance array
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-
+    LAND_NAMES[land_idx] = LANDS[land_idx].name;
+    LAND_VALUE[land_idx] = LANDS[land_idx].land_value;
     LAND_TO_LAND_COUNT[land_idx] = LANDS[land_idx].land_conn_count;
     for (int conn_idx = 0; conn_idx < LANDS[land_idx].land_conn_count; conn_idx++) {
       LAND_TO_LAND_CONN[land_idx][conn_idx] = LANDS[land_idx].connected_land_index[conn_idx];
     }
-    LAND_NAMES[land_idx] = LANDS[land_idx].name;
 
     for (int j = 0; j < AIRS_COUNT; j++) {
       if (land_idx != j) {
@@ -526,85 +528,6 @@ void generate_random_numbers() {
     RANDOM_NUMBERS[i] = rand() % 256;
   }
 }
-void refresh_canBomberLandHere() {
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    // is allied owned and not recently conquered?
-    canBomberLandHere[land_idx] =
-        (is_allied[data.land_state[land_idx].owner_idx] && !data.land_state[land_idx].no_airstrip);
-  }
-}
-void refresh_canBomberLandIn1Move() {
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    canBomberLandIn1Move[land_idx] = false;
-    for (int conn_idx = 0; conn_idx < LANDS[land_idx].land_conn_count; conn_idx++) {
-      if (canBomberLandHere[LANDS[land_idx].connected_land_index[conn_idx]]) {
-        canBomberLandIn1Move[land_idx] = true;
-        break;
-      }
-    }
-  }
-  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    canBomberLandIn1Move[LANDS_COUNT + sea_idx] = false;
-    for (int conn_idx = 0; conn_idx < SEAS[sea_idx].land_conn_count; conn_idx++) {
-      if (canBomberLandHere[SEAS[sea_idx].connected_land_index[conn_idx]]) {
-        canBomberLandIn1Move[LANDS_COUNT + sea_idx] = true;
-        break;
-      }
-    }
-  }
-}
-void refresh_canBomberLandIn2Moves() {
-  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
-    canBomberLandIn2Moves[air_idx] = false;
-    for (int conn_idx = 0; conn_idx < AIR_CONN_COUNT[air_idx]; conn_idx++) {
-      if (canBomberLandIn1Move[AIR_CONNECTIONS[air_idx][conn_idx]]) {
-        canBomberLandIn2Moves[air_idx] = true;
-        break;
-      }
-    }
-  }
-}
-void refresh_canFighterLandHere() {
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] =
-        (is_allied[data.land_state[land_idx].owner_idx] && !data.land_state[land_idx].no_airstrip);
-    // check for possiblity to build carrier under fighter
-    if (data.land_state[land_idx].factory_max > 0 &&
-        data.land_state[land_idx].owner_idx == current_player_index) {
-      for (int conn_idx = 0; conn_idx < LANDS[land_idx].sea_conn_count; conn_idx++) {
-        canFighterLandHere[LANDS_COUNT + LANDS[land_idx].connected_sea_index[conn_idx]] = true;
-      }
-    }
-  }
-  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    if (allied_carriers[sea_idx] > 0) {
-      canFighterLandHere[sea_idx] = true;
-      // if player owns these carriers, then landing area is 2 spaces away
-      if (units_sea_ptr[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
-        for (int conn_idx = 0; conn_idx < SEAS[sea_idx].sea_conn_count; conn_idx++) {
-          uint8_t connected_sea1 = SEAS[sea_idx].connected_sea_index[conn_idx];
-          canFighterLandHere[LANDS_COUNT + connected_sea1] = true;
-          for (int conn2_idx = 0; conn2_idx < SEAS[connected_sea1].sea_conn_count; conn2_idx++) {
-            canFighterLandHere[LANDS_COUNT + SEAS[connected_sea1].connected_sea_index[conn2_idx]] =
-                true;
-          }
-        }
-      }
-    }
-  }
-}
-void refresh_canFighterLandIn1Move() {
-  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
-    canFighterLandIn1Move[air_idx] = false;
-    for (int conn_idx = 0; conn_idx < AIR_CONN_COUNT[air_idx]; conn_idx++) {
-      if (canFighterLandHere[AIR_CONNECTIONS[air_idx][conn_idx]]) {
-        canFighterLandIn1Move[air_idx] = true;
-        break;
-      }
-    }
-  }
-}
 void refresh_cache() {
   for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     enemies_count = 0;
@@ -680,12 +603,17 @@ void refresh_cache() {
       }
     }
     transports_with_large_cargo_space[sea_idx] =
-        memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_large_cargo_space,
-               (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != 0;
+        memchr(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], 0,
+               (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != NULL;
+    // memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_large_cargo_space,
+    //        (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != 0;
     transports_with_small_cargo_space[sea_idx] =
-        memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_small_cargo_space,
-               (TRANS_EMPTY_STATES + TRANS_1I_STATES + TRANS_1A_STATES + TRANS_1T_STATES) *
-                   sizeof(uint8_t)) != 0;
+        transports_with_large_cargo_space[sea_idx] ||
+        memchr(&units_sea_ptr[sea_idx][TRANS_1A][0], 0,
+               (TRANS_1A_STATES + TRANS_1T_STATES) * sizeof(uint8_t)) != NULL;
+    // memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_small_cargo_space,
+    //        (TRANS_EMPTY_STATES + TRANS_1I_STATES + TRANS_1A_STATES + TRANS_1T_STATES) *
+    //            sizeof(uint8_t)) != 0;
 
     units_sea_grand_total[sea_idx] = units_sea_player_total[sea_idx][0];
     for (int player_idx = 0; player_idx < PLAYERS_COUNT - 1; player_idx++) {
@@ -711,6 +639,82 @@ void refresh_cache() {
   memcpy(sea_path2, SEA_PATH[1][canal_state], sizeof(sea_path2));
   memcpy(sea_path_alt1, SEA_PATH_ALT[canal_state], sizeof(sea_path_alt1));
 }
+void refresh_canBomberLandHere() {
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    // is allied owned and not recently conquered?
+    canBomberLandHere[land_idx] = (is_allied[owner_idx[land_idx]] && !no_airstrip[land_idx]);
+  }
+}
+void refresh_canBomberLandIn1Move() {
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    canBomberLandIn1Move[land_idx] = false;
+    for (int conn_idx = 0; conn_idx < LANDS[land_idx].land_conn_count; conn_idx++) {
+      if (canBomberLandHere[LANDS[land_idx].connected_land_index[conn_idx]]) {
+        canBomberLandIn1Move[land_idx] = true;
+        break;
+      }
+    }
+  }
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    canBomberLandIn1Move[LANDS_COUNT + sea_idx] = false;
+    for (int conn_idx = 0; conn_idx < SEAS[sea_idx].land_conn_count; conn_idx++) {
+      if (canBomberLandHere[SEAS[sea_idx].connected_land_index[conn_idx]]) {
+        canBomberLandIn1Move[LANDS_COUNT + sea_idx] = true;
+        break;
+      }
+    }
+  }
+}
+void refresh_canBomberLandIn2Moves() {
+  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
+    canBomberLandIn2Moves[air_idx] = false;
+    for (int conn_idx = 0; conn_idx < AIR_CONN_COUNT[air_idx]; conn_idx++) {
+      if (canBomberLandIn1Move[AIR_CONNECTIONS[air_idx][conn_idx]]) {
+        canBomberLandIn2Moves[air_idx] = true;
+        break;
+      }
+    }
+  }
+}
+void refresh_canFighterLandHere() {
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    // is allied owned and not recently conquered?
+    canFighterLandHere[land_idx] = (is_allied[owner_idx[land_idx]] && !no_airstrip[land_idx]);
+    // check for possiblity to build carrier under fighter
+    if (factory_max[land_idx] > 0 && owner_idx[land_idx] == current_player_index) {
+      for (int conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[land_idx]; conn_idx++) {
+        canFighterLandHere[LANDS_COUNT + LAND_TO_SEA_CONN[land_idx][conn_idx]] = true;
+      }
+    }
+  }
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    if (allied_carriers[sea_idx] > 0) {
+      canFighterLandHere[sea_idx] = true;
+      // if player owns these carriers, then landing area is 2 spaces away
+      if (units_sea_ptr[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
+        for (int conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[sea_idx]; conn_idx++) {
+          uint8_t connected_sea1 = SEA_TO_SEA_CONN[sea_idx][conn_idx];
+          canFighterLandHere[LANDS_COUNT + connected_sea1] = true;
+          for (int conn2_idx = 0; conn2_idx < SEA_TO_SEA_COUNT[connected_sea1]; conn2_idx++) {
+            canFighterLandHere[LANDS_COUNT + SEA_TO_SEA_CONN[connected_sea1][conn2_idx]] = true;
+          }
+        }
+      }
+    }
+  }
+}
+void refresh_canFighterLandIn1Move() {
+  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
+    canFighterLandIn1Move[air_idx] = false;
+    for (int conn_idx = 0; conn_idx < AIR_CONN_COUNT[air_idx]; conn_idx++) {
+      if (canFighterLandHere[AIR_CONNECTIONS[air_idx][conn_idx]]) {
+        canFighterLandIn1Move[air_idx] = true;
+        break;
+      }
+    }
+  }
+}
+
 void setPrintableStatus() {
   strcat(printableGameStatus, current_player_color);
   strcat(printableGameStatus, current_player_name);
@@ -937,7 +941,7 @@ void add_valid_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_mov
   (*valid_moves_count)++;
 }
 
-bool is_path_blocked(uint8_t src_land, uint8_t dst_land) {
+bool is_land_path_blocked(uint8_t src_land, uint8_t dst_land) {
   uint8_t nextLandMovement = land_path1[starting_land][dst_land];
   if (factory_max[nextLandMovement] > 0) {
     return true;
@@ -965,6 +969,162 @@ void clear_move_history() {
   memset(source_territories_count, 0, sizeof(source_territories_count));
 }
 
+uint8_t get_user_input(uint8_t unit_type, uint8_t src_air, uint8_t* valid_moves,
+                       uint8_t valid_moves_count) {
+  uint8_t user_input;
+  if (valid_moves_count == 1) {
+    return valid_moves[0];
+  }
+  if (current_player_is_human) {
+    setPrintableStatus();
+    strcat(printableGameStatus, "Moving ");
+    if (src_air < LANDS_COUNT) {
+      strcat(printableGameStatus, NAMES_UNIT_LAND[unit_type]);
+      strcat(printableGameStatus, " From: ");
+      strcat(printableGameStatus, LAND_NAMES[src_air]);
+    } else {
+      strcat(printableGameStatus, NAMES_UNIT_SEA[unit_type]);
+      strcat(printableGameStatus, " From: ");
+      strcat(printableGameStatus, SEA_NAMES[src_air - LANDS_COUNT]);
+    }
+    strcat(printableGameStatus, " Valid Moves: ");
+    for (int i = 0; i < valid_moves_count; i++) {
+      sprintf(threeCharStr, "%d ", valid_moves[i]);
+      strcat(printableGameStatus, threeCharStr);
+    }
+    printf("%s\n", printableGameStatus);
+    return getUserInput(valid_moves, valid_moves_count);
+  }
+  return getAIInput(valid_moves, valid_moves_count);
+}
+
+void update_move_history(uint8_t user_input, uint8_t src_air, uint8_t* valid_moves,
+                         uint8_t valid_moves_count) {
+  source_territories[user_input][source_territories_count[user_input]] = src_air;
+  source_territories_count[user_input]++;
+  for (int i = valid_moves_count - 1; i >= 0; i--) {
+    if (valid_moves[i] == user_input) {
+      break;
+    } else {
+      skipped_territories[src_air][valid_moves[i]] = true;
+      valid_moves_count--;
+    }
+  }
+}
+
+bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea) {
+  uint8_t trans_type = TRANS_1T;
+  if (UNIT_WEIGHTS[unit_type] > 2) {
+    trans_type = TRANS_1I;
+  }
+  while (trans_type >= TRANS_EMPTY) {
+    uint8_t trans_state = STATES_MOVE_SEA[trans_type] - STATES_STAGING[trans_type];
+    while (trans_state >= STATES_UNLOADING[trans_type]) {
+      if (units_sea_ptr[dst_sea][trans_type][trans_state] > 0) {
+        units_sea_ptr[dst_sea][LOAD_UNIT_TYPE[unit_type][trans_type]][trans_state]++;
+        units_sea_player_total[dst_sea][0]++;
+        units_sea_grand_total[dst_sea]++;
+        units_sea_ptr[dst_sea][trans_type][trans_state]--;
+        units_land_player_total[src_land][0]--;
+        units_land_grand_total[src_land]--;
+        units_land_ptr[src_land][unit_type][trans_type]--;
+        transports_with_large_cargo_space[dst_sea] =
+            memchr(&units_sea_ptr[dst_sea][TRANS_EMPTY][0], 0,
+                   (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != NULL;
+        // memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_large_cargo_space,
+        //        (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != 0;
+        transports_with_small_cargo_space[dst_sea] =
+            transports_with_large_cargo_space[dst_sea] ||
+            memchr(&units_sea_ptr[dst_sea][TRANS_1A][0], 0,
+                   (TRANS_1A_STATES + TRANS_1T_STATES) * sizeof(uint8_t)) != NULL;
+        // memcmp(&units_sea_ptr[sea_idx][TRANS_EMPTY][0], zeros_transports_with_small_cargo_space,
+        //        (TRANS_EMPTY_STATES + TRANS_1I_STATES + TRANS_1A_STATES + TRANS_1T_STATES) *
+        //            sizeof(uint8_t)) != 0;
+        return true;
+      }
+      trans_state--;
+    }
+    trans_type--;
+  }
+  printf("Error: Failed to load tank onto transport\n");
+}
+
+void add_valid_sea_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_sea,
+                         uint8_t moves_remaining, uint8_t unit_type) {
+  if (moves_remaining == 2) {
+    // check for moving from sea to sea (two moves away)
+    for (uint8_t sea_idx = 0; sea_idx < SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
+         sea_idx++) {
+      uint8_t dst_sea =
+          SEAS_WITHIN_2_MOVES[canal_state][src_sea][sea_idx]; // TODO optimize canal_state
+      if (is_sea_path_blocked(src_sea, dst_sea)) {
+        continue;
+      }
+      add_valid_sea_move_if_history_allows_2(valid_moves, valid_moves_count, dst_sea + LANDS_COUNT,
+                                             src_sea);
+    }
+  } else {
+    // check for moving from sea to sea (one move away)
+    for (uint8_t sea_idx = 0; sea_idx < SEAS_WITHIN_1_MOVE_COUNT[canal_state][src_sea]; sea_idx++) {
+      uint8_t dst_sea = SEAS_WITHIN_1_MOVE[canal_state][src_sea][sea_idx];
+      add_valid_sea_move_if_history_allows_1(valid_moves, valid_moves_count, dst_sea + LANDS_COUNT,
+                                             src_sea);
+    }
+  }
+}
+
+void add_valid_land_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_land,
+                          uint8_t moves_remaining, uint8_t unit_type) {
+  if (moves_remaining == 2) {
+    // check for moving from land to land (two moves away)
+    for (int land_idx = 0; land_idx < LANDS_WITHIN_2_MOVES_COUNT[src_land]; land_idx++) {
+      uint8_t dst_land = LANDS_WITHIN_2_MOVES[src_land][land_idx];
+      if (LAND_DIST[src_land][dst_land] == 1) {
+        add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_land, src_land);
+        continue;
+      }
+      if (is_land_path_blocked(src_land, dst_land)) {
+        continue;
+      }
+      add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_land, src_land);
+    }
+    // check for moving from land to sea (two moves away)
+    for (int sea_idx = 0; sea_idx < LOAD_WITHIN_2_MOVES_COUNT[src_land]; sea_idx++) {
+      uint8_t dst_sea = LOAD_WITHIN_2_MOVES[src_land][sea_idx];
+      if (!transports_with_large_cargo_space[dst_sea]) { // assume large, only tanks move 2
+        continue;
+      }
+      uint8_t dst_air = dst_sea + LANDS_COUNT;
+      if (LAND_DIST[src_land][dst_air] == 1) {
+        add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_air, src_land);
+        continue;
+      }
+      if (is_land_path_blocked(src_land, dst_air)) {
+        continue;
+      }
+      add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_air, src_land);
+    }
+  } else {
+    // check for moving from land to land (one move away)
+    for (int land_idx = 0; land_idx < LANDS_WITHIN_1_MOVE_COUNT[src_land]; land_idx++) {
+      uint8_t dst_land = LANDS_WITHIN_1_MOVE[src_land][land_idx];
+      add_valid_move_if_history_allows_1(valid_moves, valid_moves_count, dst_land, src_land);
+    }
+    // check for moving from land to sea (one move away)
+    for (int sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[src_land]; sea_idx++) {
+      uint8_t dst_sea = LOAD_WITHIN_1_MOVE[src_land][sea_idx];
+      if (!transports_with_small_cargo_space[dst_sea]) {
+        continue;
+      }
+      if (UNIT_WEIGHTS[unit_type] > 2 && !transports_with_large_cargo_space[dst_sea]) {
+        continue;
+      }
+      add_valid_move_if_history_allows_1(valid_moves, valid_moves_count, dst_sea + LANDS_COUNT,
+                                         src_land);
+    }
+  }
+}
+
 void stage_transport_units() {
   // loop through transports with "3" moves remaining (that aren't full),
   // start at sea 0 to n
@@ -972,79 +1132,36 @@ void stage_transport_units() {
   for (int trans_type = TRANS_EMPTY; trans_type <= TRANS_1T; trans_type++) {
     uint8_t staging_state = STATES_MOVE_SEA[trans_type] - 1;
     uint8_t done_staging = staging_state - 1;
+    clear_move_history();
     // TODO CHECKPOINT
-    for (int starting_sea = 0; starting_sea < SEAS_COUNT; starting_sea++) {
-      while (units_sea_ptr[starting_sea][trans_type][staging_state] > 0) {
-        uint8_t user_input;
-        if (current_player_is_human) {
-          setPrintableStatus();
-          strcat(printableGameStatus, "Staging ");
-          strcat(printableGameStatus, NAMES_UNIT_SEA[trans_type]);
-          strcat(printableGameStatus, " From: ");
-          strcat(printableGameStatus, SEA_NAMES[starting_sea]);
-          strcat(printableGameStatus, " To: ");
-          printf("%s\n", printableGameStatus);
-          user_input = getUserInput();
-        } else {
-          // AI
-          user_input = getAIInput();
-        }
-        // what is the actual destination that is a max of 2 sea moves away?
-        uint8_t sea_destination = sea_path2[starting_sea][user_input];
-        if (starting_sea == sea_destination || sea_destination == INFINITY) {
-          units_sea_ptr[starting_sea][trans_type][done_staging]++;
-          units_sea_ptr[starting_sea][trans_type][staging_state]--;
+    for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+      uint8_t valid_moves[AIRS_COUNT];
+      valid_moves[0] = src_sea;
+      uint8_t valid_moves_count = 1;
+      add_valid_sea_moves(valid_moves, &valid_moves_count, src_sea, 2, trans_type);
+      while (units_sea_ptr[src_sea][trans_type][staging_state] > 0) {
+        uint8_t src_air = src_sea + LANDS_COUNT;
+        uint8_t dst_air = get_user_input(trans_type, src_air, valid_moves, valid_moves_count);
+        update_move_history(dst_air, src_sea, valid_moves, valid_moves_count);
+        if (src_air == dst_air) {
+          units_sea_ptr[src_sea][trans_type][done_staging]++;
+          units_sea_ptr[src_sea][trans_type][staging_state]--;
           continue;
         }
-        // what is the actual sea distance between the two?
-        uint8_t seaDistance = sea_dist[starting_sea][sea_destination];
-        // if the distance is 2, is the primary path blocked?
-        if (seaDistance == 2) {
-          uint8_t nextSeaMovement = sea_path1[starting_sea][sea_destination];
-          uint8_t nextSeaMovementAlt = nextSeaMovement;
-          // check if the next sea movement has enemy ships
-          bool hasEnemyShips = false;
-          for (int enemy_index = 0; enemy_index < enemies_count; enemy_index++) {
-            if (units_sea_blockade_total[nextSeaMovement][enemies[enemy_index]] > 0) {
-              hasEnemyShips = true;
-              nextSeaMovement = sea_path_alt1[starting_sea][sea_destination];
-              break;
-            }
-          }
-          if (hasEnemyShips && nextSeaMovementAlt != nextSeaMovement) {
-            // check if the next sea movement has enemy ships
-            hasEnemyShips = false;
-            for (int enemy_index = 0; enemy_index < enemies_count; enemy_index++) {
-              if (units_sea_blockade_total[nextSeaMovement][enemies[enemy_index]] > 0) {
-                hasEnemyShips = true;
-                break;
-              }
-            }
-          }
-          // if both paths are blocked, or dest is land
-          // then move 1 space closer (where enemies are)
-          if (hasEnemyShips || sea_destination < LANDS_COUNT) {
-            sea_destination = nextSeaMovement;
-          }
-        }
-        if (sea_destination < LANDS_COUNT) {
-          units_sea_ptr[starting_sea][trans_type][done_staging]++;
-          units_sea_ptr[starting_sea][trans_type][staging_state]--;
-          continue;
-        }
-        units_sea_ptr[sea_destination][trans_type][done_staging - seaDistance]++;
-        // units_sea_type_total[actualDestination][i]++;
-        units_sea_player_total[sea_destination][0]++;
-        units_sea_grand_total[sea_destination]++;
-        units_sea_ptr[sea_destination][trans_type][staging_state]--;
-        // units_sea_type_total[j][i]--;
-        units_sea_player_total[starting_sea][0]--;
-        units_sea_grand_total[starting_sea]--;
+        uint8_t seaDistance = sea_dist[src_sea][dst_air];
+        uint8_t dst_sea = dst_air - LANDS_COUNT;
+        units_sea_ptr[dst_sea][trans_type][done_staging - seaDistance]++;
+        units_sea_player_total[dst_sea][0]++;
+        units_sea_grand_total[dst_sea]++;
+        units_sea_ptr[dst_sea][trans_type][staging_state]--;
+        units_sea_player_total[src_sea][0]--;
+        units_sea_grand_total[src_sea]--;
       }
     }
   }
 }
 void move_fighter_units() {
+  clear_move_history();
   // check if any fighters have full moves remaining
   uint8_t* ptr = &units_air_ptr[0][FIGHTERS][FIGHTER_MOVES_MAX];
   if (memchr(ptr, 1, AIRS_COUNT * sizeof(uint8_t)) == NULL) {
@@ -1199,149 +1316,6 @@ void move_bomber_units() {
   }
 }
 
-uint8_t get_user_input(uint8_t unit_type, uint8_t src_land, uint8_t* valid_moves,
-                       uint8_t valid_moves_count) {
-  uint8_t user_input;
-  if (valid_moves_count == 1) {
-    return valid_moves[0];
-  }
-  if (current_player_is_human) {
-    setPrintableStatus();
-    strcat(printableGameStatus, "Moving ");
-    strcat(printableGameStatus, NAMES_UNIT_LAND[unit_type]);
-    strcat(printableGameStatus, " From: ");
-    strcat(printableGameStatus, LAND_NAMES[src_land]);
-    strcat(printableGameStatus, " Valid Moves: ");
-    for (int i = 0; i < valid_moves_count; i++) {
-      sprintf(threeCharStr, "%d ", valid_moves[i]);
-      strcat(printableGameStatus, threeCharStr);
-    }
-    printf("%s\n", printableGameStatus);
-    return getUserInput(valid_moves, valid_moves_count);
-  }
-  return getAIInput(valid_moves, valid_moves_count);
-}
-
-void update_move_history(uint8_t user_input, uint8_t src_land, uint8_t* valid_moves,
-                         uint8_t valid_moves_count) {
-  source_territories[user_input][source_territories_count[user_input]] = src_land;
-  source_territories_count[user_input]++;
-  for (int i = valid_moves_count - 1; i >= 0; i--) {
-    if (valid_moves[i] == user_input) {
-      break;
-    } else {
-      skipped_territories[src_land][valid_moves[i]] = true;
-      valid_moves_count--;
-    }
-  }
-}
-
-bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea) {
-  uint8_t trans_type = TRANS_1T;
-  if (UNIT_WEIGHTS[unit_type] > 2) {
-    trans_type = TRANS_1I;
-  }
-  while (trans_type >= TRANS_EMPTY) {
-    uint8_t trans_state = STATES_MOVE_SEA[trans_type] - STATES_STAGING[trans_type];
-    while (trans_state >= STATES_UNLOADING[trans_type]) {
-      if (units_sea_ptr[dst_sea][trans_type][trans_state] > 0) {
-        units_sea_ptr[dst_sea][LOAD_UNIT_TYPE[unit_type][trans_type]][trans_state]++;
-        units_sea_player_total[dst_sea][0]++;
-        units_sea_grand_total[dst_sea]++;
-        units_sea_ptr[dst_sea][trans_type][trans_state]--;
-        units_land_player_total[src_land][0]--;
-        units_land_grand_total[src_land]--;
-        units_land_ptr[src_land][unit_type][trans_type]--;
-        transports_with_large_cargo_space[dst_sea] =
-            memcmp(&units_sea_ptr[dst_sea][TRANS_EMPTY][0], zeros_transports_with_large_cargo_space,
-                   (TRANS_EMPTY_STATES + TRANS_1I_STATES) * sizeof(uint8_t)) != 0;
-        transports_with_small_cargo_space[dst_sea] =
-            memcmp(&units_sea_ptr[dst_sea][TRANS_EMPTY][0], zeros_transports_with_small_cargo_space,
-                   (TRANS_EMPTY_STATES + TRANS_1I_STATES + TRANS_1A_STATES + TRANS_1T_STATES) *
-                       sizeof(uint8_t)) != 0;
-        return true;
-      }
-      trans_state--;
-    }
-    trans_type--;
-  }
-  printf("Error: Failed to load tank onto transport\n");
-}
-
-void move_land_unit(uint8_t unit_type, uint8_t src_land, uint8_t user_input,
-                    uint8_t moves_remaining) {
-  uint8_t landDistance = LAND_DIST[src_land][user_input];
-  bool hasEnemyBlockers = false;
-  for (int enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
-    if (units_land_player_total[user_input][enemies[enemy_idx]] > 0) {
-      hasEnemyBlockers = true;
-      break;
-    }
-  }
-  // if the actual destination is not blitzable, then end unit turn
-  if (is_allied[owner_idx[user_input]] || !hasEnemyBlockers) {
-    landDistance = 2;
-  }
-  units_land_ptr[user_input][unit_type][moves_remaining - landDistance]++;
-  units_land_player_total[user_input][0]++;
-  units_land_grand_total[user_input]++;
-  units_land_player_total[src_land][0]--;
-  units_land_grand_total[src_land]--;
-  units_land_ptr[src_land][unit_type][moves_remaining]--;
-}
-
-void add_valid_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_land,
-                     uint8_t moves_remaining, uint8_t unit_type) {
-  if (moves_remaining == 2) {
-    // check for moving from land to land (two moves away)
-    for (int land_idx = 0; land_idx < LANDS_WITHIN_2_MOVES_COUNT[src_land]; land_idx++) {
-      uint8_t dst_land = LANDS_WITHIN_2_MOVES[src_land][land_idx];
-      if (LAND_DIST[src_land][dst_land] == 1) {
-        add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_land, src_land);
-        continue;
-      }
-      if (is_path_blocked(src_land, dst_land)) {
-        continue;
-      }
-      add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_land, src_land);
-    }
-    // check for moving from land to sea (two moves away)
-    for (int sea_idx = 0; sea_idx < LOAD_WITHIN_2_MOVES_COUNT[src_land]; sea_idx++) {
-      uint8_t dst_sea = LOAD_WITHIN_2_MOVES[src_land][sea_idx];
-      if (!transports_with_large_cargo_space[dst_sea]) { // assume large, only tanks move 2
-        continue;
-      }
-      uint8_t dst_air = dst_sea + LANDS_COUNT;
-      if (LAND_DIST[src_land][dst_air] == 1) {
-        add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_air, src_land);
-        continue;
-      }
-      if (is_path_blocked(src_land, dst_air)) {
-        continue;
-      }
-      add_valid_move_if_history_allows_2(valid_moves, valid_moves_count, dst_air, src_land);
-    }
-  } else {
-    // check for moving from land to land (one move away)
-    for (int land_idx = 0; land_idx < LANDS_WITHIN_1_MOVE_COUNT[src_land]; land_idx++) {
-      uint8_t dst_land = LANDS_WITHIN_1_MOVE[src_land][land_idx];
-      add_valid_move_if_history_allows_1(valid_moves, valid_moves_count, dst_land, src_land);
-    }
-    // check for moving from land to sea (one move away)
-    for (int sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[src_land]; sea_idx++) {
-      uint8_t dst_sea = LOAD_WITHIN_1_MOVE[src_land][sea_idx];
-      if (!transports_with_small_cargo_space[dst_sea]) {
-        continue;
-      }
-      if (UNIT_WEIGHTS[unit_type] > 2 && !transports_with_large_cargo_space[dst_sea]) {
-        continue;
-      }
-      add_valid_move_if_history_allows_1(valid_moves, valid_moves_count, dst_sea + LANDS_COUNT,
-                                         src_land);
-    }
-  }
-}
-
 void move_land_unit_type(uint8_t unit_type) {
   clear_move_history();
   for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
@@ -1349,20 +1323,44 @@ void move_land_unit_type(uint8_t unit_type) {
       uint8_t valid_moves[AIRS_COUNT];
       valid_moves[0] = src_land;
       uint8_t valid_moves_count = 1;
-      add_valid_moves(valid_moves, &valid_moves_count, src_land, moves_remaining, unit_type);
+      add_valid_land_moves(valid_moves, &valid_moves_count, src_land, moves_remaining, unit_type);
       while (units_land_ptr[src_land][unit_type][moves_remaining] > 0) {
-        uint8_t user_input = get_user_input(unit_type, src_land, valid_moves, valid_moves_count);
-        update_move_history(user_input, src_land, valid_moves, valid_moves_count);
-        if (src_land == user_input) {
+        uint8_t dst_air = get_user_input(unit_type, src_land, valid_moves, valid_moves_count);
+        update_move_history(dst_air, src_land, valid_moves, valid_moves_count);
+        if (src_land == dst_air) {
           units_land_ptr[src_land][unit_type][0]++;
           units_land_ptr[src_land][unit_type][moves_remaining]--;
           continue;
         }
-        if (user_input >= LANDS_COUNT) {
-          load_transport(unit_type, src_land, user_input - LANDS_COUNT);
+        if (dst_air >= LANDS_COUNT) {
+          load_transport(unit_type, src_land, dst_air - LANDS_COUNT);
           continue;
         }
-        move_land_unit(unit_type, src_land, user_input, moves_remaining);
+        bool hasEnemyBlockers = false; // TODO optimize prebuild
+        for (int enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
+          if (units_land_player_total[dst_air][enemies[enemy_idx]] > 0) {
+            hasEnemyBlockers = true;
+            break;
+          }
+        }
+        // if the destination is not blitzable, then end unit turn
+        uint8_t landDistance;
+        if (is_allied[owner_idx[dst_air]] || hasEnemyBlockers) {
+          landDistance = MAX_MOVE_LAND[unit_type];
+        } else {
+          landDistance = LAND_DIST[src_land][dst_air];
+          income_per_turn[owner_idx[dst_air]] -= LAND_VALUE[dst_air];
+          owner_idx[dst_air] = 0;
+          income_per_turn[0] += LAND_VALUE[dst_air];
+          no_airstrip[dst_air] = true;
+          builds_left[dst_air] = 0;
+        }
+        units_land_ptr[dst_air][unit_type][moves_remaining - landDistance]++;
+        units_land_player_total[dst_air][0]++;
+        units_land_grand_total[dst_air]++;
+        units_land_player_total[src_land][0]--;
+        units_land_grand_total[src_land]--;
+        units_land_ptr[src_land][unit_type][moves_remaining]--;
       }
     }
   }
