@@ -1362,7 +1362,7 @@ void move_infantry() {
         user_input = getAIInput();
       }
       // what is the actual destination that is a max of 1 land move away?
-      uint8_t actualDestination = LAND_PATH[i][user_input];
+      uint8_t actualDestination = user_input;
 
       if (src_land == actualDestination || actualDestination == INFINITY) {
         units_land_ptr[src_land][INFANTRY][0]++;
@@ -1500,9 +1500,7 @@ void move_subs() {
       uint8_t user_input;
       if (current_player_is_human) {
         setPrintableStatus();
-        strcat(printableGameStatus, "Moving ");
-        strcat(printableGameStatus, NAMES_UNIT_SEA[i]);
-        strcat(printableGameStatus, " From: ");
+        strcat(printableGameStatus, "Moving Submarine From: ");
         strcat(printableGameStatus, SEAS[src_sea].name);
         strcat(printableGameStatus, " To: ");
         printf("%s\n", printableGameStatus);
