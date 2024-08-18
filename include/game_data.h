@@ -108,6 +108,8 @@ void refresh_canBomberLandIn1Move();
 void refresh_canBomberLandIn2Moves();
 uint8_t getUserInput();
 uint8_t getAIInput();
+void add_valid_move_if_history_allows_1(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t dst_air, uint8_t starting_land);
+void add_valid_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t dst_air, uint8_t starting_land);
 void initializeGameData();
 void setPrintableStatus();
 void refresh_cache();
