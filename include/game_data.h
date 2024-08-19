@@ -30,7 +30,8 @@ typedef struct {
   uint8_t factory_hp;
   uint8_t factory_max;
   uint8_t bombard_max;                                     // bombarded, resets
-  bool no_airstrip;                                 // resets
+  //bool no_airstrip;                                 // resets
+  bool flagged_for_combat;                                // resets
   uint8_t fighters[FIGHTER_STATES];                        // rotates
   uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
   uint8_t infantry[INFANTRY_STATES];                       // rotates
@@ -138,4 +139,5 @@ void buy_units();
 void crash_air_units();
 void collect_money();
 void rotate_turns();
+void remove_sea_defenders(uint8_t src_sea, uint8_t attacker_hits);
 #endif
