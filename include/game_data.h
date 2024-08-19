@@ -137,4 +137,5 @@ void reset_units_fully();
 void buy_units();
 void crash_air_units();
 void collect_money();
+void rotate_turns();
 #endif
