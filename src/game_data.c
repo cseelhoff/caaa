@@ -2130,7 +2130,7 @@ void resolve_land_battles() {
         remove_land_defenders(src_land, attacker_hits);
       }      
     }
-    // fire tactical aa_guns
+    // check if can fire tactical aa_guns
     uint8_t total_air_units = air_total[src_land][FIGHTERS] + air_total[src_land][BOMBERS_LAND_AIR];
     if(total_air_units > 0) {
       int total_aa_guns = 0;
