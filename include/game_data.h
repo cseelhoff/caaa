@@ -19,6 +19,7 @@
 #include "units/tank.h"
 #include "units/transport.h"
 #include "units/units.h"
+#include <stdint.h>
 
 #define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
@@ -31,7 +32,7 @@ typedef struct {
   uint8_t factory_max;
   uint8_t bombard_max;                                     // bombarded, resets
   //bool no_airstrip;                                 // resets
-  bool flagged_for_combat;                                // resets
+  //bool flagged_for_combat;                                // resets
   uint8_t fighters[FIGHTER_STATES];                        // rotates
   uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
   uint8_t infantry[INFANTRY_STATES];                       // rotates
@@ -70,7 +71,7 @@ typedef struct {
   uint8_t money[PLAYERS_COUNT];
   LandState land_state[LANDS_COUNT];
   UnitsSea units_sea[SEAS_COUNT];
-  bool unresolved_combat[AIRS_COUNT]; // track retreats
+  bool flagged_for_combat[AIRS_COUNT]; // track retreats
 } GameData;
 
 typedef struct {
@@ -83,7 +84,7 @@ typedef struct {
   uint8_t units_sea_blockade_total[SEAS_COUNT][PLAYERS_COUNT];
   uint8_t units_sea_grand_total[SEAS_COUNT];
   uint8_t* units_sea_ptr[SEAS_COUNT][SEA_UNIT_TYPES];
-  uint8_t* units_air_ptr[AIRS_COUNT][AIR_UNIT_TYPES];
+  uint8_t* units_air_ptr[AIRS_COUNT][AIR_UNIT_TYPES_COUNT];
   uint8_t income_per_turn[PLAYERS_COUNT];
   uint8_t enemies[PLAYERS_COUNT - 1];
   uint8_t enemies_count;
@@ -139,6 +140,7 @@ void buy_units();
 void crash_air_units();
 void collect_money();
 void rotate_turns();
-void remove_sea_defenders(uint8_t src_sea, uint8_t hits);
+void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged);
 void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
+uint8_t ask_to_retreat();
 #endif

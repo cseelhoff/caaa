@@ -1,4 +1,6 @@
 #include "serialize_data.h"
+#include "cJSON.h"
+#include "game_data.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,12 +64,12 @@ void deserialize_game_data_from_json(GameData* data, cJSON* json) {
     fprintf(stderr, "Invalid player_index\n");
   }
 
-  cJSON* phase = cJSON_GetObjectItem(json, "phase");
-  if (cJSON_IsNumber(phase)) {
-    data->phase = phase->valueint;
-  } else {
-    fprintf(stderr, "Invalid phase\n");
-  }
+  // cJSON* phase = cJSON_GetObjectItem(json, "phase");
+  // if (cJSON_IsNumber(phase)) {
+  //   data->phase = phase->valueint;
+  // } else {
+  //   fprintf(stderr, "Invalid phase\n");
+  // }
 
   cJSON* money_array = cJSON_GetObjectItem(json, "money");
   if (cJSON_IsArray(money_array)) {
@@ -105,15 +107,28 @@ void deserialize_game_data_from_json(GameData* data, cJSON* json) {
   } else {
     fprintf(stderr, "Invalid units_sea array\n");
   }
+
+  cJSON* flagged_for_combat = cJSON_GetObjectItem(json, "flagged_for_combat");
+  if (cJSON_IsArray(flagged_for_combat)) {
+    int array_size = cJSON_GetArraySize(flagged_for_combat);
+    for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
+      cJSON* flagged_for_combat_item = cJSON_GetArrayItem(flagged_for_combat, i);
+      if (cJSON_IsBool(flagged_for_combat_item)) {
+        data->flagged_for_combat[i] = flagged_for_combat_item->valueint;
+      } else {
+        fprintf(stderr, "Invalid flagged_for_combat item\n");
+      }
+    }
+  } else {
+    fprintf(stderr, "Invalid flagged_for_combat array\n");
+  }
+
+
 }
 void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
-  }
-  cJSON* conquered = cJSON_GetObjectItem(json, "conquered");
-  if (cJSON_IsBool(conquered)) {
-    land_state->conquered = cJSON_IsTrue(conquered);
   }
   set_land_state_field(json, "owner_index", &land_state->owner_idx);
   set_land_state_field(json, "builds_left", &land_state->builds_left);
@@ -167,7 +182,7 @@ void extract_and_assign(cJSON* json, const char* key, uint8_t* target_array) {
 cJSON* serialize_game_data_to_json(GameData* data) {
   cJSON* json = cJSON_CreateObject();
   cJSON_AddNumberToObject(json, "player_index", data->player_index);
-  cJSON_AddNumberToObject(json, "phase", data->phase);
+  //cJSON_AddNumberToObject(json, "phase", data->phase);
 
   cJSON* money_array = cJSON_CreateArray();
   for (int i = 0; i < PLAYERS_COUNT; i++) {
@@ -190,6 +205,11 @@ cJSON* serialize_game_data_to_json(GameData* data) {
   }
   cJSON_AddItemToObject(json, "units_sea", units_sea_array);
 
+  cJSON* flagged_for_combat = cJSON_CreateArray();
+  for (int i = 0; i < AIRS_COUNT; i++) {
+    cJSON_AddItemToArray(flagged_for_combat, cJSON_CreateBool(data->flagged_for_combat[i]));
+  }
+  cJSON_AddItemToObject(json, "flagged_for_combat", flagged_for_combat);
   return json;
 }
 
