@@ -139,5 +139,6 @@ void buy_units();
 void crash_air_units();
 void collect_money();
 void rotate_turns();
-void remove_sea_defenders(uint8_t src_sea, uint8_t attacker_hits);
+void remove_sea_defenders(uint8_t src_sea, uint8_t hits);
+void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
 #endif

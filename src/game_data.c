@@ -694,7 +694,8 @@ void refresh_canBomberLandIn2Moves() {
 void refresh_canFighterLandHere() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] = (is_allied[owner_idx[land_idx]] && !flagged_for_combat[land_idx]);
+    canFighterLandHere[land_idx] =
+        (is_allied[owner_idx[land_idx]] && !flagged_for_combat[land_idx]);
     // check for possiblity to build carrier under fighter
     if (factory_max[land_idx] > 0 && owner_idx[land_idx] == current_player_index) {
       for (int conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[land_idx]; conn_idx++) {
@@ -1673,6 +1674,8 @@ void resolve_sea_battles() {
         }
         int defender_hits = defender_damage / 6;
         defender_hits += RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0;
+        if (defender_hits > 0)
+          remove_sea_attackers(src_sea, defender_hits);
       }
       // remove casualties
       if (attacker_hits > 0)
@@ -1737,18 +1740,41 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
     }
   }
 
-  for (int unit_type; unit_type < ATTACKER_SEA_UNIT_TYPES; unit_type++) {
-    for (int enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
-      uint8_t enemy = enemies[enemy_idx];
-      uint8_t sea_unit_type = ORDER_OF_SEA_ATTACKERS[unit_type];
-      if (units_sea_ptr[src_sea][enemy][ORDER_OF_SEA_ATTACKERS[unit_type]] > 0) {
-        if (units_sea_ptr[src_sea][enemy][sea_unit_type] < hits) {
-          hits -= units_sea_ptr[src_sea][enemy][sea_unit_type];
-          units_sea_ptr[src_sea][enemy][sea_unit_type] = 0;
-        } else {
-          units_sea_ptr[src_sea][enemy][sea_unit_type] -= hits;
-          return;
-        }
+  for (uint8_t unit_type; unit_type < ATTACKER_SEA_UNIT_TYPES_1; unit_type++) {
+    uint8_t* total_units = &units_sea_ptr[src_sea][ORDER_OF_SEA_ATTACKERS_1[unit_type]][0];
+    if (*total_units > 0) {
+      if (*total_units < hits) {
+        hits -= *total_units;
+        *total_units = 0;
+      } else {
+        *total_units -= hits;
+        return;
+      }
+    }
+  }
+  for (uint8_t unit_type; unit_type < ATTACKER_SEA_UNIT_TYPES_2; unit_type++) {
+    uint8_t* total_units = &units_sea_ptr[src_sea][ORDER_OF_SEA_ATTACKERS_2[unit_type]][0];
+    if (*total_units > 0) {
+      if (*total_units < hits) {
+        hits -= *total_units;
+        air_total[unit_type] -= *total_units;
+        *total_units = 0;
+      } else {
+        *total_units -= hits;
+        air_total[unit_type] -= hits;
+        return;
+      }
+    }
+  }
+  for (uint8_t unit_type; unit_type < ATTACKER_SEA_UNIT_TYPES_3; unit_type++) {
+    uint8_t* total_units = &units_sea_ptr[src_sea][ORDER_OF_SEA_ATTACKERS_3[unit_type]][0];
+    if (*total_units > 0) {
+      if (*total_units < hits) {
+        hits -= *total_units;
+        *total_units = 0;
+      } else {
+        *total_units -= hits;
+        return;
       }
     }
   }
