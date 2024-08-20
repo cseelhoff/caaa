@@ -6,6 +6,8 @@
 #include "serialize_data.h"
 #include "units/artillery.h"
 #include "units/bomber.h"
+#include "units/fighter.h"
+#include "units/infantry.h"
 #include "units/sub.h"
 #include "units/transport.h"
 #include "units/units.h"
@@ -1183,6 +1185,9 @@ void add_valid_land_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint
       add_valid_move_if_history_allows_1(valid_moves, valid_moves_count, dst_land, src_land);
     }
     // check for moving from land to sea (one move away)
+    if (UNIT_WEIGHTS[unit_type] > 5) {
+      return;
+    }
     for (int sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[src_land]; sea_idx++) {
       uint8_t dst_sea = LOAD_WITHIN_1_MOVE[src_land][sea_idx];
       if (!transports_with_small_cargo_space[dst_sea]) {
@@ -1781,8 +1786,10 @@ void resolve_sea_battles() {
       }
       // fire subs (defender always submerges if possible)
       int attacker_damage = units_sea_ptr[src_sea][SUBMARINES][0] * SUB_ATTACK;
-      uint8_t attacker_hits = attacker_damage / 6;
-      attacker_hits += RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0;
+      uint8_t attacker_hits =
+          (attacker_damage / 6) +
+          (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+
       int defender_damage;
       int defender_hits;
       if (!defender_submerged) {
@@ -1790,8 +1797,8 @@ void resolve_sea_battles() {
         for (int enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
           defender_damage += other_sea_units[src_air][enemies[enemy_idx]][SUBMARINES];
         }
-        defender_hits = defender_damage / 6;
-        defender_hits += RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0;
+        defender_hits = (defender_damage / 6) +
+                        (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
         if (defender_hits > 0)
           remove_sea_attackers(src_sea, defender_hits);
       }
@@ -1806,18 +1813,19 @@ void resolve_sea_battles() {
       for (uint8_t unit_type = 0; unit_type < AIR_UNIT_TYPES_COUNT; unit_type++) {
         attacker_damage += air_total[src_air][unit_type] * ATTACK_UNIT_LAND[unit_type];
       }
-      attacker_hits = attacker_damage / 6;
-      attacker_hits += RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0;
+      attacker_hits = (attacker_damage / 6) +
+                      (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+
       defender_damage = 0;
       for (uint8_t enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
         uint8_t* enemy_units = other_sea_units[src_sea][enemies[enemy_idx]];
         for (uint8_t unit_type = 0; unit_type < BLOCKADE_UNIT_TYPES_COUNT; unit_type++) {
-          defender_damage += enemy_units[unit_type] * ATTACK_UNIT_SEA[unit_type];
+          defender_damage += enemy_units[unit_type] * DEFENSE_UNIT_SEA[unit_type];
         }
-        defender_damage += enemy_units[FIGHTERS] * ATTACK_UNIT_SEA[FIGHTERS];
+        defender_damage += enemy_units[FIGHTERS] * DEFENSE_UNIT_SEA[FIGHTERS];
       }
-      defender_hits = defender_damage / 6;
-      defender_hits += RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0;
+      defender_hits = (defender_damage / 6) +
+                      (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
       // remove casualties
       if (defender_hits > 0)
         remove_sea_attackers(src_sea, defender_hits);
@@ -2057,10 +2065,6 @@ void unload_transports() {
     }
   }
 }
-// void bombard_shores() {
-// }
-//  fire_strat_aa_guns() {}
-//  void fire_tact_aa_guns() {}
 void resolve_land_battles() {
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     // check if battle is over
@@ -2079,11 +2083,11 @@ void resolve_land_battles() {
       if (factory_hp[src_land] > 0) {
         // fire_strat_aa_guns();
         uint8_t defender_damage = air_total[src_land][BOMBERS_LAND_AIR];
-        uint8_t defender_hits = defender_damage / 6;
-        defender_hits += RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0;
+        uint8_t defender_hits =
+            (defender_damage / 6) +
+            (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
         if (defender_hits > 0) {
-          for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1;
-               cur_state++) {
+          for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
             uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
             if (*total_units < defender_hits) {
               defender_hits -= *total_units;
@@ -2101,94 +2105,296 @@ void resolve_land_battles() {
           }
         }
         attacker_damage = air_total[src_land][BOMBERS_LAND_AIR] * 21;
-        attacker_hits = attacker_damage / 6;
-        attacker_hits += RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0;
-        factory_hp[src_land] = factory_hp[src_land] > attacker_hits ? factory_hp[src_land] - attacker_hits : 0;
+        attacker_hits = (attacker_damage / 6) +
+                        (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+        factory_hp[src_land] =
+            factory_hp[src_land] > attacker_hits ? factory_hp[src_land] - attacker_hits : 0;
         continue;
       }
     }
-    if(enemy_units_count[src_land] == 0) {
-      continue;
-    }
-    // bombard_shores
-    if(bombard_max[src_land] > 0) {
-      attacker_damage = 0;        
-      for(uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
-        for(uint8_t sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[src_land]; sea_idx++) {
-          uint8_t src_sea = LOAD_WITHIN_1_MOVE[src_land][sea_idx];
-          while(units_sea_ptr[src_sea][unit_type][1] > 0 && bombard_max[src_land] > 0) {
-            attacker_damage += ATTACK_UNIT_SEA[unit_type];
-            units_sea_ptr[src_sea][unit_type][0]++;
-            units_sea_ptr[src_sea][unit_type][1]--;        
-            bombard_max[src_land]--;    
-          }
+    while (true) {
+      if (enemy_units_count[src_land] == 0) {
+        // if infantry, artillery, tanks exist then capture
+        if (units_land_ptr[src_land][INFANTRY][0] + units_land_ptr[src_land][ARTILLERY][0] +
+                units_land_ptr[src_land][TANKS][0] >
+            0) {
+          conquer_land(src_land);
         }
+        continue;
       }
-      attacker_hits = attacker_damage / 6;
-      attacker_hits += RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0;
-      if(attacker_hits > 0) {
-        remove_land_defenders(src_land, attacker_hits);
-      }      
-    }
-    // check if can fire tactical aa_guns
-    uint8_t total_air_units = air_total[src_land][FIGHTERS] + air_total[src_land][BOMBERS_LAND_AIR];
-    if(total_air_units > 0) {
-      int total_aa_guns = 0;
-      for(uint8_t enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
-        total_aa_guns += other_land_units[src_land][enemies[enemy_idx]][AA_GUNS];
-      }
-      if(total_aa_guns > 0) {
-        // fire_tact_aa_guns();
-        uint8_t defender_damage = total_air_units * 3;
-        uint8_t defender_hits = defender_damage / 6;
-        defender_hits += RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0;
-        if(defender_hits > 0) {
-          for(uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
-            uint8_t* total_units = &units_land_ptr[src_land][FIGHTERS][cur_state];
-            if(*total_units < defender_hits) {
-              defender_hits -= *total_units;
-              air_total[src_land][FIGHTERS] -= *total_units;
-              units_land_player_total[src_land][0] -= *total_units;
-              units_land_grand_total[src_land] -= *total_units;
-              *total_units = 0;
-            } else {
-              *total_units -= defender_hits;
-              air_total[src_land][FIGHTERS] -= defender_hits;
-              units_land_player_total[src_land][0] -= defender_hits;
-              units_land_grand_total[src_land] -= defender_hits;
-              break;
+      // bombard_shores
+      if (bombard_max[src_land] > 0) {
+        attacker_damage = 0;
+        for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
+          for (uint8_t sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[src_land]; sea_idx++) {
+            uint8_t src_sea = LOAD_WITHIN_1_MOVE[src_land][sea_idx];
+            while (units_sea_ptr[src_sea][unit_type][1] > 0 && bombard_max[src_land] > 0) {
+              attacker_damage += ATTACK_UNIT_SEA[unit_type];
+              units_sea_ptr[src_sea][unit_type][0]++;
+              units_sea_ptr[src_sea][unit_type][1]--;
+              bombard_max[src_land]--;
             }
           }
         }
-        if(defender_hits > 0) {
-          for(uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
-            uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
-            if(*total_units < defender_hits) {
-              defender_hits -= *total_units;
-              air_total[src_land][BOMBERS_LAND_AIR] -= *total_units;
-              units_land_player_total[src_land][0] -= *total_units;
-              units_land_grand_total[src_land] -= *total_units;
-              *total_units = 0;
-            } else {
-              *total_units -= defender_hits;
-              air_total[src_land][BOMBERS_LAND_AIR] -= defender_hits;
-              units_land_player_total[src_land][0] -= defender_hits;
-              units_land_grand_total[src_land] -= defender_hits;
-              break;
+        attacker_hits = (attacker_damage / 6) +
+                        (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+        if (attacker_hits > 0) {
+          remove_land_defenders(src_land, attacker_hits);
+        }
+      }
+      // check if can fire tactical aa_guns
+      uint8_t total_air_units =
+          air_total[src_land][FIGHTERS] + air_total[src_land][BOMBERS_LAND_AIR];
+      uint8_t defender_damage;
+      uint8_t defender_hits;
+      if (total_air_units > 0) {
+        int total_aa_guns = 0;
+        for (uint8_t enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
+          total_aa_guns += other_land_units[src_land][enemies[enemy_idx]][AA_GUNS];
+        }
+        if (total_aa_guns > 0) {
+          // fire_tact_aa_guns();
+          defender_damage = total_air_units * 3;
+          defender_hits = (defender_damage / 6) +
+                          (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
+          if (defender_hits > 0) {
+            for (uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
+              uint8_t* total_units = &units_land_ptr[src_land][FIGHTERS][cur_state];
+              if (*total_units < defender_hits) {
+                defender_hits -= *total_units;
+                air_total[src_land][FIGHTERS] -= *total_units;
+                units_land_player_total[src_land][0] -= *total_units;
+                units_land_grand_total[src_land] -= *total_units;
+                *total_units = 0;
+              } else {
+                *total_units -= defender_hits;
+                air_total[src_land][FIGHTERS] -= defender_hits;
+                units_land_player_total[src_land][0] -= defender_hits;
+                units_land_grand_total[src_land] -= defender_hits;
+                break;
+              }
+            }
+          }
+          if (defender_hits > 0) {
+            for (uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
+              uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
+              if (*total_units < defender_hits) {
+                defender_hits -= *total_units;
+                air_total[src_land][BOMBERS_LAND_AIR] -= *total_units;
+                units_land_player_total[src_land][0] -= *total_units;
+                units_land_grand_total[src_land] -= *total_units;
+                *total_units = 0;
+              } else {
+                *total_units -= defender_hits;
+                air_total[src_land][BOMBERS_LAND_AIR] -= defender_hits;
+                units_land_player_total[src_land][0] -= defender_hits;
+                units_land_grand_total[src_land] -= defender_hits;
+                break;
+              }
             }
           }
         }
       }
-    }
-      
       // land_battle
-      //ask retreat
+      attacker_damage = 0;
+      for (uint8_t cur_state = 1; cur_state < FIGHTER_STATES - 1; cur_state++) {
+        attacker_damage += units_land_ptr[src_land][FIGHTERS][cur_state] * FIGHTER_ATTACK;
+      }
+      for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
+        attacker_damage += units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state] * BOMBER_ATTACK;
+      }
+      uint8_t infantry_count = units_land_ptr[src_land][INFANTRY][0];
+      uint8_t artillery_count = units_land_ptr[src_land][ARTILLERY][0];
+      attacker_damage += (infantry_count * INFANTRY_ATTACK) + (artillery_count * ARTILLERY_ATTACK) +
+                         (units_land_ptr[src_land][TANKS][0] * TANK_ATTACK);
+      // add damage for the minimum of count of infantry/artillery
+      attacker_damage += infantry_count < artillery_count ? infantry_count : artillery_count;
+      attacker_hits = (attacker_damage / 6) +
+                      (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+
+      for (uint8_t enemy_idx = 0; enemy_idx < enemies_count; enemy_idx++) {
+        uint8_t* land_units = other_land_units[src_land][enemies[enemy_idx]];
+        defender_damage = (land_units[INFANTRY] * INFANTRY_DEFENSE) +
+                          (land_units[ARTILLERY] * ARTILLERY_DEFENSE) +
+                          (land_units[TANKS] * TANK_DEFENSE) +
+                          (land_units[FIGHTERS] * FIGHTER_DEFENSE) +
+                          (land_units[BOMBERS_LAND_AIR] * BOMBER_DEFENSE);
+        defender_hits = (defender_damage / 6) +
+                        (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
+      }
+      if (defender_hits > 0) {
+        remove_land_attackers(src_land, defender_hits);
+      }
+      if (attacker_hits > 0) {
+        remove_land_defenders(src_land, attacker_hits);
+      }
+      // ask to retreat (0-255, any non valid retreat zone is considered a no)
+      uint8_t retreat = ask_to_retreat();
+      // if retreat, move units to retreat zone immediately and end battle
+      if (LAND_DIST[src_land][retreat] == 1 && enemy_units_count[retreat] == 0 &&
+          !flagged_for_combat[retreat]) {
+        for (uint8_t unit_type = INFANTRY; unit_type <= TANKS; unit_type++) {
+          units_land_ptr[retreat][unit_type][0] += units_land_ptr[src_land][unit_type][0];
+          units_land_ptr[src_land][unit_type][0] = 0;
+          flagged_for_combat[src_land] = false;
+        }
+        continue;
+      }
+    }
   }
 }
-void move_aa_guns() {}
-void land_air_units() {}
-void buy_units() {}
+void move_aa_guns() {
+  move_land_unit_type(AA_GUNS);
+  // clear_move_history();
+  // for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+  //   uint8_t valid_moves[AIRS_COUNT];
+  //   valid_moves[0] = src_land;
+  //   uint8_t valid_moves_count = 1;
+  //   add_valid_land_moves(valid_moves, &valid_moves_count, src_land, 1, AA_GUNS);
+  //   while (units_land_ptr[src_land][AA_GUNS][1] > 0) {
+  //     uint8_t src_air = src_land + LANDS_COUNT;
+  //     uint8_t dst_air = get_user_move_input(AA_GUNS, src_air, valid_moves, valid_moves_count);
+  //     update_move_history(dst_air, src_land, valid_moves, valid_moves_count);
+  //     if (src_air == dst_air) {
+  //       units_land_ptr[src_land][AA_GUNS][0]++;
+  //       units_land_ptr[src_land][AA_GUNS][1]--;
+  //       continue;
+  //     }
+  //     units_land_ptr[dst_air][AA_GUNS][0]++;
+  //     units_land_player_total[dst_air][0]++;
+  //     units_land_grand_total[dst_air]++;
+  //     units_land_ptr[dst_air][AA_GUNS][1]--;
+  //     units_land_player_total[src_land][0]--;
+  //     units_land_grand_total[src_land]--;
+  //   }
+  // }
+}
+
+void land_fighter_units() {
+  // refresh_canFighterLandHere_final();
+  //  check if any fighters have moves remaining
+  for (uint8_t cur_state = 1; cur_state < FIGHTER_STATES - 1; cur_state++) {
+    uint8_t* total_fighter_count = &units_air_ptr[0][FIGHTERS][cur_state];
+    if (memchr(total_fighter_count, 1, AIRS_COUNT * sizeof(uint8_t)) ==
+        NULL) { // TODO optimize to find next fighter faster
+      return;
+    }
+    clear_move_history();
+    for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {
+      uint8_t valid_moves[AIRS_COUNT];
+      valid_moves[0] = src_air;
+      uint8_t valid_moves_count = 1;
+      add_valid_fighter_landing(valid_moves, &valid_moves_count, src_air, cur_state, FIGHTERS);
+      while (*total_fighter_count > 0) {
+        uint8_t dst_air = get_user_move_input(FIGHTERS, src_air, valid_moves, valid_moves_count);
+        update_move_history(dst_air, src_air, valid_moves, valid_moves_count);
+        if (src_air == dst_air) {
+          units_land_ptr[src_air][FIGHTERS][0]++;
+          *total_fighter_count -= 1;
+          continue;
+        }
+        units_air_ptr[dst_air][FIGHTERS][0]++;
+        if (dst_air < LANDS_COUNT) {
+          units_land_player_total[dst_air][0]++;
+          units_land_grand_total[dst_air]++;
+          units_land_player_total[src_air][0]--;
+          units_land_grand_total[src_air]--;
+        } else {
+          uint8_t dst_sea = dst_air - LANDS_COUNT;
+          units_sea_player_total[dst_sea][0]++;
+          units_sea_grand_total[dst_sea]++;
+          uint8_t src_sea = src_air - LANDS_COUNT;
+          units_sea_player_total[src_sea][0]--;
+          units_sea_grand_total[src_sea]--;
+        }
+        *total_fighter_count -= 1;
+      }
+    }
+  }
+}
+void land_bomber_units() {
+  // check if any bombers have moves remaining
+  for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
+    uint8_t* total_bomber_count = &units_air_ptr[0][BOMBERS_LAND_AIR][cur_state];
+    if (memchr(total_bomber_count, 1, AIRS_COUNT * sizeof(uint8_t)) ==
+        NULL) { // TODO optimize to find next bomber faster
+      return;
+    }
+    clear_move_history();
+    // refresh_canFighterLandHere();
+    // refresh_canFighterLandIn1Move();
+    for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {
+      uint8_t valid_moves[AIRS_COUNT];
+      valid_moves[0] = src_air;
+      uint8_t valid_moves_count = 1;
+      uint8_t movement_remaining = cur_state + (src_air < LANDS_COUNT ? 0 : 1);
+      add_valid_bomber_landing(valid_moves, &valid_moves_count, src_air, movement_remaining,
+                               BOMBERS_LAND_AIR);
+      while (*total_bomber_count > 0) {
+        uint8_t dst_air =
+            get_user_move_input(BOMBERS_LAND_AIR, src_air, valid_moves, valid_moves_count);
+        update_move_history(dst_air, src_air, valid_moves, valid_moves_count);
+        if (src_air == dst_air) {
+          units_air_ptr[src_air][BOMBERS_LAND_AIR][0]++;
+          *total_bomber_count -= 1;
+          continue;
+        }
+        units_air_ptr[dst_air][BOMBERS_LAND_AIR][0]++;
+        if (dst_air < LANDS_COUNT) {
+          units_land_player_total[dst_air][0]++;
+          units_land_grand_total[dst_air]++;
+          units_land_player_total[src_air][0]--;
+          units_land_grand_total[src_air]--;
+        } else {
+          uint8_t dst_sea = dst_air - LANDS_COUNT;
+          units_sea_player_total[dst_sea][0]++;
+          units_sea_grand_total[dst_sea]++;
+          uint8_t src_sea = src_air - LANDS_COUNT;
+          units_sea_player_total[src_sea][0]--;
+          units_sea_grand_total[src_sea]--;
+        }
+        *total_bomber_count -= 1;
+      }
+    }
+  }
+}
+void buy_units() {
+  while (money[0] > 0) {
+    uint8_t total_construction_remaining = 0;
+    uint8_t sea_construction_remaining = 0;
+    for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) { // TODO optimize with cache
+      uint8_t builds_left_temp = builds_left[land_idx];
+      total_construction_remaining += builds_left_temp;
+      if (LOAD_WITHIN_1_MOVE_COUNT[land_idx] > 0) {
+        sea_construction_remaining += builds_left_temp;
+      }
+      if (builds_left_temp == 0 && factory_hp[land_idx] < factory_max[land_idx]) {
+        continue;
+      }
+    }
+    if (total_construction_remaining == 0 || money[0] < INFANTRY_COST) {
+      break;
+    }
+  }
+}
 void crash_air_units() {}
-void reset_units_fully() {}
-void collect_money() {}
-void rotate_turns() {}
+void reset_units_fully() {
+  // reset battleship health
+  for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    units_sea_ptr[sea_idx][BATTLESHIPS][0] += units_sea_ptr[sea_idx][BS_DAMAGED][0];
+    units_sea_ptr[sea_idx][BS_DAMAGED][0] = 0;
+  }
+}
+void collect_money() { 
+  // if player still owns their capital, collect income
+  current_player_money += (income_per_turn[current_player_index] * (owner_idx[current_player.capital_territory_index] == current_player_index)); 
+  //TODO: fix OWNERID owner_idx offset
+}
+void rotate_turns() {
+  // save cache back to arrays
+  // current_player = (current_player + 1) % PLAYERS_COUNT;
+  // current_player_is_human = is_human[current_player];
+  // rotate arrays
+  // set movement to full
+  // set contruction remaining to full
+}
