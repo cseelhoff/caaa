@@ -27,8 +27,7 @@
 
 typedef struct {
   uint8_t owner_idx; // rotates
-  uint8_t builds_left; // resets
-  uint8_t factory_hp;
+  int8_t factory_hp;
   uint8_t factory_max;
   uint8_t bombard_max;                                     // bombarded, resets
   //bool no_airstrip;                                 // resets
@@ -71,6 +70,7 @@ typedef struct {
   uint8_t money[PLAYERS_COUNT];
   LandState land_state[LANDS_COUNT];
   UnitsSea units_sea[SEAS_COUNT];
+  uint8_t builds_left[AIRS_COUNT];
   bool flagged_for_combat[AIRS_COUNT]; // track retreats
 } GameData;
 

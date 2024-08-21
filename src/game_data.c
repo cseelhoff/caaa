@@ -63,11 +63,13 @@ uint8_t income_per_turn[PLAYERS_COUNT];
 uint8_t enemies[PLAYERS_COUNT - 1];
 uint8_t enemies_count;
 uint8_t canal_state;
-uint8_t gamestate_player_to_player_id[PLAYERS_COUNT];
+uint8_t gamestate_player_to_mapstate_player[PLAYERS_COUNT];
+uint8_t mapstate_player_to_gamestate_player[PLAYERS_COUNT];
 bool is_allied[PLAYERS_COUNT];
 char* LAND_NAMES[LANDS_COUNT] = {0};
 char* SEA_NAMES[SEAS_COUNT] = {0};
 char* AIR_NAMES[AIRS_COUNT] = {0};
+uint8_t original_owner_idx[LANDS_COUNT] = {0};
 uint8_t LAND_VALUE[LANDS_COUNT] = {0};
 uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {INFINITY};
 uint8_t AIR_CONN_COUNT[AIRS_COUNT] = {0};
@@ -145,7 +147,7 @@ uint8_t canal_state;
 uint8_t owner_idx[LANDS_COUNT];
 uint8_t builds_left[LANDS_COUNT];
 uint8_t factory_max[LANDS_COUNT];
-uint8_t factory_hp[LANDS_COUNT];
+int8_t factory_hp[LANDS_COUNT]; // allow negative
 uint8_t bombard_max[LANDS_COUNT];
 bool flagged_for_combat[AIRS_COUNT];
 uint8_t other_land_units[LANDS_COUNT][PLAYERS_COUNT][LAND_UNIT_TYPES];
@@ -160,6 +162,8 @@ uint8_t source_territories[AIRS_COUNT][AIRS_COUNT] = {0};
 uint8_t source_territories_count[AIRS_COUNT] = {0};
 uint8_t enemy_units_count[AIRS_COUNT] = {0};
 uint8_t total_enemy_subs[SEAS_COUNT] = {0};
+uint8_t my_factory_locations[LANDS_COUNT] = {0};
+uint8_t my_factory_count = 0;
 uint8_t RETREAT_OPTIONS[256] = {0};
 //#define BOMBARDING_UNITS_COUNT 3
 // uint8_t BOMBARDING_UNITS[BOMBARDING_UNITS_COUNT] = {CRUISERS, BATTLESHIPS, BS_DAMAGED};
@@ -170,10 +174,20 @@ bool canBomberLandHere[AIRS_COUNT];
 bool canBomberLandIn1Move[AIRS_COUNT];
 bool canBomberLandIn2Moves[AIRS_COUNT];
 
-uint8_t RANDOM_NUMBERS[10000] = {0};
-int random_number_index = 0;
+uint8_t RANDOM_NUMBERS[65536] = {0};
+u_short random_number_index = 0;
 
 void initializeGameData() {
+  generate_total_air_distance();
+  generate_total_land_distance();
+  generate_total_sea_distance();
+  generate_seaMoveAllDestination();
+  generate_airMoveAllDestination();
+  // set RETREAT_OPTIONS to be an array of values from 0 to 255
+  for (int i = 0; i < 255; i++) {
+    RETREAT_OPTIONS[i] = i;
+  }
+
   // json = serialize_game_data_to_json(&gameData);
   // write_json_to_file("game_data_0.json", json);
   // cJSON_Delete(json);
@@ -182,29 +196,7 @@ void initializeGameData() {
   deserialize_game_data_from_json(&data, json);
   cJSON_Delete(json);
 
-  // set RETREAT_OPTIONS to be an array of values from 0 to 255
-  for (int i = 0; i < 255; i++) {
-    RETREAT_OPTIONS[i] = i;
-  }
-
   // clear printableGameStatus
-  current_player_index = data.player_index;
-  current_player_index_plus_one = current_player_index + 1;
-  current_player = Players[current_player_index];
-  current_player_name = current_player.name;
-  current_player_color = current_player.color;
-  current_player_is_human = current_player.is_human;
-  current_player_money = data.money[current_player_index];
-  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    gamestate_player_to_player_id[player_idx] = (current_player_index + player_idx) % PLAYERS_COUNT;
-    is_allied[player_idx] = current_player.is_allied[gamestate_player_to_player_id[player_idx]];
-  }
-  printableGameStatus[0] = '\0';
-  generate_total_air_distance();
-  generate_total_land_distance();
-  generate_total_sea_distance();
-  generate_seaMoveAllDestination();
-  generate_airMoveAllDestination();
   refresh_cache();
   move_fighter_units();
   move_bomber_units();
@@ -559,12 +551,26 @@ void generate_within_x_moves() {
   }
 }
 void generate_random_numbers() {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 65536; i++) {
     RANDOM_NUMBERS[i] = rand() % 256;
   }
 }
 void refresh_cache() {
+  current_player_index = data.player_index;
+  current_player_index_plus_one = current_player_index + 1;
+  current_player = Players[current_player_index];
+  current_player_name = current_player.name;
+  current_player_color = current_player.color;
+  current_player_is_human = current_player.is_human;
+  printableGameStatus[0] = '\0';
+
   for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    gamestate_player_to_mapstate_player[player_idx] =
+        (current_player_index + player_idx) % PLAYERS_COUNT;
+    mapstate_player_to_gamestate_player[gamestate_player_to_mapstate_player[player_idx]] =
+        player_idx;
+    is_allied[player_idx] =
+        current_player.is_allied[gamestate_player_to_mapstate_player[player_idx]];
     enemies_count = 0;
     if (current_player.is_allied[player_idx] == false) {
       enemies[enemies_count] = player_idx;
@@ -572,17 +578,20 @@ void refresh_cache() {
     }
 
     // OPTIONAL FOR AI PLAY current_player_is_human==true
-    player_names[player_idx] = Players[gamestate_player_to_player_id[player_idx]].name;
-    player_colors[player_idx] = Players[gamestate_player_to_player_id[player_idx]].color;
+    player_names[player_idx] = Players[gamestate_player_to_mapstate_player[player_idx]].name;
+    player_colors[player_idx] = Players[gamestate_player_to_mapstate_player[player_idx]].color;
     money[player_idx] = data.money[player_idx];
     // END OPTIONAL FOR AI PLAY
   }
   uint8_t unit_count;
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    original_owner_idx[land_idx] =
+        mapstate_player_to_gamestate_player[LANDS[land_idx].original_owner_index];
     owner_idx[land_idx] = data.land_state[land_idx].owner_idx;
     income_per_turn[owner_idx[land_idx]] += LANDS[land_idx].land_value;
     builds_left[land_idx] = data.land_state[land_idx].builds_left;
     factory_max[land_idx] = data.land_state[land_idx].factory_max;
+    my_factory_locations[my_factory_count++] = land_idx;
     factory_hp[land_idx] = data.land_state[land_idx].factory_hp;
     bombard_max[land_idx] = data.land_state[land_idx].bombard_max;
     flagged_for_combat[land_idx] = data.flagged_for_combat[land_idx];
@@ -1420,10 +1429,19 @@ void move_bomber_units() {
 }
 
 void conquer_land(uint8_t dst_land) {
-  income_per_turn[owner_idx[dst_land]] -= LAND_VALUE[dst_land];
-  owner_idx[dst_land] = 0;
-  income_per_turn[0] += LAND_VALUE[dst_land];
-  builds_left[dst_land] = 0;
+  uint8_t old_owner_id = owner_idx[dst_land];
+  if (Players[gamestate_player_to_mapstate_player[old_owner_id]].capital_territory_index ==
+      dst_land) {
+    money[0] += money[old_owner_id];
+    money[old_owner_id] = 0;
+  }
+  income_per_turn[old_owner_id] -= LAND_VALUE[dst_land];
+  uint8_t new_owner_id = 0;
+  if (is_allied[original_owner_idx[dst_land]]) {
+    new_owner_id = original_owner_idx[dst_land];
+  }
+  owner_idx[dst_land] = new_owner_id;
+  income_per_turn[new_owner_id] += LAND_VALUE[dst_land];
 }
 
 void move_land_unit_type(uint8_t unit_type) {
@@ -2359,25 +2377,114 @@ void land_bomber_units() {
   }
 }
 void buy_units() {
-  while (money[0] > 0) {
-    uint8_t total_construction_remaining = 0;
-    uint8_t sea_construction_remaining = 0;
-    for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) { // TODO optimize with cache
-      uint8_t builds_left_temp = builds_left[land_idx];
-      total_construction_remaining += builds_left_temp;
-      if (LOAD_WITHIN_1_MOVE_COUNT[land_idx] > 0) {
-        sea_construction_remaining += builds_left_temp;
-      }
-      if (builds_left_temp == 0 && factory_hp[land_idx] < factory_max[land_idx]) {
-        continue;
+  for (uint8_t land_idx = 0; land_idx < my_factory_count; land_idx++) {
+    uint8_t dst_land = my_factory_locations[land_idx];
+    if (builds_left[dst_land] == 0) {
+      continue;
+    }
+    uint8_t additional_cost = 0;
+    // buy sea units
+    for (uint8_t sea_idx = 0; sea_idx < LOAD_WITHIN_1_MOVE_COUNT[dst_land]; sea_idx++) {
+      uint8_t dst_sea = LOAD_WITHIN_1_MOVE[dst_land][sea_idx];
+      uint8_t valid_purchases[COST_UNIT_SEA_COUNT + 1];
+      valid_purchases[0] = 0; // pass all units
+      uint8_t valid_purchases_count = 1;
+      uint8_t unit_type_idx = 0;
+      uint8_t last_purchased = INFINITY;
+      while (true) {
+        if (builds_left[dst_land] == 0) {
+          if (factory_hp[dst_land] >= factory_max[dst_land])
+            break;
+          additional_cost = 1;
+        }
+        while (unit_type_idx < COST_UNIT_SEA_COUNT &&
+               BUY_UNIT_SEA[unit_type_idx] <= last_purchased) {
+          if (money[0] >= COST_UNIT_SEA[unit_type_idx] + additional_cost) {
+            valid_purchases[valid_purchases_count++] = BUY_UNIT_SEA[unit_type_idx] + 1;
+          }
+          unit_type_idx++;
+        }
+        if (valid_purchases_count == 1) {
+          builds_left[dst_sea] = 0;
+          break;
+        }
+        uint8_t purchase = get_user_purchase_input(valid_purchases, valid_purchases_count);
+        if (purchase == 0) {
+          builds_left[dst_sea] = 0;
+          break;
+        }
+        uint8_t unit_type_purchased = purchase - 1;
+        factory_hp[dst_land] += additional_cost;
+        for (uint8_t sea_idx2 = 0; sea_idx2 < LOAD_WITHIN_1_MOVE_COUNT[dst_land]; sea_idx2++) {
+          builds_left[LOAD_WITHIN_1_MOVE[dst_land][sea_idx2]] += additional_cost - 1;
+        }
+        builds_left[dst_land] += additional_cost - 1;
+        money[0] -= COST_UNIT_SEA[unit_type_purchased];
+        units_sea_ptr[dst_sea][unit_type_purchased][0]++;
+        units_sea_player_total[dst_sea][0]++;
+        units_sea_grand_total[dst_sea]++;
+        last_purchased = unit_type_purchased;
       }
     }
-    if (total_construction_remaining == 0 || money[0] < INFANTRY_COST) {
-      break;
+    // buy land units
+    uint8_t valid_purchases[LAND_UNIT_TYPES + 1];
+    valid_purchases[0] = 0; // pass all units
+    uint8_t valid_purchases_count = 1;
+    uint8_t unit_type = 0;
+    uint8_t last_purchased = INFINITY;
+    while (true) {
+      if (builds_left[dst_land] == 0) {
+        if (factory_hp[dst_land] >= factory_max[dst_land])
+          break;
+        additional_cost = 1;
+        while (unit_type < LAND_UNIT_TYPES && unit_type <= last_purchased) {
+          if (money[0] >= COST_UNIT_LAND[unit_type] + additional_cost) {
+            valid_purchases[valid_purchases_count++] = unit_type + 1;
+          }
+          unit_type++;
+        }
+        if (valid_purchases_count == 1) {
+          builds_left[dst_land] = 0;
+          break;
+        }
+        uint8_t purchase = get_user_purchase_input(valid_purchases, valid_purchases_count);
+        if (purchase == 0) {
+          builds_left[dst_land] = 0;
+          break;
+        }
+        uint8_t unit_type_purchased = purchase - 1;
+        factory_hp[dst_land] += additional_cost;
+        builds_left[dst_land] += additional_cost - 1;
+        money[0] -= COST_UNIT_LAND[unit_type_purchased];
+        units_land_ptr[dst_land][unit_type_purchased][0]++;
+        units_land_player_total[dst_land][0]++;
+        units_land_grand_total[dst_land]++;
+        last_purchased = unit_type_purchased;
+      }
     }
   }
 }
-void crash_air_units() {}
+void crash_air_units() {
+  for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    if (is_allied[owner_idx[land_idx]]) {
+      continue;
+    }
+    units_air_ptr[land_idx][FIGHTERS][0] = 0;
+    units_air_ptr[land_idx][BOMBERS_LAND_AIR][0] = 0;
+    continue;
+  }
+  for (uint8_t air_idx = LANDS_COUNT; air_idx < AIRS_COUNT; air_idx++) {
+    units_air_ptr[air_idx][BOMBERS_LAND_AIR][0] = 0;
+    uint8_t sea_idx = air_idx - LANDS_COUNT;
+    uint8_t free_space = allied_carriers[sea_idx] * 2;
+    for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT - 1; player_idx++) {
+      free_space -= other_sea_units[sea_idx][player_idx][FIGHTERS];
+    }
+    units_air_ptr[air_idx][FIGHTERS][0] = (units_air_ptr[air_idx][FIGHTERS][0] > free_space)
+                                              ? free_space
+                                              : units_air_ptr[air_idx][FIGHTERS][0];
+  }
+}
 void reset_units_fully() {
   // reset battleship health
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
@@ -2385,10 +2492,13 @@ void reset_units_fully() {
     units_sea_ptr[sea_idx][BS_DAMAGED][0] = 0;
   }
 }
-void collect_money() { 
+//TODO BUY FACTORY
+void buy_factory() {}
+void collect_money() {
   // if player still owns their capital, collect income
-  current_player_money += (income_per_turn[current_player_index] * (owner_idx[current_player.capital_territory_index] == current_player_index)); 
-  //TODO: fix OWNERID owner_idx offset
+  current_player_money +=
+      (income_per_turn[0] * (owner_idx[current_player.capital_territory_index] == 0));
+  // TODO: fix OWNERID owner_idx offset
 }
 void rotate_turns() {
   // save cache back to arrays
