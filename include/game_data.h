@@ -67,9 +67,9 @@ typedef struct {
   uint8_t player_index;
   // uint8_t phase;
   uint8_t money[PLAYERS_COUNT];
+  uint8_t builds_left[AIRS_COUNT];
   LandState land_state[LANDS_COUNT];
   UnitsSea units_sea[SEAS_COUNT];
-  uint8_t builds_left[AIRS_COUNT];
   bool flagged_for_combat[AIRS_COUNT]; // track retreats
 } GameData;
 

@@ -86,6 +86,21 @@ void deserialize_game_data_from_json(GameData* data, cJSON* json) {
     fprintf(stderr, "Invalid money array\n");
   }
 
+  cJSON* builds_left_array = cJSON_GetObjectItem(json, "builds_left");
+  if (cJSON_IsArray(builds_left_array)) {
+    int array_size = cJSON_GetArraySize(builds_left_array);
+    for (int i = 0; i < array_size && i < PLAYERS_COUNT; i++) {
+      cJSON* builds_left_item = cJSON_GetArrayItem(builds_left_array, i);
+      if (cJSON_IsNumber(builds_left_item)) {
+        data->builds_left[i] = builds_left_item->valueint;
+      } else {
+        fprintf(stderr, "Invalid builds_left item\n");
+      }
+    }
+  } else {
+    fprintf(stderr, "Invalid builds_left array\n");
+  }
+
   cJSON* land_state_array = cJSON_GetObjectItem(json, "land_state");
   if (cJSON_IsArray(land_state_array)) {
     int array_size = cJSON_GetArraySize(land_state_array);
@@ -131,8 +146,8 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
     return;
   }
   set_land_state_field(json, "owner_index", &land_state->owner_idx);
-  set_land_state_field(json, "builds_left", &land_state->builds_left);
-  set_land_state_field(json, "factory_hp", &land_state->factory_hp);
+  //set_land_state_field(json, "builds_left", &land_state->builds_left);
+  set_land_state_signed_field(json, "factory_hp", &land_state->factory_hp);
   set_land_state_field(json, "factory_max", &land_state->factory_max);
   extract_and_assign(json, FIGHTER_NAME, land_state->fighters);
   extract_and_assign(json, BOMBER_NAME, land_state->bombers);
@@ -156,6 +171,13 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
         }
       }
     }
+  }
+}
+
+void set_land_state_signed_field(cJSON* json, const char* key, int8_t* field) {
+  cJSON* item = cJSON_GetObjectItem(json, key);
+  if (cJSON_IsNumber(item)) {
+    *field = item->valueint;
   }
 }
 
@@ -189,6 +211,12 @@ cJSON* serialize_game_data_to_json(GameData* data) {
     cJSON_AddItemToArray(money_array, cJSON_CreateNumber(data->money[i]));
   }
   cJSON_AddItemToObject(json, "money", money_array);
+
+  cJSON* builds_left_array = cJSON_CreateArray();
+  for (int i = 0; i < PLAYERS_COUNT; i++) {
+    cJSON_AddItemToArray(builds_left_array, cJSON_CreateNumber(data->builds_left[i]));
+  }
+  cJSON_AddItemToObject(json, "builds_left", builds_left_array);
 
   // Serialize land_state and units_sea if needed
   cJSON* land_state_array = cJSON_CreateArray();
@@ -312,7 +340,7 @@ cJSON* serialize_land_state_to_json(LandState* land_state) {
   cJSON* json = cJSON_CreateObject();
 
   cJSON_AddNumberToObject(json, "owner_index", land_state->owner_idx);
-  cJSON_AddNumberToObject(json, "builds_left", land_state->builds_left);
+  //cJSON_AddNumberToObject(json, "builds_left", land_state->builds_left);
   cJSON_AddNumberToObject(json, "factory_hp", land_state->factory_hp);
   cJSON_AddNumberToObject(json, "factory_max", land_state->factory_max);
 
