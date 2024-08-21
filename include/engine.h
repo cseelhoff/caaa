@@ -3,6 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(msg) printf("DEBUG: %s\n", msg)
+#else
+#define DEBUG_PRINT(msg)
+#endif
+
 #define STRING_BUFFER_SIZE 64
 #define MIN_AIR_HOPS 2
 #define MAX_AIR_HOPS 6

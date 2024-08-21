@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <math.h>
 
 // char buffer[STRING_BUFFER_SIZE];
 // char threeCharStr[4];
@@ -146,6 +148,7 @@ uint8_t RANDOM_NUMBERS[65536] = {0};
 u_short random_number_index = 0;
 
 void initializeGameData() {
+  DEBUG_PRINT("Entering initializeGameData");
   generate_total_air_distance();
   generate_total_land_distance();
   generate_total_sea_distance();
@@ -159,16 +162,27 @@ void initializeGameData() {
     RETREAT_OPTIONS[i] = i;
   }
 
-  // json = serialize_game_data_to_json(&gameData);
-  // write_json_to_file("game_data_0.json", json);
-  // cJSON_Delete(json);
-}
+  json = serialize_game_data_to_json(&data);
+  write_json_to_file("game_data_0.json", json);
+  cJSON_Delete(json);
 
-void load_game_data() {
-  json = read_json_from_file("game_data.json");
+  DEBUG_PRINT("Exiting initializeGameData");
+}
+#define PATH_MAX 4096
+void load_game_data(char* filename) {
+  DEBUG_PRINT("Entering load_game_data");
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    DEBUG_PRINT("Current working directory: ");
+    DEBUG_PRINT(cwd);
+  } else {
+    perror("getcwd() error");
+  }
+  json = read_json_from_file(filename);
   deserialize_game_data_from_json(&data, json);
   cJSON_Delete(json);
   refresh_cache();
+  DEBUG_PRINT("Exiting load_game_data");
 }
 
 void play_full_turn() {
@@ -285,6 +299,7 @@ void generate_total_sea_distance() {
   }
 }
 void generate_total_air_distance() {
+  DEBUG_PRINT("Entering generate_total_air_distance");
   // Initialize the total_air_distance array
   int src_air;
   int dst_air;
@@ -525,7 +540,7 @@ void generate_random_numbers() {
 }
 void refresh_cache() {
   current_player_index = data.player_index;
-  //current_player_index_plus_one = current_player_index + 1;
+  // current_player_index_plus_one = current_player_index + 1;
   current_player = PLAYERS[current_player_index];
   current_player_name = current_player.name;
   current_player_color = current_player.color;
@@ -2313,7 +2328,7 @@ void resolve_land_battles() {
     // only bombers exist
     if (air_total[src_land][BOMBERS_LAND_AIR] > 0 &&
         units_land_player_total[src_land][0] == air_total[src_land][BOMBERS_LAND_AIR]) {
-      if (factory_hp[src_land] > 0) {
+      if (factory_hp[src_land] > -factory_max[src_land]) {
         // fire_strat_aa_guns();
         uint8_t defender_damage = air_total[src_land][BOMBERS_LAND_AIR];
         uint8_t defender_hits =
@@ -2340,8 +2355,10 @@ void resolve_land_battles() {
         attacker_damage = air_total[src_land][BOMBERS_LAND_AIR] * 21;
         attacker_hits = (attacker_damage / 6) +
                         (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
-        factory_hp[src_land] =
-            factory_hp[src_land] > attacker_hits ? factory_hp[src_land] - attacker_hits : 0;
+        // factory_hp[src_land] =
+        // factory_hp[src_land] > attacker_hits ? factory_hp[src_land] - attacker_hits : 0;
+        // Include this at the top of your file
+        factory_hp[src_land] = fmax(factory_hp[src_land] - attacker_hits, -factory_max[src_land]);
         continue;
       }
     }
@@ -2645,6 +2662,7 @@ void land_bomber_units() {
   }
 }
 void buy_units() {
+    //TODO FIX Skipping fully destroyed factories
   for (uint8_t land_idx = 0; land_idx < my_factory_count; land_idx++) {
     uint8_t dst_land = my_factory_locations[land_idx];
     if (builds_left[dst_land] == 0) {
@@ -2663,7 +2681,7 @@ void buy_units() {
         if (builds_left[dst_land] == 0) {
           if (factory_hp[dst_land] >= factory_max[dst_land])
             break;
-          additional_cost = 1;
+          additional_cost = 1 - factory_hp[dst_land]; //subtracting a negative
         }
         while (unit_type_idx < COST_UNIT_SEA_COUNT &&
                BUY_UNIT_SEA[unit_type_idx] <= last_purchased) {

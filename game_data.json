@@ -8,6 +8,7 @@
 		10,
 		10
 	],
+	"builds_left":	[10, 10, 10, 10, 10],
 	"land_state": [
 		{
 			"owner_index": 4,
@@ -44,5 +45,6 @@
 		{
 			"trans_empty":	[0, 0, 0, 1]
 		}
-	]
+	],
+	"flagged_for_combat":	[false, false, false, false, false, false, false, false]
 }
