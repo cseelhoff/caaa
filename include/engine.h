@@ -3,6 +3,26 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define STRING_BUFFER_SIZE 64
+#define MIN_AIR_HOPS 2
+#define MAX_AIR_HOPS 6
+#define MIN_SEA_HOPS 1
+#define MAX_SEA_HOPS 2
+#define MIN_LAND_HOPS 1
+#define MAX_LAND_HOPS 2
+#define AIR_MOVE_SIZE 1 + MAX_AIR_HOPS - MIN_AIR_HOPS
+#define SEA_MOVE_SIZE 1 + MAX_SEA_HOPS - MIN_SEA_HOPS
+#define LAND_MOVE_SIZE 1 + MAX_LAND_HOPS - MIN_LAND_HOPS
+#define DEFENDER_LAND_UNIT_TYPES 6
+#define ATTACKER_LAND_UNIT_TYPES_1 3
+#define ATTACKER_LAND_UNIT_TYPES_2 2
+#define DEFENDER_SEA_UNIT_TYPES 13
+#define ATTACKER_SEA_UNIT_TYPES_1 2
+#define ATTACKER_SEA_UNIT_TYPES_2 2
+#define ATTACKER_SEA_UNIT_TYPES_3 8
+#define BLOCKADE_UNIT_TYPES_COUNT 5
+#define PRINTABLE_GAME_STATUS_SIZE 4096
+
 void initializeGameData();
 void generate_total_air_distance();
 void generate_total_land_distance();
