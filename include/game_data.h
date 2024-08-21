@@ -29,9 +29,9 @@ typedef struct {
   uint8_t owner_idx; // rotates
   int8_t factory_hp;
   uint8_t factory_max;
-  uint8_t bombard_max;                                     // bombarded, resets
-  //bool no_airstrip;                                 // resets
-  //bool flagged_for_combat;                                // resets
+  uint8_t bombard_max; // bombarded, resets
+  // bool no_airstrip;                                 // resets
+  // bool flagged_for_combat;                                // resets
   uint8_t fighters[FIGHTER_STATES];                        // rotates
   uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
   uint8_t infantry[INFANTRY_STATES];                       // rotates
@@ -49,24 +49,23 @@ typedef struct {
   uint8_t trans_1i[TRANS_1I_STATES];
   uint8_t trans_1a[TRANS_1A_STATES];
   uint8_t trans_1t[TRANS_1T_STATES];
-   // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
+  // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
   uint8_t trans_2i[TRANS_2I_STATES];
   uint8_t trans_1i_1a[TRANS_1I_1A_STATES];
   uint8_t trans_1i_1t[TRANS_1I_1T_STATES];
   uint8_t submarines[SUB_STATES];
   uint8_t destroyers[DESTROYER_STATES];
   uint8_t carriers[CARRIER_STATES];
-  uint8_t cruisers[CRUISER_STATES];// 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t cruisers[CRUISER_STATES];       // 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  uint8_t bs_damaged[BATTLESHIP_STATES];// 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  uint8_t bombers[BOMBER_SEA_STATES]; // move remain 1,2,3,4,5
-  uint8_t other_units[PLAYERS_COUNT - 1]
-                     [SEA_UNIT_TYPES - 1]; // no parking bombers at sea
+  uint8_t bs_damaged[BATTLESHIP_STATES];  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t bombers[BOMBER_SEA_STATES];     // move remain 1,2,3,4,5
+  uint8_t other_units[PLAYERS_COUNT - 1][SEA_UNIT_TYPES - 1]; // no parking bombers at sea
 } UnitsSea;
 
 typedef struct {
   uint8_t player_index;
-  //uint8_t phase;
+  // uint8_t phase;
   uint8_t money[PLAYERS_COUNT];
   LandState land_state[LANDS_COUNT];
   UnitsSea units_sea[SEAS_COUNT];
@@ -75,11 +74,11 @@ typedef struct {
 } GameData;
 
 typedef struct {
-  //uint8_t units_land_type_total[LANDS_COUNT][LAND_UNIT_TYPES];
+  // uint8_t units_land_type_total[LANDS_COUNT][LAND_UNIT_TYPES];
   uint8_t units_land_player_total[LANDS_COUNT][PLAYERS_COUNT];
   uint8_t units_land_grand_total[LANDS_COUNT];
   uint8_t* units_land_ptr[LANDS_COUNT][LAND_UNIT_TYPES];
-  //uint8_t units_sea_type_total[SEAS_COUNT][SEA_UNIT_TYPES];
+  // uint8_t units_sea_type_total[SEAS_COUNT][SEA_UNIT_TYPES];
   uint8_t units_sea_player_total[SEAS_COUNT][PLAYERS_COUNT];
   uint8_t units_sea_blockade_total[SEAS_COUNT][PLAYERS_COUNT];
   uint8_t units_sea_grand_total[SEAS_COUNT];
@@ -94,7 +93,7 @@ typedef struct {
 } GameCache;
 void generate_airMoveAllDestination();
 void generate_seaMoveAllDestination();
-void build_landMove2Destination() ;
+void build_landMove2Destination();
 void build_landMove1Destination();
 void build_landMove1DestinationAlt();
 void generate_total_air_distance();
@@ -110,8 +109,10 @@ void refresh_canBomberLandIn1Move();
 void refresh_canBomberLandIn2Moves();
 uint8_t getUserInput();
 uint8_t getAIInput();
-void add_valid_move_if_history_allows_1(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t dst_air, uint8_t starting_land);
-void add_valid_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t dst_air, uint8_t starting_land);
+void add_valid_land_move_if_history_allows_1(uint8_t* valid_moves, uint8_t* valid_moves_count,
+                                        uint8_t dst_air, uint8_t starting_land);
+void add_valid_land_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_moves_count,
+                                        uint8_t dst_air, uint8_t starting_land);
 void initializeGameData();
 void setPrintableStatus();
 void refresh_cache();
@@ -146,7 +147,12 @@ uint8_t ask_to_retreat();
 void retreat(uint8_t src_air, uint8_t dst_air);
 void remove_land_defenders(uint8_t src_land, uint8_t hits);
 void remove_land_attackers(uint8_t src_land, uint8_t hits);
-void add_valid_fighter_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air, uint8_t remaining_moves);
+void add_valid_unload_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_sea);
+void add_valid_fighter_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
+                             uint8_t remaining_moves);
 void add_valid_bomber_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
-                               uint8_t remaining_moves);
+                            uint8_t remaining_moves);
+bool is_sea_path_blocked(uint8_t src_sea, uint8_t dst_sea);
+bool is_sub_path_blocked(uint8_t src_sea, uint8_t dst_sea);
+bool is_land_path_blocked(uint8_t src_land, uint8_t dst_land);
 #endif
