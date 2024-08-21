@@ -13,11 +13,6 @@ typedef struct {
 
 #define TEAMS_COUNT 2
 
-Team Teams[TEAMS_COUNT] = {
-    "Allies", {0, 2, 4},
-    "Axis", {1, 3}
-};
-
 extern const uint8_t TEAM_PLAYERS[TEAMS_COUNT][MAX_TEAM_SIZE];
 
 #endif

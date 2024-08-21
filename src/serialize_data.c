@@ -1,10 +1,7 @@
 #include "serialize_data.h"
 #include "cJSON.h"
-#include "game_data.h"
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 void write_json_to_file(const char* filename, cJSON* json) {
   char* string = cJSON_Print(json);
@@ -252,34 +249,36 @@ void add_array_to_json(cJSON* json, const char* key, uint8_t* array, int size) {
 cJSON* serialize_units_sea_to_json(UnitsSea* units_sea) {
   cJSON* json = cJSON_CreateObject();
 
-  add_array_to_json(json, NAMES_UNIT_SEA[0], units_sea->fighters,
-                    STATES_MOVE_SEA[0]);
-  add_array_to_json(json, NAMES_UNIT_SEA[1], units_sea->trans_empty,
-                    STATES_MOVE_SEA[1]);
-  add_array_to_json(json, NAMES_UNIT_SEA[2], units_sea->trans_1i,
-                    STATES_MOVE_SEA[2]);
-  add_array_to_json(json, NAMES_UNIT_SEA[3], units_sea->trans_1a,
-                    STATES_MOVE_SEA[3]);
-  add_array_to_json(json, NAMES_UNIT_SEA[4], units_sea->trans_1t,
-                    STATES_MOVE_SEA[4]);
-  add_array_to_json(json, NAMES_UNIT_SEA[5], units_sea->trans_2i,
-                    STATES_MOVE_SEA[5]);
-  add_array_to_json(json, NAMES_UNIT_SEA[6], units_sea->trans_1i_1a,
-                    STATES_MOVE_SEA[6]);
-  add_array_to_json(json, NAMES_UNIT_SEA[7], units_sea->trans_1i_1t,
-                    STATES_MOVE_SEA[7]);
-  add_array_to_json(json, NAMES_UNIT_SEA[8], units_sea->submarines,
-                    STATES_MOVE_SEA[8]);
-  add_array_to_json(json, NAMES_UNIT_SEA[9], units_sea->destroyers,
-                    STATES_MOVE_SEA[9]);
-  add_array_to_json(json, NAMES_UNIT_SEA[10], units_sea->carriers,
-                    STATES_MOVE_SEA[10]);
-  add_array_to_json(json, NAMES_UNIT_SEA[11], units_sea->battleships,
-                    STATES_MOVE_SEA[11]);
-  add_array_to_json(json, NAMES_UNIT_SEA[12], units_sea->bs_damaged,
-                    STATES_MOVE_SEA[12]);
-  add_array_to_json(json, NAMES_UNIT_SEA[13], units_sea->bombers,
-                    STATES_MOVE_SEA[13]);
+  add_array_to_json(json, NAMES_UNIT_SEA[FIGHTERS], units_sea->fighters,
+                    STATES_MOVE_SEA[FIGHTERS]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_EMPTY], units_sea->trans_empty,
+                    STATES_MOVE_SEA[TRANS_EMPTY]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1I], units_sea->trans_1i,
+                    STATES_MOVE_SEA[TRANS_1I]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1A], units_sea->trans_1a,
+                    STATES_MOVE_SEA[TRANS_1A]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1T], units_sea->trans_1t,
+                    STATES_MOVE_SEA[TRANS_1T]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_2I], units_sea->trans_2i,
+                    STATES_MOVE_SEA[TRANS_2I]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1I_1A], units_sea->trans_1i_1a,
+                    STATES_MOVE_SEA[TRANS_1I_1A]);
+  add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1I_1T], units_sea->trans_1i_1t,
+                    STATES_MOVE_SEA[TRANS_1I_1T]);
+  add_array_to_json(json, NAMES_UNIT_SEA[SUBMARINES], units_sea->submarines,
+                    STATES_MOVE_SEA[SUBMARINES]);
+  add_array_to_json(json, NAMES_UNIT_SEA[DESTROYERS], units_sea->destroyers,
+                    STATES_MOVE_SEA[DESTROYERS]);
+  add_array_to_json(json, NAMES_UNIT_SEA[CARRIERS], units_sea->carriers,
+                    STATES_MOVE_SEA[CARRIERS]);
+  add_array_to_json(json, NAMES_UNIT_SEA[CRUISERS], units_sea->cruisers,
+                    STATES_MOVE_SEA[CRUISERS]);
+  add_array_to_json(json, NAMES_UNIT_SEA[BATTLESHIPS], units_sea->battleships,
+                    STATES_MOVE_SEA[BATTLESHIPS]);
+  add_array_to_json(json, NAMES_UNIT_SEA[BS_DAMAGED], units_sea->bs_damaged,
+                    STATES_MOVE_SEA[BS_DAMAGED]);
+  add_array_to_json(json, NAMES_UNIT_SEA[BOMBERS_SEA], units_sea->bombers,
+                    STATES_MOVE_SEA[BOMBERS_SEA]);
 
   cJSON* other_units_array = cJSON_CreateArray();
   for (int i = 0; i < PLAYERS_COUNT - 1; i++) {
@@ -301,20 +300,21 @@ void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
     return;
   }
 
-  extract_and_assign(json, NAMES_UNIT_SEA[0], units_sea->fighters);
-  extract_and_assign(json, NAMES_UNIT_SEA[1], units_sea->trans_empty);
-  extract_and_assign(json, NAMES_UNIT_SEA[2], units_sea->trans_1i);
-  extract_and_assign(json, NAMES_UNIT_SEA[3], units_sea->trans_1a);
-  extract_and_assign(json, NAMES_UNIT_SEA[4], units_sea->trans_1t);
-  extract_and_assign(json, NAMES_UNIT_SEA[5], units_sea->trans_2i);
-  extract_and_assign(json, NAMES_UNIT_SEA[6], units_sea->trans_1i_1a);
-  extract_and_assign(json, NAMES_UNIT_SEA[7], units_sea->trans_1i_1t);
-  extract_and_assign(json, NAMES_UNIT_SEA[8], units_sea->submarines);
-  extract_and_assign(json, NAMES_UNIT_SEA[9], units_sea->destroyers);
-  extract_and_assign(json, NAMES_UNIT_SEA[10], units_sea->carriers);
-  extract_and_assign(json, NAMES_UNIT_SEA[11], units_sea->battleships);
-  extract_and_assign(json, NAMES_UNIT_SEA[12], units_sea->bs_damaged);
-  extract_and_assign(json, NAMES_UNIT_SEA[13], units_sea->bombers);
+  extract_and_assign(json, NAMES_UNIT_SEA[FIGHTERS], units_sea->fighters);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_EMPTY], units_sea->trans_empty);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1I], units_sea->trans_1i);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1A], units_sea->trans_1a);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1T], units_sea->trans_1t);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_2I], units_sea->trans_2i);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1I_1A], units_sea->trans_1i_1a);
+  extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1I_1T], units_sea->trans_1i_1t);
+  extract_and_assign(json, NAMES_UNIT_SEA[SUBMARINES], units_sea->submarines);
+  extract_and_assign(json, NAMES_UNIT_SEA[DESTROYERS], units_sea->destroyers);
+  extract_and_assign(json, NAMES_UNIT_SEA[CARRIERS], units_sea->carriers);
+  extract_and_assign(json, NAMES_UNIT_SEA[CRUISERS], units_sea->cruisers);
+  extract_and_assign(json, NAMES_UNIT_SEA[BATTLESHIPS], units_sea->battleships);
+  extract_and_assign(json, NAMES_UNIT_SEA[BS_DAMAGED], units_sea->bs_damaged);
+  extract_and_assign(json, NAMES_UNIT_SEA[BOMBERS_SEA], units_sea->bombers);
 
   cJSON* other_units_array = cJSON_GetObjectItem(json, "other_units");
   if (cJSON_IsArray(other_units_array)) {
@@ -344,18 +344,18 @@ cJSON* serialize_land_state_to_json(LandState* land_state) {
   cJSON_AddNumberToObject(json, "factory_hp", land_state->factory_hp);
   cJSON_AddNumberToObject(json, "factory_max", land_state->factory_max);
 
-  add_array_to_json(json, NAMES_UNIT_LAND[0], land_state->fighters,
-                    STATES_MOVE_LAND[0]);
-  add_array_to_json(json, NAMES_UNIT_LAND[1], land_state->bombers,
-                    STATES_MOVE_LAND[1]);
-  add_array_to_json(json, NAMES_UNIT_LAND[2], land_state->infantry,
-                    STATES_MOVE_LAND[2]);
-  add_array_to_json(json, NAMES_UNIT_LAND[3], land_state->artillery,
-                    STATES_MOVE_LAND[3]);
-  add_array_to_json(json, NAMES_UNIT_LAND[4], land_state->tanks,
-                    STATES_MOVE_LAND[4]);
-  add_array_to_json(json, NAMES_UNIT_LAND[5], land_state->aa_guns,
-                    STATES_MOVE_LAND[5]);
+  add_array_to_json(json, NAMES_UNIT_LAND[FIGHTERS], land_state->fighters,
+                    STATES_MOVE_LAND[FIGHTERS]);
+  add_array_to_json(json, NAMES_UNIT_LAND[BOMBERS_LAND_AIR], land_state->bombers,
+                    STATES_MOVE_LAND[BOMBERS_LAND_AIR]);
+  add_array_to_json(json, NAMES_UNIT_LAND[INFANTRY], land_state->infantry,
+                    STATES_MOVE_LAND[INFANTRY]);
+  add_array_to_json(json, NAMES_UNIT_LAND[ARTILLERY], land_state->artillery,
+                    STATES_MOVE_LAND[ARTILLERY]);
+  add_array_to_json(json, NAMES_UNIT_LAND[TANKS], land_state->tanks,
+                    STATES_MOVE_LAND[TANKS]);
+  add_array_to_json(json, NAMES_UNIT_LAND[AA_GUNS], land_state->aa_guns,
+                    STATES_MOVE_LAND[AA_GUNS]);
 
   cJSON* other_units_array = cJSON_CreateArray();
   for (int i = 0; i < PLAYERS_COUNT - 1; i++) {

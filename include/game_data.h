@@ -6,22 +6,10 @@
 #include "player.h"
 #include "sea.h"
 #include "team.h"
-#include "units/aa_gun.h"
-#include "units/artillery.h"
-#include "units/battleship.h"
-#include "units/bomber.h"
-#include "units/carrier.h"
-#include "units/cruiser.h"
-#include "units/destroyer.h"
-#include "units/fighter.h"
-#include "units/infantry.h"
-#include "units/sub.h"
-#include "units/tank.h"
-#include "units/transport.h"
 #include "units/units.h"
 #include <stdint.h>
 
-#define STRING_BUFFER_SIZE 64
+//#define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
 #define MAX_AIR_TO_AIR_CONNECTIONS 7
 
@@ -91,68 +79,5 @@ typedef struct {
   char* player_names[PLAYERS_COUNT];
   char* player_colors[PLAYERS_COUNT];
 } GameCache;
-void generate_airMoveAllDestination();
-void generate_seaMoveAllDestination();
-void build_landMove2Destination();
-void build_landMove1Destination();
-void build_landMove1DestinationAlt();
-void generate_total_air_distance();
-void generate_total_land_distance();
-void generate_total_sea_distance();
-void build_airMove2Destination();
-void build_airMove3Destination();
-void build_airMove4Destination();
-void build_airMove5Destination();
-void build_airMove6Destination();
-void refresh_canBomberLandHere();
-void refresh_canBomberLandIn1Move();
-void refresh_canBomberLandIn2Moves();
-uint8_t getUserInput();
-uint8_t getAIInput();
-void add_valid_land_move_if_history_allows_1(uint8_t* valid_moves, uint8_t* valid_moves_count,
-                                        uint8_t dst_air, uint8_t starting_land);
-void add_valid_land_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_moves_count,
-                                        uint8_t dst_air, uint8_t starting_land);
-void initializeGameData();
-void setPrintableStatus();
-void refresh_cache();
-void setPrintableStatusLands();
-void setPrintableStatusSeas();
-void stage_transport_units();
-void move_transport_units();
-void move_subs();
-void move_destroyers_battleships();
-void move_fighter_units();
-void move_bomber_units();
-void move_land_unit_type(uint8_t unit_type);
-void move_tanks();
-void move_artillery();
-void move_infantry();
-void resolve_sea_battles();
-void unload_transports();
-void bomb_factories();
-void bombard_shores();
-void fire_aa_guns();
-void resolve_land_battles();
-void land_air_units();
-void move_aa_guns();
-void reset_units_fully();
-void buy_units();
-void crash_air_units();
-void collect_money();
-void rotate_turns();
-void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged);
-void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
-uint8_t ask_to_retreat();
-void retreat(uint8_t src_air, uint8_t dst_air);
-void remove_land_defenders(uint8_t src_land, uint8_t hits);
-void remove_land_attackers(uint8_t src_land, uint8_t hits);
-void add_valid_unload_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_sea);
-void add_valid_fighter_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
-                             uint8_t remaining_moves);
-void add_valid_bomber_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
-                            uint8_t remaining_moves);
-bool is_sea_path_blocked(uint8_t src_sea, uint8_t dst_sea);
-bool is_sub_path_blocked(uint8_t src_sea, uint8_t dst_sea);
-bool is_land_path_blocked(uint8_t src_land, uint8_t dst_land);
+
 #endif

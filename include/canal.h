@@ -12,9 +12,6 @@ typedef struct {
     uint8_t lands[2];
 } Canal;
 
-Canal CANALS[CANALS_COUNT] = {
-    "Panama", {0, 1}, {0, 1},
-    "Suez", {0, 2}, {1, 2}
-};
+extern const Canal CANALS[CANALS_COUNT];
 
 #endif

@@ -17,24 +17,6 @@ typedef struct {
   uint8_t connected_land_index[MAX_LAND_TO_LAND_CONNECTIONS];
 } Land;
 
-//  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
-
-Land LANDS[LANDS_COUNT] = {
-  "Washington", 4, 8, 2, 0, //owner, money, sea_con, land_conn
-  {0, 1, 0, 0}, //sea
-  {0, 0, 0, 0, 0, 0}, //land
-  "London", 2, 8, 2, 0, 
-  {1, 2, 0, 0}, 
-  {0, 0, 0, 0, 0, 0},
-  "Berlin", 1, 8, 1, 1,
-  {2, 0, 0, 0}, 
-  {3, 0, 0, 0, 0, 0},
-  "Moscow", 0, 8, 0, 2, 
-  {0, 0, 0, 0}, 
-  {2, 4, 0, 0, 0, 0},
-  "Japan", 3, 8, 1, 1,
-  {0, 0, 0, 0}, 
-  {2, 4, 0, 0, 0, 0}  
-};
+extern const Land LANDS[LANDS_COUNT];
 
 #endif
