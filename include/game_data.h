@@ -143,4 +143,10 @@ void rotate_turns();
 void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged);
 void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
 uint8_t ask_to_retreat();
+void retreat(uint8_t src_air, uint8_t dst_air);
+void remove_land_defenders(uint8_t src_land, uint8_t hits);
+void remove_land_attackers(uint8_t src_land, uint8_t hits);
+void add_valid_fighter_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air, uint8_t remaining_moves);
+void add_valid_bomber_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
+                               uint8_t remaining_moves);
 #endif
