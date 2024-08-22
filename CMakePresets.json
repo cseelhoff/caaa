@@ -12,8 +12,8 @@
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_FLAGS_DEBUG": "-DDEBUG",
-                "CMAKE_CXX_FLAGS_DEBUG": "-DDEBUG"
+                "CMAKE_C_FLAGS_DEBUG": "-g -DDEBUG",
+                "CMAKE_CXX_FLAGS_DEBUG": "-g -DDEBUG"
             }
         },
         {
