@@ -8,7 +8,7 @@
 		10,
 		10
 	],
-	"builds_left":	[10, 10, 10, 10, 10],
+	"builds_left":	[10, 8, 10, 8, 8],
 	"land_state": [
 		{
 			"owner_index": 4,

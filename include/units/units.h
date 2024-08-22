@@ -57,7 +57,7 @@ extern const uint8_t ATTACK_UNIT_SEA[SEA_UNIT_TYPES];
 extern const uint8_t DEFENSE_UNIT_SEA[SEA_UNIT_TYPES];
 extern const uint8_t MAX_MOVE_SEA[SEA_UNIT_TYPES];
 extern const uint8_t STATES_MOVE_SEA[SEA_UNIT_TYPES];
-extern const uint8_t COST_UNIT_SEA[COST_UNIT_SEA_COUNT];
+extern const uint8_t COST_UNIT_SEA[SEA_UNIT_TYPES];
 extern const uint8_t BUY_UNIT_SEA[COST_UNIT_SEA_COUNT];
 extern const uint8_t STATES_STAGING[SEA_UNIT_TYPES];
 extern const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES];
