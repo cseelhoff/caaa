@@ -120,7 +120,6 @@ void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged
 void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
 void unload_transports();
 void resolve_land_battles();
-void move_aa_guns();
 void add_valid_unload_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_sea);
 void add_valid_fighter_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
                              uint8_t remaining_moves);

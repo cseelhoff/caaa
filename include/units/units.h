@@ -41,7 +41,7 @@
 #define AA_GUNS 5
 
 #define AIR_UNIT_TYPES_COUNT 2
-#define INFINITY 255
+#define MAX_UINT8_T 255
 
 #define COST_UNIT_SEA_COUNT 7
 

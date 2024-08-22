@@ -8,7 +8,7 @@
 		10,
 		10
 	],
-	"builds_left":	[10, 8, 10, 8, 8],
+	"builds_left":	[0, 0, 0, 8, 0, 0, 0, 0],
 	"land_state": [
 		{
 			"owner_index": 4,
@@ -26,24 +26,32 @@
 			"owner_index": 1,
 			"builds_left": 10,
 			"factory_hp": 10,
-			"factory_max": 10
+			"factory_max": 10,
+			"other_land_units":	[[1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]
 		},
 		{
 			"owner_index": 0,
 			"builds_left": 8,
 			"factory_hp": 8,
-			"factory_max": 8
+			"factory_max": 8,
+			"fighters":	[0, 0, 0, 0, 1],
+			"bombers":	[0, 0, 0, 0, 0, 0, 1],
+			"infantry":	[0, 2],
+			"artillery":	[0, 2],
+			"tanks":	[0, 0, 1],
+			"aa_guns":	[0, 1]
 		},
 		{
 			"owner_index": 3,
 			"builds_left": 8,
 			"factory_hp": 8,
-			"factory_max": 8
+			"factory_max": 8,
+			"other_land_units":	[[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0]]
 		}
 	],
 	"units_sea":[
 		{
-			"trans_empty":	[0, 0, 0, 1]
+			"carriers":	[0, 1]
 		}
 	],
 	"flagged_for_combat":	[false, false, false, false, false, false, false, false]

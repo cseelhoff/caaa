@@ -26,7 +26,7 @@ typedef struct {
   uint8_t artillery[ARTILLERY_STATES];                     // rotates
   uint8_t tanks[TANK_STATES];                              // rotates
   uint8_t aa_guns[AA_GUN_STATES];                          // rotates
-  uint8_t other_units[PLAYERS_COUNT - 1][LAND_UNIT_TYPES]; // rotates
+  uint8_t other_land_units[PLAYERS_COUNT - 1][LAND_UNIT_TYPES]; // rotates
 } LandState;
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
   uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t bs_damaged[BATTLESHIP_STATES];  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t bombers[BOMBER_SEA_STATES];     // move remain 1,2,3,4,5
-  uint8_t other_units[PLAYERS_COUNT - 1][SEA_UNIT_TYPES - 1]; // no parking bombers at sea
+  uint8_t other_sea_units[PLAYERS_COUNT - 1][SEA_UNIT_TYPES - 1]; // no parking bombers at sea
 } UnitsSea;
 
 typedef struct {
