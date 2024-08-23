@@ -20,7 +20,7 @@ char* LAND_NAMES[LANDS_COUNT] = {0};
 char* SEA_NAMES[SEAS_COUNT] = {0};
 char* AIR_NAMES[AIRS_COUNT] = {0};
 uint8_t LAND_VALUE[LANDS_COUNT] = {0};
-uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
+uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {0};
 uint8_t AIR_CONN_COUNT[AIRS_COUNT] = {0};
 uint8_t AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {0};
 uint8_t AIR_DIST[AIRS_COUNT][AIRS_COUNT] = {0};
@@ -44,9 +44,8 @@ uint8_t AIR_WITHIN_X_MOVES[6][AIRS_COUNT][AIRS_COUNT - 1] = {0};
 uint8_t AIR_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {0};
 uint8_t AIR_TO_LAND_WITHIN_X_MOVES[5][AIRS_COUNT][LANDS_COUNT - 1] = {0};
 uint8_t AIR_TO_LAND_WITHIN_X_MOVES_COUNT[5][AIRS_COUNT] = {0};
-uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {MAX_UINT8_T};
-uint8_t sea_dist[SEAS_COUNT][AIRS_COUNT] = {
-    MAX_UINT8_T}; // TODO optimize sea_count rather than air_count
+uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t sea_dist[SEAS_COUNT][AIRS_COUNT] = {0}; // TODO optimize sea_count rather than air_count
 uint8_t SEA_PATH[SEA_MOVE_SIZE][CANAL_STATES][SEAS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 uint8_t SEA_PATH_ALT[CANAL_STATES][SEAS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 uint8_t sea_path1[SEAS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
@@ -385,7 +384,6 @@ void generate_LandMoveDst(int hop, int src_land, int dst_air, int cur_land, int 
       generate_LandMoveDst(hop + 1, src_land, dst_air, next_land, next_dist);
     }
   }
-  memcpy(land_path1, LAND_PATH[0], sizeof(land_path1));
 }
 void generate_landMoveAllDestination() {
   for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
@@ -400,6 +398,7 @@ void generate_landMoveAllDestination() {
       }
     }
   }
+  memcpy(land_path1, LAND_PATH[0], sizeof(land_path1));
 }
 void generate_SeaMoveDst(int hop, int src_sea, int dst_air, int cur_sea, int min_dist) {
   if (hop > MAX_SEA_HOPS)
@@ -538,14 +537,6 @@ void generate_unit_pointers() {
   for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     income_per_turn[player_idx] = 0;
     total_factory_count[player_idx] = 0;
-    enemies_count[player_idx] = 0;
-    for (int player_idx2 = 0; player_idx2 < PLAYERS_COUNT; player_idx2++) {
-      is_allied[player_idx][player_idx2] =
-          PLAYERS[data.player_index].is_allied[(data.player_index + player_idx2) % PLAYERS_COUNT];
-      if (is_allied[player_idx][player_idx2] == false) {
-        enemies[player_idx][enemies_count[player_idx]++] = player_idx2;
-      }
-    }
   }
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     units_air_ptr[land_idx][FIGHTERS] = (uint8_t*)data.land_state[land_idx].fighters;
@@ -644,8 +635,8 @@ void refresh_cache() {
         enemy_units_count[air_idx] += units_sea_player_total[player_idx][sea_idx];
         enemy_destroyers_total[sea_idx] += sea_units[DESTROYERS];
         enemy_blockade_total[sea_idx] += sea_units[DESTROYERS] + sea_units[CARRIERS] +
-                                        sea_units[CRUISERS] + sea_units[BATTLESHIPS] +
-                                        sea_units[BS_DAMAGED];
+                                         sea_units[CRUISERS] + sea_units[BATTLESHIPS] +
+                                         sea_units[BS_DAMAGED];
       } else {
         allied_carriers[sea_idx] += sea_units[CARRIERS];
       }
@@ -2615,6 +2606,21 @@ void rotate_turns() {
   // reset combat flags
   memset(data.flagged_for_combat, 0, AIRS_COUNT);
   data.player_index = (data.player_index + 1) % PLAYERS_COUNT;
+  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    enemies_count[player_idx] = 0;
+    for (int player_idx2 = 0; player_idx2 < PLAYERS_COUNT; player_idx2++) {
+      is_allied[player_idx][player_idx2] =
+          PLAYERS[data.player_index].is_allied[(data.player_index + player_idx2) % PLAYERS_COUNT];
+      if (is_allied[player_idx][player_idx2] == false) {
+        enemies[player_idx][enemies_count[player_idx]++] = player_idx2;
+      }
+    }
+  }
+
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    data.land_state[land_idx].owner_idx = (data.land_state[land_idx].owner_idx + 1) % PLAYERS_COUNT;
+  }
+  
   for (uint8_t land_idx = 0; land_idx < total_factory_count[0]; land_idx++) {
     uint8_t dst_land = factory_locations[0][land_idx];
     data.builds_left[dst_land] = *factory_max[dst_land];
