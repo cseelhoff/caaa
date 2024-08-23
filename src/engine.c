@@ -2151,7 +2151,7 @@ void resolve_land_battles() {
       // bombard_shores
       if (bombard_max[src_land] > 0) {
         attacker_damage = 0;
-        DEBUG_PRINT("BOMBARDING");
+        DEBUG_PRINT("Sea Bombardment");
         for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
           for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
             uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
@@ -2163,6 +2163,7 @@ void resolve_land_battles() {
             }
           }
         }
+        bombard_max[src_land] = 0;
         attacker_hits = (attacker_damage / 6) +
                         (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
         if (attacker_hits > 0) {
@@ -2562,6 +2563,7 @@ void collect_money() {
       (income_per_turn[0] * (*owner_idx[PLAYERS[data.player_index].capital_territory_index] == 0));
 }
 void rotate_turns() {
+  // rotate units
   memcpy(&other_land_units_temp, &other_land_units_0, OTHER_LAND_UNITS_SIZE);
   memcpy(&other_land_units_0, &data.other_land_units[0], OTHER_LAND_UNITS_SIZE);
   memmove(&data.other_land_units[0], &data.other_land_units[1], MULTI_OTHER_LAND_UNITS_SIZE);
@@ -2619,12 +2621,19 @@ void rotate_turns() {
   memcpy(units_sea_player_total[PLAYERS_COUNT], units_sea_player_total[0], SEAS_COUNT);
   memmove(&units_sea_player_total[0], &units_sea_player_total[1], PLAYERS_COUNT * SEAS_COUNT);
 
+  // reset combat flags
+  memset(data.flagged_for_combat, 0, AIRS_COUNT);
   data.player_index = (data.player_index + 1) % PLAYERS_COUNT;
-  
+
+  for (uint8_t land_idx = 0; land_idx < total_factory_count[0]; land_idx++) {
+      uint8_t dst_land = factory_locations[0][land_idx];
+      data.builds_left[dst_land] = *factory_max[dst_land];
+      for(uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[dst_land]; sea_idx++) {
+        data.builds_left[LAND_TO_SEA_CONN[dst_land][sea_idx]] += *factory_max[dst_land];
+      }
+  }
+
   refresh_cache();
-  // rotate units
   // current_player = (current_player + 1) % PLAYERS_COUNT;
   // set contruction remaining to full
-  // reset combat flags
-  // reset bombard_max
 }
