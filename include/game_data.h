@@ -18,15 +18,12 @@ typedef struct {
   int8_t factory_hp;
   uint8_t factory_max;
   uint8_t bombard_max; // bombarded, resets
-  // bool no_airstrip;                                 // resets
-  // bool flagged_for_combat;                                // resets
   uint8_t fighters[FIGHTER_STATES];                        // rotates
   uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
   uint8_t infantry[INFANTRY_STATES];                       // rotates
   uint8_t artillery[ARTILLERY_STATES];                     // rotates
   uint8_t tanks[TANK_STATES];                              // rotates
   uint8_t aa_guns[AA_GUN_STATES];                          // rotates
-  uint8_t other_land_units[PLAYERS_COUNT - 1][LAND_UNIT_TYPES]; // rotates
 } LandState;
 
 typedef struct {
@@ -48,36 +45,17 @@ typedef struct {
   uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t bs_damaged[BATTLESHIP_STATES];  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
   uint8_t bombers[BOMBER_SEA_STATES];     // move remain 1,2,3,4,5
-  uint8_t other_sea_units[PLAYERS_COUNT - 1][SEA_UNIT_TYPES - 1]; // no parking bombers at sea
 } UnitsSea;
 
 typedef struct {
-  uint8_t player_index;
-  // uint8_t phase;
-  uint8_t money[PLAYERS_COUNT];
-  uint8_t builds_left[AIRS_COUNT];
+  uint8_t player_index; //rotates
+  uint8_t money[PLAYERS_COUNT]; //rotates
+  uint8_t builds_left[AIRS_COUNT]; 
   LandState land_state[LANDS_COUNT];
   UnitsSea units_sea[SEAS_COUNT];
+  uint8_t other_land_units[PLAYERS_COUNT - 1][LANDS_COUNT][LAND_UNIT_TYPES]; // rotates
+  uint8_t other_sea_units[PLAYERS_COUNT - 1][SEAS_COUNT][SEA_UNIT_TYPES - 1]; // no parking bombers at sea
   bool flagged_for_combat[AIRS_COUNT]; // track retreats
 } GameData;
-
-typedef struct {
-  // uint8_t units_land_type_total[LANDS_COUNT][LAND_UNIT_TYPES];
-  uint8_t units_land_player_total[LANDS_COUNT][PLAYERS_COUNT];
-  uint8_t units_land_grand_total[LANDS_COUNT];
-  uint8_t* units_land_ptr[LANDS_COUNT][LAND_UNIT_TYPES];
-  // uint8_t units_sea_type_total[SEAS_COUNT][SEA_UNIT_TYPES];
-  uint8_t units_sea_player_total[SEAS_COUNT][PLAYERS_COUNT];
-  uint8_t units_sea_blockade_total[SEAS_COUNT][PLAYERS_COUNT];
-  uint8_t units_sea_grand_total[SEAS_COUNT];
-  uint8_t* units_sea_ptr[SEAS_COUNT][SEA_UNIT_TYPES];
-  uint8_t* units_air_ptr[AIRS_COUNT][AIR_UNIT_TYPES_COUNT];
-  uint8_t income_per_turn[PLAYERS_COUNT];
-  uint8_t enemies[PLAYERS_COUNT - 1];
-  uint8_t enemies_count;
-  uint8_t canal_state;
-  char* player_names[PLAYERS_COUNT];
-  char* player_colors[PLAYERS_COUNT];
-} GameCache;
 
 #endif
