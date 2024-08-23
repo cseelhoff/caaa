@@ -11,7 +11,6 @@ typedef struct {
   char* color;
   int capital_territory_index;
   uint8_t team;
-  uint8_t money;
   bool is_allied[PLAYERS_COUNT]; //alied with self
   bool is_human;
 } Player;

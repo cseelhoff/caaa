@@ -43,6 +43,7 @@ void generate_unit_pointers();
 void load_game_data();
 
 void play_full_turn();
+void refresh_quick_totals();
 void refresh_cache();
 void refresh_canBomberLandHere();
 void refresh_canBomberLandIn1Move();

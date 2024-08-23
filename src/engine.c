@@ -172,6 +172,7 @@ void load_game_data(char* filename) {
   json = read_json_from_file(filename);
   deserialize_game_data_from_json(&data, json);
   cJSON_Delete(json);
+  refresh_quick_totals();
   refresh_cache();
   DEBUG_PRINT("Exiting load_game_data");
 }
@@ -554,12 +555,8 @@ void generate_unit_pointers() {
     }
     owner_idx[land_idx] = &data.land_state[land_idx].owner_idx;
     bombard_max[land_idx] = &data.land_state[land_idx].bombard_max;
-    income_per_turn[*owner_idx[land_idx]] += LANDS[land_idx].land_value;
     factory_hp[land_idx] = &data.land_state[land_idx].factory_hp;
     factory_max[land_idx] = &data.land_state[land_idx].factory_max;
-    if (*factory_max[land_idx] > 0)
-      factory_locations[*owner_idx[land_idx]][total_factory_count[*owner_idx[land_idx]]++] =
-          land_idx;
   }
   for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     uint8_t air_idx = sea_idx + LANDS_COUNT;
@@ -584,6 +581,31 @@ void generate_unit_pointers() {
     for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       other_sea_units_ptr[player_idx][sea_idx] =
           (uint8_t*)data.other_sea_units[player_idx - 1][sea_idx];
+    }
+  }
+}
+
+void refresh_quick_totals() {
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    if (*factory_max[land_idx] > 0)
+      factory_locations[*owner_idx[land_idx]][total_factory_count[*owner_idx[land_idx]]++] =
+          land_idx;          
+    income_per_turn[*owner_idx[land_idx]] += LANDS[land_idx].land_value;    
+    for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+      units_land_player_total[player_idx][land_idx] = 0;
+      for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES; unit_idx++) {
+        units_land_player_total[player_idx][land_idx] +=
+            other_land_units_ptr[player_idx][land_idx][unit_idx];
+      }
+    }
+  }
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+      units_sea_player_total[player_idx][sea_idx] = 0;
+      for (int unit_idx = 0; unit_idx < SEA_UNIT_TYPES; unit_idx++) {
+        units_sea_player_total[player_idx][sea_idx] +=
+            other_sea_units_ptr[player_idx][sea_idx][unit_idx];
+      }
     }
   }
 }
@@ -770,14 +792,16 @@ void setPrintableStatusLands() {
   char paddedStr[32];
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     //    LandState land_state = gameData.land_state[i];
-    strcat(printableGameStatus,
-           PLAYERS[(data.player_index + *owner_idx[land_idx]) % PLAYERS_COUNT].color);
+    strcat(
+        printableGameStatus,
+        PLAYERS[(*owner_idx[land_idx] + PLAYERS_COUNT - data.player_index) % PLAYERS_COUNT].color);
     sprintf(threeCharStr, "%d ", land_idx);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, LAND_NAMES[land_idx]);
     strcat(printableGameStatus, ": ");
-    strcat(printableGameStatus,
-           PLAYERS[(data.player_index + *owner_idx[land_idx]) % PLAYERS_COUNT].name);
+    strcat(
+        printableGameStatus,
+        PLAYERS[(*owner_idx[land_idx] + PLAYERS_COUNT - data.player_index) % PLAYERS_COUNT].name);
     strcat(printableGameStatus, " ");
     sprintf(threeCharStr, "%d", data.builds_left[land_idx]);
     strcat(printableGameStatus, threeCharStr);
@@ -829,13 +853,13 @@ void setPrintableStatusLands() {
       if (units_land_player_total[player_idx][land_idx] == 0)
         continue;
       strcat(printableGameStatus, PLAYERS[(data.player_index + player_idx) % PLAYERS_COUNT].color);
-      for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES; unit_idx++) {
-        uint8_t unit_count = other_land_units_ptr[player_idx][land_idx][unit_idx];
+      for (int land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES; land_unit_idx++) {
+        uint8_t unit_count = other_land_units_ptr[player_idx][land_idx][land_unit_idx];
         if (unit_count > 0) {
           strcat(printableGameStatus,
                  PLAYERS[(data.player_index + player_idx) % PLAYERS_COUNT].name);
           strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[unit_idx]);
+          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[land_unit_idx]);
           strcat(printableGameStatus, paddedStr);
           sprintf(threeCharStr, "%3d", unit_count);
           strcat(printableGameStatus, threeCharStr);
@@ -2444,14 +2468,14 @@ void buy_units() {
             continue;
           valid_purchases[valid_purchases_count++] = unit_type;
         }
+        uint8_t dst_air = dst_land + LANDS_COUNT;
         if (valid_purchases_count == 1) {
-          data.builds_left[dst_sea] = 0;
+          data.builds_left[dst_air] = 0;
           break;
         }
-        uint8_t dst_air = dst_land + LANDS_COUNT;
         uint8_t purchase = get_user_purchase_input(dst_air, valid_purchases, valid_purchases_count);
         if (purchase == SEA_UNIT_TYPES) { // pass all units
-          data.builds_left[dst_sea] = 0;
+          data.builds_left[dst_air] = 0;
           break;
         }
         for (uint8_t sea_idx2 = sea_idx; sea_idx2 < LAND_TO_SEA_COUNT[dst_land]; sea_idx2++) {
@@ -2550,6 +2574,7 @@ void rotate_turns() {
   memcpy(&other_land_units_temp, &other_land_units_0, OTHER_LAND_UNITS_SIZE);
   memcpy(&other_land_units_0, &data.other_land_units[0], OTHER_LAND_UNITS_SIZE);
   memmove(&data.other_land_units[0], &data.other_land_units[1], MULTI_OTHER_LAND_UNITS_SIZE);
+  memcpy(&data.other_land_units[PLAYERS_COUNT - 2], &other_land_units_temp, OTHER_LAND_UNITS_SIZE);
   for (uint8_t dst_land = 0; dst_land < LANDS_COUNT; dst_land++) {
     LandState land0 = data.land_state[dst_land];
     uint8_t* land1 = other_land_units_0[dst_land];
@@ -2563,6 +2588,7 @@ void rotate_turns() {
   memcpy(&other_sea_units_temp, &other_sea_units_0, OTHER_SEA_UNITS_SIZE);
   memcpy(&other_sea_units_0, &data.other_sea_units[0], OTHER_SEA_UNITS_SIZE);
   memmove(&data.other_sea_units[0], &data.other_sea_units[1], MULTI_OTHER_SEA_UNITS_SIZE);
+  memcpy(&data.other_sea_units[PLAYERS_COUNT - 2], &other_sea_units_temp, OTHER_SEA_UNITS_SIZE);
   for (uint8_t dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
     for (uint8_t unit_type = 0; unit_type < LAND_UNIT_TYPES; unit_type++) {
       UnitsSea sea0 = data.units_sea[dst_sea];
@@ -2585,26 +2611,32 @@ void rotate_turns() {
     }
   }
   uint8_t temp_money = data.money[0];
-  memmove(&data.money[0], &data.money[1], PLAYERS_COUNT - 4);
+  memmove(&data.money[0], &data.money[1], sizeof(data.money[0]) * (PLAYERS_COUNT - 1));
   data.money[PLAYERS_COUNT - 1] = temp_money;
   income_per_turn[PLAYERS_COUNT] = income_per_turn[0];
-  memmove(&income_per_turn[0], &income_per_turn[1], PLAYERS_COUNT);
+  memmove(&income_per_turn[0], &income_per_turn[1], sizeof(income_per_turn[0]) * PLAYERS_COUNT);
   total_factory_count[PLAYERS_COUNT] = total_factory_count[0];
-  memmove(&total_factory_count[0], &total_factory_count[1], PLAYERS_COUNT);
-  enemies_count[PLAYERS_COUNT] = enemies_count[0];
-  memmove(&enemies_count[0], &enemies_count[1], PLAYERS_COUNT);
-  memcpy(factory_locations[PLAYERS_COUNT], factory_locations[0], LANDS_COUNT);
-  memmove(&factory_locations[0], &factory_locations[1], PLAYERS_COUNT * LANDS_COUNT);
-  memcpy(is_allied[PLAYERS_COUNT], is_allied[0], PLAYERS_COUNT);
-  memmove(&is_allied[0], &is_allied[1], PLAYERS_COUNT * PLAYERS_COUNT);
-  memcpy(enemies[PLAYERS_COUNT], enemies[0], (PLAYERS_COUNT - 1));
-  memmove(&enemies[0], &enemies[1], PLAYERS_COUNT * (PLAYERS_COUNT - 1));
-  memcpy(units_land_player_total[PLAYERS_COUNT], units_land_player_total[0], LANDS_COUNT);
-  memmove(&units_land_player_total[0], &units_land_player_total[1], PLAYERS_COUNT * LANDS_COUNT);
-  memcpy(units_sea_player_total[PLAYERS_COUNT], units_sea_player_total[0], SEAS_COUNT);
-  memmove(&units_sea_player_total[0], &units_sea_player_total[1], PLAYERS_COUNT * SEAS_COUNT);
+  memmove(&total_factory_count[0], &total_factory_count[1],
+          sizeof(total_factory_count[0]) * PLAYERS_COUNT);
+  //  enemies_count[PLAYERS_COUNT] = enemies_count[0];
+  //  memmove(&enemies_count[0], &enemies_count[1], PLAYERS_COUNT);
+  memcpy(&factory_locations[PLAYERS_COUNT], &factory_locations[0], sizeof(factory_locations[0]));
+  memmove(&factory_locations[0], &factory_locations[1],
+          sizeof(factory_locations[0]) * PLAYERS_COUNT);
+  //  memcpy(&is_allied[PLAYERS_COUNT], is_allied[0], PLAYERS_COUNT);
+  //  memmove(&is_allied[0], &is_allied[1], PLAYERS_COUNT * PLAYERS_COUNT);
+  //  memcpy(&enemies[PLAYERS_COUNT], enemies[0], (PLAYERS_COUNT - 1));
+  //  memmove(&enemies[0], &enemies[1], PLAYERS_COUNT * (PLAYERS_COUNT - 1));
+  memcpy(&units_land_player_total[PLAYERS_COUNT], &units_land_player_total[0],
+         sizeof(units_land_player_total[0]));
+  memmove(&units_land_player_total[0], &units_land_player_total[1],
+          sizeof(units_land_player_total[0]) * PLAYERS_COUNT);
+  memcpy(&units_sea_player_total[PLAYERS_COUNT], &units_sea_player_total[0],
+         sizeof(units_sea_player_total[0]));
+  memmove(&units_sea_player_total[0], &units_sea_player_total[1],
+          sizeof(units_sea_player_total[0]) * PLAYERS_COUNT);
   // reset combat flags
-  memset(data.flagged_for_combat, 0, AIRS_COUNT);
+  memset(&data.flagged_for_combat, 0, sizeof(data.flagged_for_combat));
   data.player_index = (data.player_index + 1) % PLAYERS_COUNT;
   for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     enemies_count[player_idx] = 0;
@@ -2620,12 +2652,12 @@ void rotate_turns() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     data.land_state[land_idx].owner_idx = (data.land_state[land_idx].owner_idx + 1) % PLAYERS_COUNT;
   }
-  
-  for (uint8_t land_idx = 0; land_idx < total_factory_count[0]; land_idx++) {
-    uint8_t dst_land = factory_locations[0][land_idx];
+
+  for (int land_idx = 0; land_idx < total_factory_count[0]; land_idx++) {
+    int dst_land = factory_locations[0][land_idx];
     data.builds_left[dst_land] = *factory_max[dst_land];
-    for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[dst_land]; sea_idx++) {
-      data.builds_left[LAND_TO_SEA_CONN[dst_land][sea_idx]] += *factory_max[dst_land];
+    for (int sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[dst_land]; sea_idx++) {
+      data.builds_left[LAND_TO_SEA_CONN[dst_land][sea_idx] + LANDS_COUNT] += *factory_max[dst_land];
     }
   }
   refresh_cache();
