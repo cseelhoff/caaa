@@ -81,7 +81,7 @@ uint8_t get_user_purchase_input(uint8_t src_air, uint8_t* valid_purchases,
 uint8_t get_user_move_input(uint8_t unit_type, uint8_t src_air, uint8_t* valid_moves,
                             uint8_t valid_moves_count);
 void update_move_history(uint8_t user_input, uint8_t src_air, uint8_t* valid_moves,
-                         uint8_t valid_moves_count);
+                         uint8_t* valid_moves_count);
 bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea);
 void add_valid_land_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_land,
                           uint8_t moves_remaining, uint8_t unit_type);
