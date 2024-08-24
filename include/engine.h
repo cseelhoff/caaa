@@ -45,12 +45,6 @@ void load_game_data();
 void play_full_turn();
 void refresh_quick_totals();
 void refresh_cache();
-void refresh_canBomberLandHere();
-void refresh_canBomberLandIn1Move();
-void refresh_canBomberLandIn2Moves();
-void refresh_canFighterLandHere();
-void refresh_canFighterLandIn1Move();
-void refresh_canFighterLandHere_final();
 
 void setPrintableStatus();
 void setPrintableStatusLands();
@@ -81,15 +75,7 @@ void build_airMove3Destination();
 void build_airMove4Destination();
 void build_airMove5Destination();
 void build_airMove6Destination();
-void refresh_canBomberLandHere();
-void refresh_canBomberLandIn1Move();
-void refresh_canBomberLandIn2Moves();
-uint8_t getUserInput();
-uint8_t getAIInput();
-void add_valid_land_move_if_history_allows_1(uint8_t* valid_moves, uint8_t* valid_moves_count,
-                                             uint8_t dst_air, uint8_t starting_land);
-void add_valid_land_move_if_history_allows_2(uint8_t* valid_moves, uint8_t* valid_moves_count,
-                                             uint8_t dst_air, uint8_t starting_land);
+
 uint8_t get_user_purchase_input(uint8_t src_air, uint8_t* valid_purchases,
                                 uint8_t valid_purchases_count);
 uint8_t get_user_move_input(uint8_t unit_type, uint8_t src_air, uint8_t* valid_moves,
