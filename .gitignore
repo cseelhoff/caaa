@@ -55,3 +55,4 @@ build/
 .cache/
 
 game_data_0.json
+backup_game.json
