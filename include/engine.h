@@ -82,7 +82,7 @@ uint8_t get_user_move_input(uint8_t unit_type, uint8_t src_air, uint8_t* valid_m
                             uint8_t valid_moves_count);
 void update_move_history(uint8_t user_input, uint8_t src_air, uint8_t* valid_moves,
                          uint8_t* valid_moves_count);
-bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea);
+bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea, uint8_t land_unit_state);
 void add_valid_land_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_land,
                           uint8_t moves_remaining, uint8_t unit_type);
 void add_valid_sea_moves(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_sea,
