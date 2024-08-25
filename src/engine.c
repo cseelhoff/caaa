@@ -80,7 +80,8 @@ uint8_t ORDER_OF_SEA_ATTACKERS_1[ATTACKER_SEA_UNIT_TYPES_1] = {SUBMARINES, DESTR
 uint8_t ORDER_OF_SEA_ATTACKERS_2[ATTACKER_SEA_UNIT_TYPES_2] = {FIGHTERS, BOMBERS_SEA};
 uint8_t ORDER_OF_SEA_ATTACKERS_3[ATTACKER_SEA_UNIT_TYPES_3] = {
     BS_DAMAGED, TRANS_EMPTY, TRANS_1I, TRANS_1A, TRANS_1T, TRANS_2I, TRANS_1I_1A, TRANS_1I_1T};
-uint8_t RETREAT_OPTIONS[256] = {0};
+uint8_t valid_retreats[MAX_SEA_TO_SEA_CONNECTIONS + 1] = {0};
+uint8_t retreat_count = 0;
 uint8_t RANDOM_NUMBERS[65536] = {0};
 u_short random_number_index = 0;
 char printableGameStatus[PRINTABLE_GAME_STATUS_SIZE] = "";
@@ -151,9 +152,9 @@ void initializeGameData() {
   generate_random_numbers();
   generate_unit_pointers();
   // set RETREAT_OPTIONS to be an array of values from 0 to 255
-  for (int i = 0; i < 255; i++) {
-    RETREAT_OPTIONS[i] = i;
-  }
+  // for (int i = 0; i < 255; i++) {
+  //  RETREAT_OPTIONS[i] = i;
+  //}
   json = serialize_game_data_to_json(&data);
   write_json_to_file("game_data_0.json", json);
   cJSON_Delete(json);
@@ -254,13 +255,19 @@ void generate_total_sea_distance() {
   // Initialize the total_land_distance array
   for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
     // SEA_NAMES[src_sea] = SEAS[src_sea].name;
-    SEA_TO_SEA_COUNT[src_sea] = SEAS[src_sea].sea_conn_count;
-    for (int conn_idx = 0; conn_idx < SEAS[src_sea].sea_conn_count; conn_idx++) {
-      SEA_TO_SEA_CONN[src_sea][conn_idx] = SEAS[src_sea].connected_sea_index[conn_idx];
+    uint8_t sea_to_sea_count = SEAS[src_sea].sea_conn_count;
+    SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
+    uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
+    const Sea* sea = &SEAS[src_sea];
+    for (int conn_idx = 0; conn_idx < sea_to_sea_count; conn_idx++) {
+      sea_to_sea_conn[conn_idx] = sea->connected_sea_index[conn_idx];
     }
-    SEA_TO_LAND_COUNT[src_sea] = SEAS[src_sea].land_conn_count;
-    for (int conn_idx = 0; conn_idx < SEAS[src_sea].land_conn_count; conn_idx++) {
-      SEA_TO_LAND_CONN[src_sea][conn_idx] = SEAS[src_sea].connected_land_index[conn_idx];
+    uint8_t sea_to_land_count = SEAS[src_sea].land_conn_count;
+    SEA_TO_LAND_COUNT[src_sea] = sea_to_land_count;
+    uint8_t* sea_to_land_conn = SEA_TO_LAND_CONN[src_sea];
+    sea = &SEAS[src_sea];
+    for (int conn_idx = 0; conn_idx < sea_to_land_count; conn_idx++) {
+      sea_to_land_conn[conn_idx] = sea->connected_land_index[conn_idx];
     }
   }
   for (int canal_idx = 0; canal_idx < CANAL_STATES; canal_idx++) {
@@ -767,6 +774,11 @@ void setPrintableStatusLands() {
       int current_player_idx = (player_index + player_idx) % PLAYERS_COUNT;
       strcat(printableGameStatus, PLAYERS[current_player_idx].color);
       uint8_t* other_land_units_here = other_land_units_ptr[player_idx][land_idx];
+#ifdef DEBUG
+      if (*other_land_units_here == 255) {
+        printf("ERROR: other_land_units_here == 255\n");
+      }
+#endif
       for (int land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES; land_unit_idx++) {
         uint8_t unit_count = other_land_units_here[land_unit_idx];
         if (unit_count > 0) {
@@ -1329,9 +1341,8 @@ void stage_transport_units() {
     clear_move_history();
     // TODO CHECKPOINT
     for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      uint8_t* units_sea_ptr_src_sea_unit_type_staging_state =
-          &units_sea_ptr[src_sea][unit_type][staging_state];
-      if (*units_sea_ptr_src_sea_unit_type_staging_state == 0)
+      uint8_t* total_ships = &units_sea_ptr[src_sea][unit_type][staging_state];
+      if (*total_ships == 0)
         continue;
       uint8_t valid_moves[AIRS_COUNT];
       uint8_t src_air = src_sea + LANDS_COUNT;
@@ -1339,12 +1350,12 @@ void stage_transport_units() {
       uint8_t valid_moves_count = 1;
       add_valid_sea_moves(valid_moves, &valid_moves_count, src_sea, 2);
       uint8_t* units_sea_ptr_src_sea_unit_type = units_sea_ptr[src_sea][unit_type];
-      while (*units_sea_ptr_src_sea_unit_type_staging_state > 0) {
+      while (*total_ships > 0) {
         uint8_t dst_air = get_user_move_input(unit_type, src_air, valid_moves, valid_moves_count);
         update_move_history(dst_air, src_sea, valid_moves, &valid_moves_count);
         if (src_air == dst_air) {
-          units_sea_ptr_src_sea_unit_type[done_staging]++;
-          *units_sea_ptr_src_sea_unit_type_staging_state -= 1;
+          units_sea_ptr_src_sea_unit_type[done_staging] += *total_ships;
+          *total_ships = 0;
           continue;
         }
         uint8_t dst_sea = dst_air - LANDS_COUNT;
@@ -1372,7 +1383,15 @@ void stage_transport_units() {
   }
 }
 void move_fighter_units() {
+#ifdef DEBUG
   DEBUG_PRINT("Entering move_fighter_units");
+  setPrintableStatus();
+  printf("%s\n", printableGameStatus);
+  if (enemy_units_count[2] == -1) {
+    printf("DEBUG: enemy_units_count[2] == -1\n");
+  }
+#endif
+
   clear_move_history();
   // refresh_canFighterLandHere
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
@@ -1429,10 +1448,14 @@ void move_fighter_units() {
     add_valid_fighter_moves(valid_moves, &valid_moves_count, src_air, FIGHTER_MOVES_MAX);
     while (*total_fighters > 0) {
       uint8_t dst_air = get_user_move_input(FIGHTERS, src_air, valid_moves, valid_moves_count);
+#ifdef DEBUG
+      printf("DEBUG: player: %s moving fighters %d, src_air: %d, dst_air: %d\n",
+             PLAYERS[data.player_index].name, FIGHTERS, src_air, dst_air);
+#endif
       update_move_history(dst_air, src_air, valid_moves, &valid_moves_count);
       if (src_air == dst_air) {
-        units_land_ptr[src_air][FIGHTERS][0]++;
-        *total_fighters -= 1;
+        units_land_ptr[src_air][FIGHTERS][0] += *total_fighters;
+        *total_fighters = 0;
         continue;
       }
       uint8_t airDistance = AIR_DIST[src_air][dst_air];
@@ -1450,9 +1473,9 @@ void move_fighter_units() {
       }
       if (dst_air < LANDS_COUNT) {
         units_land_ptr[dst_air][FIGHTERS][FIGHTER_MOVES_MAX - airDistance]++;
-        other_land_units_ptr[0][dst_air][FIGHTERS]++;
+        other_land_units_0[dst_air][FIGHTERS]++;
         units_land_player_total[0][dst_air]++;
-        other_land_units_ptr[0][src_air][FIGHTERS]--;
+        other_land_units_0[src_air][FIGHTERS]--;
         units_land_player_total[0][src_air]--;
       } else {
         uint8_t dst_sea = dst_air - LANDS_COUNT;
@@ -1522,10 +1545,14 @@ void move_bomber_units() {
     while (*total_bombers > 0) {
       uint8_t dst_air =
           get_user_move_input(BOMBERS_LAND_AIR, src_land, valid_moves, valid_moves_count);
+#ifdef DEBUG
+      printf("DEBUG: player: %s bombers fighters %d, src_air: %d, dst_air: %d\n",
+             PLAYERS[data.player_index].name, BOMBERS_LAND_AIR, src_land, dst_air);
+#endif
       update_move_history(dst_air, src_land, valid_moves, &valid_moves_count);
       if (src_land == dst_air) {
-        units_land_ptr[src_land][BOMBERS_LAND_AIR][0]++;
-        *total_bombers -= 1;
+        units_land_ptr[src_land][BOMBERS_LAND_AIR][0] += *total_bombers;
+        *total_bombers = 0;
         continue;
       }
       if (dst_air < LANDS_COUNT) {
@@ -1591,20 +1618,25 @@ void move_land_unit_type(uint8_t unit_type) {
       add_valid_land_moves(valid_moves, &valid_moves_count, src_land, moves_remaining, unit_type);
       while (*total_units > 0) {
         uint8_t dst_air = get_user_move_input(unit_type, src_land, valid_moves, valid_moves_count);
+#ifdef DEBUG
+        printf("DEBUG: player: %s moving land unit %d, src_air: %d, dst_air: %d enemy count: %d\n",
+               PLAYERS[data.player_index].name, unit_type, src_land, dst_air,
+               enemy_units_count[dst_air]);
+#endif
         update_move_history(dst_air, src_land, valid_moves, &valid_moves_count);
         if (src_land == dst_air) {
-          units_land_ptr[src_land][unit_type][0]++;
-          *total_units -= 1;
+          units_land_ptr[src_land][unit_type][0] += *total_units;
+          *total_units = 0;
           continue;
         }
         if (dst_air >= LANDS_COUNT) {
           load_transport(unit_type, src_land, dst_air - LANDS_COUNT, moves_remaining);
+          // recalculate valid moves since transport cargo has changed
           uint8_t valid_moves_count = 1;
           add_valid_land_moves(valid_moves, &valid_moves_count, src_land, moves_remaining,
                                unit_type);
           continue;
         }
-        DEBUG_PRINT("Moving land unit to land and possible combat");
         data.flagged_for_combat[dst_air] = enemy_units_count[dst_air] > 0;
         // if the destination is not blitzable, then end unit turn
         uint8_t landDistance;
@@ -1617,9 +1649,9 @@ void move_land_unit_type(uint8_t unit_type) {
           data.flagged_for_combat[dst_air] = true;
         }
         units_land_ptr[dst_air][unit_type][moves_remaining - landDistance]++;
-        other_land_units_ptr[0][dst_air][unit_type]++; // TODO ptr 0? or other_land_units_0
+        other_land_units_0[dst_air][unit_type]++;
         units_land_player_total[0][dst_air]++;
-        other_land_units_ptr[0][src_land][unit_type]--;
+        other_land_units_0[src_land][unit_type]--;
         units_land_player_total[0][src_land]--;
         *total_units -= 1;
       }
@@ -1638,9 +1670,8 @@ void move_transport_units() {
     // TODO CHECKPOINT
     for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
       for (int cur_state = max_state; cur_state >= min_state; cur_state--) {
-        uint8_t* units_sea_ptr_src_sea_unit_type_cur_state =
-            &units_sea_ptr[src_sea][unit_type][cur_state];
-        if (*units_sea_ptr_src_sea_unit_type_cur_state == 0)
+        uint8_t* total_ships = &units_sea_ptr[src_sea][unit_type][cur_state];
+        if (*total_ships == 0)
           continue;
         int moves_remaining = cur_state - STATES_UNLOADING[unit_type];
         uint8_t valid_moves[AIRS_COUNT];
@@ -1648,8 +1679,12 @@ void move_transport_units() {
         valid_moves[0] = src_air;
         uint8_t valid_moves_count = 1;
         add_valid_sea_moves(valid_moves, &valid_moves_count, src_sea, moves_remaining);
-        while (*units_sea_ptr_src_sea_unit_type_cur_state > 0) {
+        while (*total_ships > 0) {
           uint8_t dst_air = get_user_move_input(unit_type, src_air, valid_moves, valid_moves_count);
+#ifdef DEBUG
+          printf("DEBUG: moving transport units unit_type: %d, src_air: %d, dst_air: %d\n",
+                 unit_type, src_air, dst_air);
+#endif
           update_move_history(dst_air, src_air, valid_moves, &valid_moves_count);
           uint8_t dst_sea = dst_air - LANDS_COUNT;
           if (enemy_blockade_total[dst_sea] > 0) {
@@ -1658,14 +1693,14 @@ void move_transport_units() {
             break;
           }
           if (src_air == dst_air) {
-            units_sea_ptr[src_sea][unit_type][done_moving]++;
-            units_sea_ptr_src_sea_unit_type_cur_state -= 1;
+            units_sea_ptr[src_sea][unit_type][done_moving] += *total_ships;
+            *total_ships = 0;
             continue;
           }
           units_sea_ptr[dst_sea][unit_type][done_moving]++;
           other_sea_units_0[dst_sea][unit_type]++;
           units_sea_player_total[0][dst_sea]++;
-          units_sea_ptr_src_sea_unit_type_cur_state -= 1;
+          *total_ships -= 1;
           other_sea_units_0[src_sea][unit_type]--;
           units_sea_player_total[0][src_sea]--;
           if (unit_type <= TRANS_1T) {
@@ -1694,6 +1729,10 @@ void move_subs() {
     add_valid_sub_moves(valid_moves, &valid_moves_count, src_sea, SUB_MOVES_MAX);
     while (*total_subs > 0) {
       uint8_t dst_air = get_user_move_input(SUBMARINES, src_air, valid_moves, valid_moves_count);
+#ifdef DEBUG
+      printf("DEBUG: moving sub units unit_type: %d, src_air: %d, dst_air: %d\n", SUBMARINES,
+             src_air, dst_air);
+#endif
       update_move_history(dst_air, src_air, valid_moves, &valid_moves_count);
       uint8_t dst_sea = dst_air - LANDS_COUNT;
       if (enemy_units_count[dst_sea] > 0) {
@@ -1702,14 +1741,14 @@ void move_subs() {
         break;
       }
       if (src_air == dst_air) {
-        units_sea_ptr[src_sea][SUBMARINES][SUB_DONE_MOVING]++;
-        *total_subs -= 1;
+        units_sea_ptr[src_sea][SUBMARINES][SUB_DONE_MOVING] += *total_subs;
+        *total_subs = 0;
         continue;
       }
       units_sea_ptr[dst_sea][SUBMARINES][SUB_DONE_MOVING]++;
       other_sea_units_0[dst_sea][SUBMARINES]++;
       units_sea_player_total[0][dst_sea]++;
-      units_sea_ptr[src_sea][SUBMARINES][SUB_UNMOVED]--;
+      *total_subs -= 1;
       other_sea_units_0[src_sea][SUBMARINES]--;
       units_sea_player_total[0][src_sea]--;
     }
@@ -1734,18 +1773,25 @@ void move_destroyers_battleships() {
       add_valid_sea_moves(valid_moves, &valid_moves_count, src_sea, moves_remaining);
       while (*total_ships > 0) {
         uint8_t dst_air = get_user_move_input(unit_type, src_air, valid_moves, valid_moves_count);
+#ifdef DEBUG
+        printf("DEBUG: moving ships units unit_type: %d, src_air: %d, dst_air: %d\n", unit_type,
+               src_air, dst_air);
+        if (unit_type == DESTROYERS) {
+          printf("DEBUG: src_sea: %d, dst_air: %d\n", src_sea, dst_air);
+        }
+#endif
         update_move_history(dst_air, src_air, valid_moves, &valid_moves_count);
-        uint8_t dst_sea = dst_air - LANDS_COUNT;
-        if (enemy_blockade_total > 0) {
+        if (enemy_units_count[dst_air] > 0) {
           DEBUG_PRINT("Moving large ships. Enemy units detected, flagging for combat");
-          data.flagged_for_combat[dst_sea] = true;
-          break;
+          data.flagged_for_combat[dst_air] = true;
+          // break;
         }
         if (src_air == dst_air) {
-          units_sea_ptr[src_sea][unit_type][done_moving]++;
-          *total_ships -= 1;
+          units_sea_ptr[src_sea][unit_type][done_moving] += *total_ships;
+          *total_ships = 0;
           continue;
         }
+        uint8_t dst_sea = dst_air - LANDS_COUNT;
         units_sea_ptr[dst_sea][unit_type][done_moving]++;
         other_sea_units_0[dst_sea][unit_type]++;
         units_sea_player_total[0][dst_sea]++;
@@ -1772,8 +1818,13 @@ void resolve_sea_battles() {
     if (units_sea_player_total[0][src_sea] == 0) {
       continue;
     }
+    setPrintableStatus();
+    printf("%s\n", printableGameStatus);
+#ifdef DEBUG
+    printf("DEBUG: resolve_sea_battles: src_sea: %d\n", src_sea);
+#endif
     // does enemy only have submerged subs?
-    bool defender_submerged = units_sea_ptr[src_sea][DESTROYERS][0] == 0;
+    bool defender_submerged = other_sea_units_0[src_sea][DESTROYERS] == 0;
     if (defender_submerged) {
       uint8_t total_enemy_subs = 0;
       for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
@@ -1790,6 +1841,17 @@ void resolve_sea_battles() {
     }
 
     while (true) {
+#ifdef DEBUG
+      setPrintableStatus();
+      printf("%s\n", printableGameStatus);
+      if (other_land_units_0[2][FIGHTERS] == 255) {
+        printf("DEBUG: units_land_ptr[0][FIGHTERS][0] == 255\n");
+      }
+      if (enemy_units_count[2] == -1) {
+        printf("DEBUG: enemy_units_count[2] == -1\n");
+      }
+#endif
+      uint8_t* units11 = &units_sea_ptr[src_sea][DESTROYERS][0];
       bool targets_exist = false;
       if (enemy_blockade_total[src_sea] > 0) {
         for (int enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
@@ -1848,7 +1910,7 @@ void resolve_sea_battles() {
       if (!defender_submerged) {
         defender_damage = 0;
         for (int enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-          defender_damage += other_sea_units_ptr[enemies_0[enemy_idx]][src_air][SUBMARINES];
+          defender_damage += other_sea_units_ptr[enemies_0[enemy_idx]][src_sea][SUBMARINES];
         }
         defender_hits = (defender_damage / 6) +
                         (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
@@ -1889,14 +1951,29 @@ void resolve_sea_battles() {
       }
 
       // ask to retreat (0-255, any non valid retreat zone is considered a no)
+      valid_retreats[0] = src_sea;
+      retreat_count = 1;
+      uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
+      for (int sea_conn_idx = 0; sea_conn_idx < SEA_TO_SEA_COUNT[src_sea]; sea_conn_idx++) {
+        uint8_t sea_dst = sea_to_sea_conn[sea_conn_idx];
+        if (enemy_blockade_total[sea_dst] == 0)
+          valid_retreats[retreat_count++] = sea_dst;
+      }
       uint8_t retreat = ask_to_retreat();
       // if retreat, move units to retreat zone immediately and end battle
       if (sea_dist[src_sea][retreat] == 1 && enemy_units_count[retreat] == 0 &&
           !data.flagged_for_combat[retreat]) {
+#ifdef DEBUG
+        printf("DEBUG: retreating to %d\n", retreat);
+#endif
         for (uint8_t unit_type = TRANS_EMPTY; unit_type <= BS_DAMAGED; unit_type++) {
           units_sea_ptr[retreat][unit_type][0] +=
               units_sea_ptr[src_sea][unit_type][STATES_UNLOADING[unit_type]];
           units_sea_ptr[src_sea][unit_type][STATES_UNLOADING[unit_type]] = 0;
+          other_sea_units_0[retreat][unit_type] += other_sea_units_0[src_sea][unit_type];
+          units_sea_player_total[0][retreat] += units_sea_player_total[0][src_sea];
+          units_sea_player_total[0][src_sea] -= units_sea_player_total[0][src_sea];
+          other_sea_units_0[src_sea][unit_type] = 0;
           data.flagged_for_combat[src_air] = false;
         }
         continue;
@@ -1911,9 +1988,9 @@ uint8_t ask_to_retreat() {
     setPrintableStatus();
     strcat(printableGameStatus, "To where do you want to retreat (255 for no)? ");
     printf("%s\n", printableGameStatus);
-    return getUserInput(RETREAT_OPTIONS, AIRS_COUNT);
+    return getUserInput(valid_retreats, AIRS_COUNT);
   }
-  return getAIInput(RETREAT_OPTIONS, AIRS_COUNT);
+  return getAIInput(valid_retreats, AIRS_COUNT);
 }
 void remove_land_defenders(uint8_t src_land, uint8_t hits) {
   for (uint8_t unit_idx = 0; unit_idx < DEFENDER_LAND_UNIT_TYPES; unit_idx++) {
@@ -1981,6 +2058,9 @@ void remove_land_attackers(uint8_t src_land, uint8_t hits) {
   }
 }
 void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged) {
+#ifdef DEBUG
+  printf("DEBUG: remove_sea_defenders: src_sea: %d, hits: %d\n", src_sea, hits);
+#endif
   for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
     uint8_t enemy_player_idx = enemies_0[enemy_idx];
     uint8_t* total_battleships = &other_sea_units_ptr[enemy_player_idx][src_sea][BATTLESHIPS];
@@ -2030,11 +2110,17 @@ void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged
           hits -= *total_units;
           units_sea_player_total[enemy_player_idx][src_sea] -= *total_units;
           enemy_units_count[src_sea] -= *total_units;
+          if (unit_idx >= DESTROYERS && unit_idx <= BS_DAMAGED) {
+            enemy_blockade_total[src_sea] -= *total_units;
+          }
           *total_units = 0;
         } else {
           *total_units -= hits;
           units_sea_player_total[enemy_player_idx][src_sea] -= hits;
           enemy_units_count[src_sea] -= hits;
+          if (unit_idx >= DESTROYERS && unit_idx <= BS_DAMAGED) {
+            enemy_blockade_total[src_sea] -= hits;
+          }
           hits = 0;
           return;
         }
@@ -2044,6 +2130,9 @@ void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged
 }
 
 void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
+#ifdef DEBUG
+  printf("DEBUG: remove_sea_attackers: src_sea: %d, hits: %d\n", src_sea, hits);
+#endif
   uint8_t* total_battleships = &units_sea_ptr[src_sea][BATTLESHIPS][0];
   uint8_t* total_bs_damaged = &units_sea_ptr[src_sea][BS_DAMAGED][0];
   if (*total_battleships > 0) {
@@ -2075,6 +2164,7 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
       } else {
         *total_units -= hits;
         units_sea_player_total[0][src_sea] -= hits;
+        other_sea_units_0[src_sea][unit_type] -= hits;
         hits = 0;
         return;
       }
@@ -2112,7 +2202,6 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
       return;
     }
   }
-  uint8_t src_air = src_sea + LANDS_COUNT;
   for (uint8_t unit_idx = 0; unit_idx < ATTACKER_SEA_UNIT_TYPES_2; unit_idx++) {
     uint8_t unit_type = ORDER_OF_SEA_ATTACKERS_2[unit_idx];
     if (other_land_units_ptr[0][src_sea][unit_type] == 0)
@@ -2174,28 +2263,40 @@ void unload_transports() {
     uint8_t unload_cargo2 = UNLOAD_CARGO2[unit_type];
     clear_move_history();
     for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+      uint8_t* total_units = &units_sea_ptr[src_sea][unit_type][unloading_state];
+      if (*total_units == 0)
+        continue;
+      uint8_t src_air = src_sea + LANDS_COUNT;
       uint8_t valid_moves[AIRS_COUNT];
-      valid_moves[0] = src_sea;
+      valid_moves[0] = src_air;
       uint8_t valid_moves_count = 1;
       add_valid_unload_moves(valid_moves, &valid_moves_count, src_sea);
-      while (units_sea_ptr[src_sea][unit_type][unloading_state] > 0) {
-        uint8_t src_air = src_sea + LANDS_COUNT;
+      while (*total_units > 0) {
         uint8_t dst_air = get_user_move_input(unit_type, src_air, valid_moves, valid_moves_count);
         update_move_history(dst_air, src_sea, valid_moves, &valid_moves_count);
         if (src_air == dst_air) {
-          units_sea_ptr[src_sea][unit_type][0]++;
-          units_sea_ptr[src_sea][unit_type][unloading_state]--;
+          units_sea_ptr[src_sea][unit_type][0] += *total_units;
+          *total_units = 0;
           continue;
         }
-        data.flagged_for_combat[dst_air] = enemy_units_count[dst_air] > 0;
+        if (enemy_units_count[dst_air] > 0) {
+          data.flagged_for_combat[dst_air] = true;
+        } else {
+          conquer_land(dst_air);
+        }
         bombard_max[dst_air]++;
         units_land_ptr[dst_air][unload_cargo1][0]++;
+        other_land_units_0[dst_air][unload_cargo1]++;
         units_land_player_total[0][dst_air]++;
         units_sea_ptr[src_sea][TRANS_EMPTY][0]++;
-        units_sea_ptr[src_sea][unit_type][unloading_state]--;
+        other_sea_units_0[src_sea][TRANS_EMPTY]++;
+        other_sea_units_0[src_sea][unit_type]--;
+        units_sea_player_total[0][src_sea]--;
+        *total_units -= 1;
         if (unit_type > TRANS_1T) {
           bombard_max[dst_air]++;
           units_land_ptr[dst_air][unload_cargo2][0]++;
+          other_land_units_0[dst_air][unload_cargo2]++;
           units_land_player_total[0][dst_air]++;
         }
       }
@@ -2212,20 +2313,24 @@ void resolve_land_battles() {
 #ifdef DEBUG
     // debug print the current src_land and its name
     char debug_message[100];
-    snprintf(debug_message, sizeof(debug_message), "Current src_land: %d, Name: %s", src_land,
+    snprintf(debug_message, sizeof(debug_message), "Resolve land combat in: %d, Name: %s", src_land,
              LANDS[src_land].name);
     DEBUG_PRINT(debug_message);
+    setPrintableStatus();
+    printf("%s\n", printableGameStatus);
 #endif
+    int* units_land_player_total_0_src_land = &units_land_player_total[0][src_land];
     // check if no friendlies remain
-    if (units_land_player_total[0][src_land] == 0) {
+    if (*units_land_player_total_0_src_land == 0) {
       DEBUG_PRINT("No friendlies remain");
       continue;
     }
     uint8_t attacker_damage;
     uint8_t attacker_hits;
     // only bombers exist
-    uint8_t* bombers_count = &other_land_units_ptr[0][src_land][BOMBERS_LAND_AIR];
-    if (*bombers_count > 0 && units_land_player_total[0][src_land] == *bombers_count) {
+    uint8_t* other_land_units_ptr_0_src_land = other_land_units_ptr[0][src_land];
+    uint8_t* bombers_count = &other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
+    if (*bombers_count > 0 && *other_land_units_ptr_0_src_land == *bombers_count) {
       if (*factory_hp[src_land] > -*factory_max[src_land]) {
         DEBUG_PRINT("Strategic Bombing");
         // fire_strat_aa_guns();
@@ -2234,17 +2339,18 @@ void resolve_land_battles() {
             (defender_damage / 6) +
             (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
         if (defender_hits > 0) {
+          uint8_t* units_land_ptr_src_land_bombers = units_land_ptr[src_land][BOMBERS_LAND_AIR];
           for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
-            uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
+            uint8_t* total_units = &units_land_ptr_src_land_bombers[cur_state];
             if (*total_units < defender_hits) {
               defender_hits -= *total_units;
               *bombers_count -= *total_units;
-              units_land_player_total[0][src_land] -= *total_units;
+              *units_land_player_total_0_src_land -= *total_units;
               *total_units = 0;
             } else {
               *total_units -= defender_hits;
               *bombers_count -= defender_hits;
-              units_land_player_total[0][src_land] -= defender_hits;
+              *units_land_player_total_0_src_land -= defender_hits;
               defender_hits = 0;
               return;
             }
@@ -2259,93 +2365,106 @@ void resolve_land_battles() {
       }
     }
     DEBUG_PRINT("Normal Land Combat");
+    uint8_t* other_land_units_0_src_land = other_land_units_0[src_land];
+    // bombard_shores
+    if (bombard_max[src_land] > 0) {
+      attacker_damage = 0;
+      DEBUG_PRINT("Sea Bombardment");
+      for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
+        for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
+          uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
+          uint8_t* total_bombard_ships = units_sea_ptr[src_sea][unit_type];
+          while (total_bombard_ships[1] > 0 && bombard_max[src_land] > 0) {
+            attacker_damage += ATTACK_UNIT_SEA[unit_type];
+            total_bombard_ships[0]++;
+            total_bombard_ships[1]--;
+            bombard_max[src_land]--;
+          }
+        }
+      }
+      bombard_max[src_land] = 0;
+      attacker_hits = (attacker_damage / 6) +
+                      (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+      if (attacker_hits > 0) {
+        remove_land_defenders(src_land, attacker_hits);
+      }
+    }
+    // check if can fire tactical aa_guns
+    uint8_t total_air_units = other_land_units_ptr_0_src_land[FIGHTERS] +
+                              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
+    uint8_t defender_damage;
+    uint8_t defender_hits;
+    if (total_air_units > 0) {
+      int total_aa_guns = 0;
+      for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
+        total_aa_guns += other_land_units_ptr[enemies_0[enemy_idx]][src_land][AA_GUNS];
+      }
+      if (total_aa_guns > 0) {
+        DEBUG_PRINT("Firing AA");
+        // fire_tact_aa_guns();
+        defender_damage = total_air_units * 3;
+        defender_hits = (defender_damage / 6) +
+                        (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
+        if (defender_hits > 0) {
+          for (uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
+            uint8_t* total_units = &units_land_ptr[src_land][FIGHTERS][cur_state];
+            if (*total_units < defender_hits) {
+              defender_hits -= *total_units;
+              other_land_units_ptr_0_src_land[FIGHTERS] -= *total_units;
+              *units_land_player_total_0_src_land -= *total_units;
+              *total_units = 0;
+            } else {
+              *total_units -= defender_hits;
+              other_land_units_ptr_0_src_land[FIGHTERS] -= defender_hits;
+              *units_land_player_total_0_src_land -= defender_hits;
+              defender_hits = 0;
+              break;
+            }
+          }
+        }
+        if (defender_hits > 0) {
+          for (uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
+            uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
+            if (*total_units < defender_hits) {
+              defender_hits -= *total_units;
+              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= *total_units;
+              *units_land_player_total_0_src_land -= *total_units;
+              *total_units = 0;
+            } else {
+              *total_units -= defender_hits;
+              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= defender_hits;
+              *units_land_player_total_0_src_land -= defender_hits;
+              defender_hits = 0;
+              break;
+            }
+          }
+        }
+      }
+    }
     while (true) {
+      // print land location name
+      char debug_message[100];
+      snprintf(debug_message, sizeof(debug_message), "Current src_land: %d, Name: %s", src_land,
+               LANDS[src_land].name);
+      setPrintableStatus();
+      printf("%s\n", printableGameStatus);
+
+      if (*units_land_player_total_0_src_land == 0) {
+        DEBUG_PRINT("No friendlies remain");
+        break;
+      }
+      if (enemy_units_count[src_land] == -1) {
+        DEBUG_PRINT("No enemies remain");
+      }
       if (enemy_units_count[src_land] == 0) {
         // if infantry, artillery, tanks exist then capture
-        if (other_land_units_ptr[0][src_land][INFANTRY] +
-                other_land_units_ptr[0][src_land][ARTILLERY] +
-                other_land_units_ptr[0][src_land][TANKS] >
+        if (other_land_units_0_src_land[INFANTRY] + other_land_units_0_src_land[ARTILLERY] +
+                other_land_units_0_src_land[TANKS] >
             0) {
           conquer_land(src_land);
         }
         break;
       }
-      // bombard_shores
-      if (bombard_max[src_land] > 0) {
-        attacker_damage = 0;
-        DEBUG_PRINT("Sea Bombardment");
-        for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
-          for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
-            uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
-            while (units_sea_ptr[src_sea][unit_type][1] > 0 && bombard_max[src_land] > 0) {
-              attacker_damage += ATTACK_UNIT_SEA[unit_type];
-              units_sea_ptr[src_sea][unit_type][0]++;
-              units_sea_ptr[src_sea][unit_type][1]--;
-              bombard_max[src_land]--;
-            }
-          }
-        }
-        bombard_max[src_land] = 0;
-        attacker_hits = (attacker_damage / 6) +
-                        (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
-        if (attacker_hits > 0) {
-          remove_land_defenders(src_land, attacker_hits);
-        }
-      }
-      // check if can fire tactical aa_guns
-      uint8_t total_air_units = other_land_units_ptr[0][src_land][FIGHTERS] +
-                                other_land_units_ptr[0][src_land][BOMBERS_LAND_AIR];
-      uint8_t defender_damage;
-      uint8_t defender_hits;
-      if (total_air_units > 0) {
-        int total_aa_guns = 0;
-        for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-          total_aa_guns += other_land_units_ptr[enemies_0[enemy_idx]][src_land][AA_GUNS];
-        }
-        if (total_aa_guns > 0) {
-          DEBUG_PRINT("Firing AA");
-          // fire_tact_aa_guns();
-          defender_damage = total_air_units * 3;
-          defender_hits = (defender_damage / 6) +
-                          (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
-          if (defender_hits > 0) {
-            for (uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
-              uint8_t* total_units = &units_land_ptr[src_land][FIGHTERS][cur_state];
-              if (*total_units < defender_hits) {
-                defender_hits -= *total_units;
-                other_land_units_ptr[0][src_land][FIGHTERS] -= *total_units;
-                units_land_player_total[0][src_land] -= *total_units;
-                *total_units = 0;
-              } else {
-                *total_units -= defender_hits;
-                other_land_units_ptr[0][src_land][FIGHTERS] -= defender_hits;
-                units_land_player_total[0][src_land] -= defender_hits;
-                defender_hits = 0;
-                break;
-              }
-            }
-          }
-          if (defender_hits > 0) {
-            for (uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
-              uint8_t* total_units = &units_land_ptr[src_land][BOMBERS_LAND_AIR][cur_state];
-              if (*total_units < defender_hits) {
-                defender_hits -= *total_units;
-                other_land_units_ptr[0][src_land][BOMBERS_LAND_AIR] -= *total_units;
-                units_land_player_total[0][src_land] -= *total_units;
-                *total_units = 0;
-              } else {
-                *total_units -= defender_hits;
-                other_land_units_ptr[0][src_land][BOMBERS_LAND_AIR] -= defender_hits;
-                units_land_player_total[0][src_land] -= defender_hits;
-                defender_hits = 0;
-                break;
-              }
-            }
-          }
-        }
-      }
-      setPrintableStatus();
-      printf("%s\n", printableGameStatus);
       // land_battle
       attacker_damage = 0;
       for (uint8_t cur_state = 1; cur_state < FIGHTER_STATES - 1; cur_state++) {
@@ -2395,12 +2514,11 @@ void resolve_land_battles() {
           other_land_units_0[retreat][unit_type] += total_units;
           units_land_player_total[0][retreat] += total_units;
           other_land_units_0[src_land][unit_type] -= total_units;
-          units_land_player_total[0][src_land] -= total_units;
+          *units_land_player_total_0_src_land -= total_units;
           units_land_ptr[src_land][unit_type][0] = 0;
         }
         data.flagged_for_combat[src_land] = false;
         break;
-        ;
       }
     }
   }
@@ -2580,6 +2698,9 @@ void land_bomber_units() {
   }
 }
 void buy_units() {
+  setPrintableStatus();
+  printf("%s\n", printableGameStatus);
+
   for (uint8_t factory_idx = 0; factory_idx < total_factory_count[0]; factory_idx++) {
     uint8_t dst_land = factory_locations[0][factory_idx];
     if (data.builds_left[dst_land] == 0) {
@@ -2750,7 +2871,7 @@ void rotate_turns() {
       uint8_t* sea1 = other_sea_units_0[dst_sea];
       sea0->fighters[FIGHTER_STATES - 1] = sea1[FIGHTERS];
       sea0->trans_empty[TRANS_EMPTY_STATES - 1] = sea1[TRANS_EMPTY];
-      sea0->trans_1i[TRANS_1I_STATES - 1] = sea1[TRANS_1T];
+      sea0->trans_1i[TRANS_1I_STATES - 1] = sea1[TRANS_1I];
       sea0->trans_1a[TRANS_1A_STATES - 1] = sea1[TRANS_1A];
       sea0->trans_1t[TRANS_1T_STATES - 1] = sea1[TRANS_1T];
       sea0->trans_2i[TRANS_2I_STATES - 1] = sea1[TRANS_2I];
@@ -2821,4 +2942,28 @@ void rotate_turns() {
   json = serialize_game_data_to_json(&data);
   write_json_to_file("backup_game.json", json);
   cJSON_Delete(json);
+}
+
+double get_score() {
+  int allied_score = 1; // one helps prevent division by zero
+  int enemy_score = 1;
+  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    int score = data.money[player_idx];
+    for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+      for (int unit_type = 0; unit_type < LAND_UNIT_TYPES; unit_type++) {
+        score += other_land_units_ptr[player_idx][land_idx][unit_type] * COST_UNIT_LAND[unit_type];
+      }
+    }
+    for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+      for (int unit_type = 0; unit_type < SEA_UNIT_TYPES; unit_type++) {
+        score += other_sea_units_ptr[player_idx][sea_idx][unit_type] * COST_UNIT_SEA[unit_type];
+      }
+    }
+    if (is_allied_0[player_idx]) {
+      allied_score += score;
+    } else {
+      enemy_score += score;
+    }
+  }
+  return (double)allied_score / (double)enemy_score;
 }

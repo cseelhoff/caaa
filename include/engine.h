@@ -122,4 +122,5 @@ void reset_units_fully();
 void buy_factory();
 void collect_money();
 void rotate_turns();
+double get_score();
 #endif
