@@ -167,6 +167,13 @@ void load_game_data(char* filename) {
     perror("getcwd() error");
   }
   json = read_json_from_file(filename);
+  // set all data to 0
+  memset(&data, 0, sizeof(data));
+  memset(&current_player_land_unit_types, 0, sizeof(current_player_land_unit_types));
+  memset(&current_player_sea_unit_types, 0, sizeof(current_player_sea_unit_types));
+  memset(&total_player_land_units, 0, sizeof(total_player_land_units));
+  memset(&total_player_sea_units, 0, sizeof(total_player_sea_units));
+
   deserialize_game_data_from_json(&data, json);
   cJSON_Delete(json);
   refresh_quick_totals();
@@ -200,10 +207,15 @@ void play_full_turn() {
   debug_checks();
   land_fighter_units();
   land_bomber_units();
+  debug_checks();
   buy_units();
+  debug_checks();
   crash_air_units();
+  debug_checks();
   reset_units_fully();
+  debug_checks();
   buy_factory();
+  debug_checks();
   collect_money();
   rotate_turns();
 }
@@ -1790,12 +1802,13 @@ void move_land_unit_type(uint8_t unit_type) {
         // if the destination is not blitzable, then end unit turn
         uint8_t landDistance;
         if (is_allied_0[*owner_idx[dst_air]] || enemy_units_count[dst_air] > 0) {
-          landDistance = MAX_MOVE_LAND[unit_type];
+          landDistance = moves_remaining;
         } else {
           DEBUG_PRINT("Conquering land");
           landDistance = LAND_DIST[src_land][dst_air];
           conquer_land(dst_air);
           data.flagged_for_combat[dst_air] = true;
+          debug_checks();
         }
         land_units_state[dst_air][unit_type][moves_remaining - landDistance]++;
         current_player_land_unit_types[dst_air][unit_type]++;
@@ -1803,6 +1816,7 @@ void move_land_unit_type(uint8_t unit_type) {
         current_player_land_unit_types[src_land][unit_type]--;
         total_player_land_units[0][src_land]--;
         *total_units -= 1;
+        debug_checks();
       }
     }
   }
@@ -2913,13 +2927,14 @@ void land_fighter_units() {
         }
         if (src_air < LANDS_COUNT) {
           total_player_land_units[0][src_air]--;
-          current_player_land_unit_types[dst_air][FIGHTERS]--;
+          current_player_land_unit_types[src_air][FIGHTERS]--;
         } else {
           uint8_t src_sea = src_air - LANDS_COUNT;
           total_player_sea_units[0][src_sea]--;
           current_player_sea_unit_types[src_sea][FIGHTERS]--;
         }
         *total_fighter_count -= 1;
+        debug_checks();
       }
     }
   }
@@ -3128,8 +3143,11 @@ void crash_air_units() {
 void reset_units_fully() {
   // reset battleship health
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    sea_units_state[sea_idx][BATTLESHIPS][0] += sea_units_state[sea_idx][BS_DAMAGED][0];
+    sea_units_state[sea_idx][BATTLESHIPS][0] += current_player_sea_unit_types[sea_idx][BS_DAMAGED];
+    current_player_sea_unit_types[sea_idx][BATTLESHIPS] += current_player_sea_unit_types[sea_idx][BS_DAMAGED];
     sea_units_state[sea_idx][BS_DAMAGED][0] = 0;
+    sea_units_state[sea_idx][BS_DAMAGED][1] = 0;
+    current_player_sea_unit_types[sea_idx][BS_DAMAGED] = 0;
   }
 }
 // TODO BUY FACTORY
