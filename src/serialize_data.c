@@ -146,7 +146,7 @@ void deserialize_game_data_from_json(GameData* data, cJSON* json) {
           cJSON* inner_array = cJSON_GetArrayItem(middle_array, j);
           if (cJSON_IsArray(inner_array)) {
             int inner_size = cJSON_GetArraySize(inner_array);
-            for (int k = 0; k < inner_size && k < LAND_UNIT_TYPES; k++) {
+            for (int k = 0; k < inner_size && k < LAND_UNIT_TYPES_COUNT; k++) {
               cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
                 data->other_land_units[i][j][k] = (uint8_t)item->valueint;
@@ -171,7 +171,7 @@ void deserialize_game_data_from_json(GameData* data, cJSON* json) {
           cJSON* inner_array = cJSON_GetArrayItem(middle_array, j);
           if (cJSON_IsArray(inner_array)) {
             int inner_size = cJSON_GetArraySize(inner_array);
-            for (int k = 0; k < inner_size && k < SEA_UNIT_TYPES; k++) {
+            for (int k = 0; k < inner_size && k < SEA_UNIT_TYPES_COUNT; k++) {
               cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
                 data->other_sea_units[i][j][k] = (uint8_t)item->valueint;
@@ -272,7 +272,7 @@ cJSON* serialize_game_data_to_json(GameData* data) {
     cJSON* middle_array = cJSON_CreateArray();
     for (int j = 0; j < LANDS_COUNT; j++) {
       cJSON* inner_array = cJSON_CreateArray();
-      for (int k = 0; k < LAND_UNIT_TYPES; k++) {
+      for (int k = 0; k < LAND_UNIT_TYPES_COUNT; k++) {
         cJSON_AddItemToArray(inner_array, cJSON_CreateNumber(data->other_land_units[i][j][k]));
       }
       cJSON_AddItemToArray(middle_array, inner_array);
@@ -286,7 +286,7 @@ cJSON* serialize_game_data_to_json(GameData* data) {
     cJSON* middle_array = cJSON_CreateArray();
     for (int j = 0; j < SEAS_COUNT; j++) {
       cJSON* inner_array = cJSON_CreateArray();
-      for (int k = 0; k < SEA_UNIT_TYPES; k++) {
+      for (int k = 0; k < SEA_UNIT_TYPES_COUNT; k++) {
         cJSON_AddItemToArray(inner_array, cJSON_CreateNumber(data->other_sea_units[i][j][k]));
       }
       cJSON_AddItemToArray(middle_array, inner_array);

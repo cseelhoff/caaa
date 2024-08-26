@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SEA_UNIT_TYPES 15
+#define SEA_UNIT_TYPES_COUNT 15
 #define FIGHTERS 0
 #define TRANS_EMPTY 1
 #define TRANS_1I 2
@@ -33,7 +33,7 @@
 #define BS_DAMAGED 13
 #define BOMBERS_SEA 14
 
-#define LAND_UNIT_TYPES 6
+#define LAND_UNIT_TYPES_COUNT 6
 #define BOMBERS_LAND_AIR 1
 #define INFANTRY 2
 #define ARTILLERY 3
@@ -45,26 +45,26 @@
 
 #define COST_UNIT_SEA_COUNT 7
 
-extern const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES];
-extern const uint8_t UNIT_WEIGHTS[LAND_UNIT_TYPES];
-extern const uint8_t ATTACK_UNIT_LAND[LAND_UNIT_TYPES];
-extern const uint8_t DEFENSE_UNIT_LAND[LAND_UNIT_TYPES];
-extern const uint8_t MAX_MOVE_LAND[LAND_UNIT_TYPES];
-extern const uint8_t STATES_MOVE_LAND[LAND_UNIT_TYPES];
-extern const uint8_t COST_UNIT_LAND[LAND_UNIT_TYPES];
-extern const char* NAMES_UNIT_SEA[SEA_UNIT_TYPES];
-extern const uint8_t ATTACK_UNIT_SEA[SEA_UNIT_TYPES];
-extern const uint8_t DEFENSE_UNIT_SEA[SEA_UNIT_TYPES];
-extern const uint8_t MAX_MOVE_SEA[SEA_UNIT_TYPES];
-extern const uint8_t STATES_MOVE_SEA[SEA_UNIT_TYPES];
-extern const uint8_t COST_UNIT_SEA[SEA_UNIT_TYPES];
+extern const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t UNIT_WEIGHTS[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t ATTACK_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t DEFENSE_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t MAX_MOVE_LAND[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t STATES_MOVE_LAND[LAND_UNIT_TYPES_COUNT];
+extern const uint8_t COST_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
+extern const char* NAMES_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t ATTACK_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t DEFENSE_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t MAX_MOVE_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t STATES_MOVE_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t COST_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
 extern const uint8_t BUY_UNIT_SEA[COST_UNIT_SEA_COUNT];
-extern const uint8_t STATES_STAGING[SEA_UNIT_TYPES];
-extern const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES];
-extern const uint8_t LOAD_UNIT_TYPE[LAND_UNIT_TYPES][SEA_UNIT_TYPES];
-extern const uint8_t UNLOAD_CARGO1[SEA_UNIT_TYPES];
-extern const uint8_t UNLOAD_CARGO2[SEA_UNIT_TYPES];
-extern const uint8_t UNMOVED_SEA[SEA_UNIT_TYPES];
-extern const uint8_t DONE_MOVING_SEA[SEA_UNIT_TYPES];
+extern const uint8_t STATES_STAGING[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t LOAD_UNIT_TYPE[LAND_UNIT_TYPES_COUNT][SEA_UNIT_TYPES_COUNT];
+extern const uint8_t UNLOAD_CARGO1[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t UNLOAD_CARGO2[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t UNMOVED_SEA[SEA_UNIT_TYPES_COUNT];
+extern const uint8_t DONE_MOVING_SEA[SEA_UNIT_TYPES_COUNT];
 
 #endif
