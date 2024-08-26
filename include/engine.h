@@ -97,6 +97,7 @@ void move_land_unit_type(uint8_t unit_type);
 void move_transport_units();
 void move_subs();
 void move_destroyers_battleships();
+void carry_allied_fighters(uint8_t src_sea, uint8_t dst_sea);
 void resolve_sea_battles();
 uint8_t ask_to_retreat();
 void remove_land_defenders(uint8_t src_land, uint8_t hits);
