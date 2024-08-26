@@ -6,7 +6,7 @@
 #define SUB_DEFENSE 1
 #define SUB_MOVES_MAX 2
 #define SUB_COST 8
-#define SUB_DONE_MOVING 1
+#define SUB_DONE_MOVING 0
 #define SUB_UNMOVED 2
 #define SUB_STATES 3
 

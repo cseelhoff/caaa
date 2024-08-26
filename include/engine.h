@@ -125,4 +125,6 @@ void collect_money();
 void rotate_turns();
 double get_score();
 void debug_checks();
+void sea_retreat(uint8_t src_sea, uint8_t retreat);
+void set_seed(uint16_t seed);
 #endif
