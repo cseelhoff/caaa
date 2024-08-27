@@ -1756,6 +1756,8 @@ void move_bomber_units() {
 
 void conquer_land(uint8_t dst_land) {
 #ifdef DEBUG
+  setPrintableStatus();
+  printf("%s\n", printableGameStatus);
   printf("conquer_land: dst_land=%d\n", dst_land);
 #endif
   uint8_t old_owner_id = *owner_idx[dst_land];
@@ -1840,15 +1842,9 @@ void move_land_unit_type(uint8_t unit_type) {
         }
         data.flagged_for_combat[dst_air] = enemy_units_count[dst_air] > 0;
         // if the destination is not blitzable, then end unit turn
-        uint8_t landDistance;
+        uint8_t landDistance = LAND_DIST[src_land][dst_air];
         if (is_allied_0[*owner_idx[dst_air]] || enemy_units_count[dst_air] > 0) {
           landDistance = moves_remaining;
-        } else {
-          DEBUG_PRINT("Conquering land");
-          landDistance = LAND_DIST[src_land][dst_air];
-          conquer_land(dst_air);
-          data.flagged_for_combat[dst_air] = true;
-          debug_checks();
         }
         land_units_state[dst_air][unit_type][moves_remaining - landDistance]++;
         current_player_land_unit_types[dst_air][unit_type]++;
@@ -1856,6 +1852,11 @@ void move_land_unit_type(uint8_t unit_type) {
         current_player_land_unit_types[src_land][unit_type]--;
         total_player_land_units[0][src_land]--;
         *total_units -= 1;
+        if (!is_allied_0[*owner_idx[dst_air]] && enemy_units_count[dst_air] == 0)  {
+          printf("Conquering land");
+          conquer_land(dst_air);
+          data.flagged_for_combat[dst_air] = true;
+        }
         debug_checks();
       }
     }
@@ -2620,12 +2621,6 @@ void unload_transports() {
           *total_units = 0;
           continue;
         }
-        if (!is_allied_0[*owner_idx[dst_air]]) {
-          data.flagged_for_combat[dst_air] = true;
-          if (enemy_units_count[dst_air] == 0) {
-            conquer_land(dst_air);
-          }
-        }
         bombard_max[dst_air]++;
         land_units_state[dst_air][unload_cargo1][0]++;
         current_player_land_unit_types[dst_air][unload_cargo1]++;
@@ -2639,6 +2634,12 @@ void unload_transports() {
           land_units_state[dst_air][unload_cargo2][0]++;
           current_player_land_unit_types[dst_air][unload_cargo2]++;
           total_player_land_units[0][dst_air]++;
+        }
+        if (!is_allied_0[*owner_idx[dst_air]]) {
+          data.flagged_for_combat[dst_air] = true;
+          if (enemy_units_count[dst_air] == 0) {
+            conquer_land(dst_air);
+          }
         }
         debug_checks();
       }
