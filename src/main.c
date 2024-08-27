@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "mcts.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -8,7 +9,7 @@ int main() {
     // Initialize the game state
 
     MCTSNode* root = mcts_search(&initial_state, 1000);
-    Action best_action = select_best_action(root);
+    uint8_t best_action = select_best_action(root);
 
     // Apply the best action to the game state
     apply_action(&initial_state, &best_action);

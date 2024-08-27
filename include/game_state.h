@@ -9,11 +9,6 @@
 #include "units/units.h"
 #include <stdint.h>
 
-typedef struct Action {
-    // Define the action here
-    uint8_t action;
-} Action;
-
 //#define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
 #define MAX_AIR_TO_AIR_CONNECTIONS 7
