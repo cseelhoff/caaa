@@ -2,12 +2,12 @@
 #define SERIALIZE_DATA_H
 
 #include "cJSON.h"
-#include "game_data.h"
+#include "game_state.h"
 
 cJSON* read_json_from_file(const char *filename);
 void write_json_to_file(const char *filename, cJSON *json);
-cJSON* serialize_game_data_to_json(GameData *data);
-void deserialize_game_data_from_json(GameData *data, cJSON *json);
+cJSON* serialize_game_data_to_json(GameState *data);
+void deserialize_game_data_from_json(GameState *data, cJSON *json);
 cJSON* serialize_land_state_to_json(LandState* land_state);
 void deserialize_land_state_from_json(LandState* land_state, cJSON* json);
 cJSON* serialize_units_sea_to_json(UnitsSea* units_sea);

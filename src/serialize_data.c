@@ -48,7 +48,7 @@ cJSON* read_json_from_file(const char* filename) {
   return json;
 }
 
-void deserialize_game_data_from_json(GameData* data, cJSON* json) {
+void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
@@ -231,7 +231,7 @@ void extract_and_assign(cJSON* json, const char* key, uint8_t* target_array) {
   }
 }
 
-cJSON* serialize_game_data_to_json(GameData* data) {
+cJSON* serialize_game_data_to_json(GameState* data) {
   cJSON* json = cJSON_CreateObject();
   cJSON_AddNumberToObject(json, "player_index", data->player_index);
   // cJSON_AddNumberToObject(json, "phase", data->phase);

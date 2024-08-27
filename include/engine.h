@@ -2,6 +2,7 @@
 #define ENGINE_H
 #include <stdbool.h>
 #include <stdint.h>
+#include "game_state.h"
 
 #ifdef DEBUG
 #define DEBUG_PRINT(msg) printf("DEBUG: %s\n", msg)
@@ -127,4 +128,12 @@ double get_score();
 void debug_checks();
 void sea_retreat(uint8_t src_sea, uint8_t retreat);
 void set_seed(uint16_t seed);
+
+GameState* clone_state(GameState* state);
+void free_state(GameState* state);
+uint8_t* get_possible_actions(GameState* state, int* num_actions);
+void apply_action(GameState* state, Action* action);
+bool is_terminal_state(GameState* state);
+double evaluate_state(GameState* state);
+
 #endif

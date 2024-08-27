@@ -1,5 +1,5 @@
-#ifndef GAME_DATA_H
-#define GAME_DATA_H
+#ifndef GAME_STATE_H
+#define GAME_STATE_H
 
 #include "canal.h"
 #include "land.h"
@@ -8,6 +8,11 @@
 #include "team.h"
 #include "units/units.h"
 #include <stdint.h>
+
+typedef struct Action {
+    // Define the action here
+    uint8_t action;
+} Action;
 
 //#define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
@@ -56,6 +61,6 @@ typedef struct {
   uint8_t other_land_units[PLAYERS_COUNT - 1][LANDS_COUNT][LAND_UNIT_TYPES_COUNT]; // rotates
   uint8_t other_sea_units[PLAYERS_COUNT - 1][SEAS_COUNT][SEA_UNIT_TYPES_COUNT - 1]; // no parking bombers at sea
   bool flagged_for_combat[AIRS_COUNT]; // track retreats
-} GameData;
+} GameState;
 
 #endif
