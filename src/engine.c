@@ -190,7 +190,7 @@ void set_seed(uint16_t new_seed) {
 void play_full_turn() {
   // clear printableGameStatus
   move_fighter_units();
-  debug_checks();
+  setPrintableStatus();
   move_bomber_units();
   debug_checks();
   stage_transport_units();
@@ -1344,10 +1344,13 @@ bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea, uint8_
          trans_state--) { // TODO - fix more underflows
       if (units_sea_ptr_dst_sea_trans_type[trans_state] > 0) {
         uint8_t new_trans_type = load_unit_type[trans_type];
-        units_sea_ptr_dst_sea[new_trans_type][trans_state]++;
         units_sea_ptr_dst_sea[trans_type][trans_state]--;
-        current_player_sea_unit_types[dst_sea][new_trans_type]++;
+        if (trans_type == TRANS_EMPTY && trans_state == TRANS_EMPTY_UNLOADING_STATES) {
+          trans_state = STATES_UNLOADING[new_trans_type]; // empty transports doesn't have an "unloading" state
+        }
+        units_sea_ptr_dst_sea[new_trans_type][trans_state]++;
         current_player_sea_unit_types[dst_sea][trans_type]--;
+        current_player_sea_unit_types[dst_sea][new_trans_type]++;
         total_player_land_units[0][src_land]--;
         current_player_land_unit_types[src_land][unit_type]--;
         land_units_state[src_land][unit_type][land_unit_state]--;
@@ -1783,7 +1786,13 @@ void conquer_land(uint8_t dst_land) {
   total_factory_count[old_owner_id]--;
   for (int i = 0; i < total_factory_count[orig_owner_id]; i++) {
     if (factory_locations[old_owner_id][i] == dst_land) {
+#ifdef DEBUG
+      printf("DEBUG: Found factory at %s\n", LANDS[dst_land].name);
+#endif
       for (int j = i; j < total_factory_count[old_owner_id]; j++) {
+#ifdef DEBUG
+        printf("DEBUG: Moving factory at %s\n", LANDS[factory_locations[old_owner_id][j]].name);
+#endif
         factory_locations[old_owner_id][j] = factory_locations[old_owner_id][j + 1];
       }
       break;
@@ -1852,7 +1861,7 @@ void move_land_unit_type(uint8_t unit_type) {
         current_player_land_unit_types[src_land][unit_type]--;
         total_player_land_units[0][src_land]--;
         *total_units -= 1;
-        if (!is_allied_0[*owner_idx[dst_air]] && enemy_units_count[dst_air] == 0)  {
+        if (!is_allied_0[*owner_idx[dst_air]] && enemy_units_count[dst_air] == 0) {
           printf("Conquering land");
           conquer_land(dst_air);
           data.flagged_for_combat[dst_air] = true;
@@ -1988,12 +1997,10 @@ void move_destroyers_battleships() {
       while (*total_ships > 0) {
         uint8_t dst_air = get_user_move_input(unit_type, src_air, valid_moves, valid_moves_count);
 #ifdef DEBUG
-        debug_checks();
+        setPrintableStatus();
+        printf("%s\n", printableGameStatus);
         printf("DEBUG: moving ships units unit_type: %d, src_air: %d, dst_air: %d\n", unit_type,
                src_air, dst_air);
-        if (unit_type == DESTROYERS) {
-          printf("DEBUG: DESTROYERS src_sea: %d, dst_air: %d\n", src_sea, dst_air);
-        }
 #endif
         update_move_history(dst_air, src_air, valid_moves, &valid_moves_count);
         if (enemy_units_count[dst_air] > 0) {
@@ -2244,7 +2251,7 @@ void resolve_sea_battles() {
 void sea_retreat(uint8_t src_sea, uint8_t dst_sea) {
 #ifdef DEBUG
   debug_checks();
-  printf("DEBUG: retreating to %d\n", dst_sea);
+  printf("DEBUG: retreating to sea: %d\n", dst_sea);
 #endif
   for (uint8_t unit_type = TRANS_EMPTY; unit_type <= BS_DAMAGED; unit_type++) {
     sea_units_state[dst_sea][unit_type][0] += current_player_sea_unit_types[src_sea][unit_type];
@@ -2438,6 +2445,10 @@ void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged
       }
     }
   }
+#ifdef DEBUG
+  setPrintableStatus();
+  printf("%s\n", printableGameStatus);
+#endif
 }
 
 void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
