@@ -206,6 +206,7 @@ void play_full_turn() {
   move_land_unit_type(AA_GUNS);
   debug_checks();
   land_fighter_units();
+  debug_checks();
   land_bomber_units();
   debug_checks();
   buy_units();
@@ -542,7 +543,7 @@ void generate_within_x_moves() {
       if (src_air == dst_land) {
         continue;
       }
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 6; i++) {
         if (AIR_DIST[src_air][dst_land] <= i + 1) {
           AIR_TO_LAND_WITHIN_X_MOVES[i][src_air][AIR_TO_LAND_WITHIN_X_MOVES_COUNT[i][src_air]++] =
               dst_land;
@@ -557,10 +558,6 @@ void generate_random_numbers() {
   }
 }
 void generate_unit_pointers() {
-  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    income_per_turn[player_idx] = 0;
-    total_factory_count[player_idx] = 0;
-  }
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     air_units_state[land_idx][FIGHTERS] = (uint8_t*)data.land_state[land_idx].fighters;
     air_units_state[land_idx][BOMBERS_LAND_AIR] = (uint8_t*)data.land_state[land_idx].bombers;
@@ -608,6 +605,11 @@ void generate_unit_pointers() {
 }
 
 void refresh_quick_totals() {
+  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    income_per_turn[player_idx] = 0;
+    total_factory_count[player_idx] = 0;
+  }
+
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     int land_owner = *owner_idx[land_idx];
     if (*factory_max[land_idx] > 0) {
@@ -1761,6 +1763,16 @@ void conquer_land(uint8_t dst_land) {
   }
   *owner_idx[dst_land] = new_owner_id;
   income_per_turn[new_owner_id] += LAND_VALUE[dst_land];
+  factory_locations[new_owner_id][total_factory_count[new_owner_id]++] = dst_land;
+  total_factory_count[old_owner_id]--;
+  for (int i = 0; i < total_factory_count[orig_owner_id]; i++) {
+    if (factory_locations[orig_owner_id][i] == dst_land) {
+      for (int j = i; j < total_factory_count[orig_owner_id]; j++) {
+        factory_locations[orig_owner_id][j] = factory_locations[orig_owner_id][j + 1];
+      }
+      break;
+    }
+  }
 }
 
 void move_land_unit_type(uint8_t unit_type) {
@@ -2739,6 +2751,9 @@ void resolve_land_battles() {
       printf("Current land battle start src_land: %d, Name: %s", src_land, LANDS[src_land].name);
       setPrintableStatus();
       printf("%s\n", printableGameStatus);
+      if (current_player_land_unit_types[src_land][AA_GUNS] > 0) {
+        printf("AA Guns: %d\n", current_player_land_unit_types[src_land][AA_GUNS]);
+      }
 
       if (*units_land_player_total_0_src_land == 0) {
         DEBUG_PRINT("No friendlies remain");
@@ -2942,33 +2957,55 @@ void land_fighter_units() {
 
 void add_valid_bomber_landing(uint8_t* valid_moves, uint8_t* valid_moves_count, uint8_t src_air,
                               uint8_t movement_remaining) {
+  printf("movement_remaining: %d\n", movement_remaining);
   uint8_t* near_land = AIR_TO_LAND_WITHIN_X_MOVES[movement_remaining - 1][src_air];
   for (int i = 0; i < AIR_TO_LAND_WITHIN_X_MOVES_COUNT[movement_remaining - 1][src_air]; i++) {
     uint8_t dst_air = near_land[i];
-    if (canBomberLandHere[dst_air] == 1) {
+    if (canBomberLandHere[dst_air]) {
+      printf("Adding valid move: %d\n", dst_air);
       valid_moves[(*valid_moves_count)++] = dst_air;
     }
   }
 }
 
 void land_bomber_units() {
+  DEBUG_PRINT("Landing Bombers");
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    // is allied owned and not recently conquered?
+    canBomberLandHere[land_idx] =
+        (is_allied_0[*owner_idx[land_idx]] && !data.flagged_for_combat[land_idx]);
+  }
+
   // check if any bombers have moves remaining
   for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1;
        cur_state++) { // TODO optimize to find next bomber faster
-    uint8_t* total_bomber_count = &air_units_state[0][BOMBERS_LAND_AIR][cur_state];
     clear_move_history();
     for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {
+      uint8_t* total_bomber_count = &air_units_state[src_air][BOMBERS_LAND_AIR][cur_state];
+      if (*total_bomber_count == 0)
+        continue;
+      printf("Bomber Count: %d with state %d, in location %d\n", *total_bomber_count, cur_state,
+             src_air);
       uint8_t valid_moves[AIRS_COUNT];
-      valid_moves[0] = src_air;
-      uint8_t valid_moves_count = 1;
+      //valid_moves[0] = src_air;
+      uint8_t valid_moves_count = 0;
       uint8_t movement_remaining = cur_state + (src_air < LANDS_COUNT ? 0 : 1);
       add_valid_bomber_landing(valid_moves, &valid_moves_count, src_air, movement_remaining);
       while (*total_bomber_count > 0) {
+        if(valid_moves_count == 0) {
+          valid_moves[valid_moves_count++] = src_air;
+        }
         uint8_t dst_air =
             get_user_move_input(BOMBERS_LAND_AIR, src_air, valid_moves, valid_moves_count);
 #ifdef DEBUG
         setPrintableStatus();
         printf("%s\n", printableGameStatus);
+        printf("valid_moves_count: %d\n", valid_moves_count);
+        printf("valid_moves: ");
+        for (int i = 0; i < valid_moves_count; i++) {
+          printf("%d ", valid_moves[i]);
+        }
+        printf("\n");
         printf("DEBUG: player: %s landing bombers %d, src_air: %d, dst_air: %d\n",
                PLAYERS[data.player_index].name, BOMBERS_LAND_AIR, src_air, dst_air);
 #endif
@@ -2976,6 +3013,7 @@ void land_bomber_units() {
         if (src_air == dst_air) {
           air_units_state[src_air][BOMBERS_LAND_AIR][0]++;
           *total_bomber_count -= 1;
+          debug_checks();
           continue;
         }
         air_units_state[dst_air][BOMBERS_LAND_AIR][0]++;
@@ -2990,14 +3028,15 @@ void land_bomber_units() {
           current_player_land_unit_types[src_sea][BOMBERS_LAND_AIR]--;
         }
         *total_bomber_count -= 1;
+        debug_checks();
       }
+      debug_checks();
     }
   }
 }
 void buy_units() {
   setPrintableStatus();
   printf("%s\n", printableGameStatus);
-
   for (uint8_t factory_idx = 0; factory_idx < total_factory_count[0]; factory_idx++) {
     uint8_t dst_land = factory_locations[0][factory_idx];
     if (data.builds_left[dst_land] == 0) {
@@ -3144,7 +3183,8 @@ void reset_units_fully() {
   // reset battleship health
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     sea_units_state[sea_idx][BATTLESHIPS][0] += current_player_sea_unit_types[sea_idx][BS_DAMAGED];
-    current_player_sea_unit_types[sea_idx][BATTLESHIPS] += current_player_sea_unit_types[sea_idx][BS_DAMAGED];
+    current_player_sea_unit_types[sea_idx][BATTLESHIPS] +=
+        current_player_sea_unit_types[sea_idx][BS_DAMAGED];
     sea_units_state[sea_idx][BS_DAMAGED][0] = 0;
     sea_units_state[sea_idx][BS_DAMAGED][1] = 0;
     current_player_sea_unit_types[sea_idx][BS_DAMAGED] = 0;
@@ -3163,6 +3203,18 @@ void rotate_turns() {
   setPrintableStatus();
   printf("%s\n", printableGameStatus);
   printf("DEBUG: Rotating turns\n");
+  for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    if (total_player_land_units[0][land_idx] > 0 && enemy_units_count[land_idx] > 0) {
+      printf("DEBUG: Player %s has %d units at %s\n", PLAYERS[data.player_index].name,
+             total_player_land_units[0][land_idx], LANDS[land_idx].name);
+    }
+  }
+  for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    if (total_player_sea_units[0][sea_idx] > 0 && enemy_units_count[sea_idx + LANDS_COUNT] > 0) {
+      printf("DEBUG: Player %s has %d units at %s\n", PLAYERS[data.player_index].name,
+             total_player_sea_units[0][sea_idx], SEAS[sea_idx].name);
+    }
+  }
 #endif
   memcpy(&total_land_unit_types_temp, &current_player_land_unit_types, OTHER_LAND_UNITS_SIZE);
   memcpy(&current_player_land_unit_types, &data.other_land_units[0], OTHER_LAND_UNITS_SIZE);
@@ -3260,9 +3312,9 @@ void rotate_turns() {
   printf("%s\n", printableGameStatus);
 #endif
 
-  json = serialize_game_data_to_json(&data);
-  write_json_to_file("backup_game.json", json);
-  cJSON_Delete(json);
+  // json = serialize_game_data_to_json(&data);
+  // write_json_to_file("backup_game.json", json);
+  // cJSON_Delete(json);
 }
 
 double get_score() {
