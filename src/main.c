@@ -5,7 +5,7 @@
 int main() {
   printf("Starting CAAA \n");
   initializeGameData();
-  for (ushort seed = 0; seed < 100; seed++) {
+  for (ushort seed = 1000; seed < 2000; seed++) {
     set_seed(seed);
     load_game_data("game_data.json");
     int turns = 100;
