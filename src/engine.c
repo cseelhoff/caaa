@@ -2226,7 +2226,9 @@ bool resolve_sea_battles() {
         break;
       }
       // fire subs (defender always submerges if possible)
-      int attacker_damage = sea_units_state[src_sea][SUBMARINES][0] * SUB_ATTACK;
+      int attacker_damage = sea_units_state[src_sea][SUBMARINES][0] * SUB_ATTACK; // TODO FIX
+      // int attacker_damage = current_player_sea_unit_types[src_sea][SUBMARINES] * SUB_ATTACK;
+      // //TODO FIX
       uint8_t attacker_hits =
           (attacker_damage / 6) +
           (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
@@ -2381,8 +2383,9 @@ void remove_land_defenders(uint8_t src_land, uint8_t hits) {
 }
 void remove_land_attackers(uint8_t src_land, uint8_t hits) {
   uint8_t* total_units;
-  for (uint8_t unit_idx; unit_idx < ATTACKER_LAND_UNIT_TYPES_COUNT_1; unit_idx++) {
+  for (uint8_t unit_idx = 0; unit_idx < ATTACKER_LAND_UNIT_TYPES_COUNT_1; unit_idx++) {
     uint8_t unit_type = ORDER_OF_LAND_ATTACKERS_1[unit_idx];
+    //TODO fix - why are AA guns with 1 move remaining here?
     total_units = &land_units_state[src_land][unit_type][0];
     if (*total_units > 0) {
 #ifdef DEBUG
@@ -2555,7 +2558,7 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
     }
   }
   uint8_t* total_units;
-  for (uint8_t unit_idx; unit_idx < ATTACKER_SEA_UNIT_TYPES_COUNT_1; unit_idx++) {
+  for (uint8_t unit_idx = 0; unit_idx < ATTACKER_SEA_UNIT_TYPES_COUNT_1; unit_idx++) {
     uint8_t unit_type = ORDER_OF_SEA_ATTACKERS_1[unit_idx];
     uint8_t* total_units = &sea_units_state[src_sea][unit_type][0];
     if (*total_units > 0) {
@@ -2643,7 +2646,7 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
       }
     }
   }
-  for (uint8_t unit_idx; unit_idx < ATTACKER_SEA_UNIT_TYPES_COUNT_3; unit_idx++) {
+  for (uint8_t unit_idx = 0; unit_idx < ATTACKER_SEA_UNIT_TYPES_COUNT_3; unit_idx++) {
     uint8_t unit_type = ORDER_OF_SEA_ATTACKERS_3[unit_idx];
     uint8_t* total_units = &sea_units_state[src_sea][unit_type][0];
     if (*total_units > 0) {
@@ -3712,7 +3715,14 @@ double random_play_until_terminal(GameState* game_state) {
   refresh_cache();
   answers_remaining = 10000;
   double score = get_score();
-  while (score > 0.01 && score < 0.99) {
+  int max_loops = 100000;
+  while (score > 0.01 && score < 0.99 && max_loops-- > 0) {
+    // printf("max_loops: %d\n", max_loops);
+    //  if(max_loops == 2) {
+    //    setPrintableStatus();
+    //    printf("%s\n", printableGameStatus);
+    //    printf("DEBUG: max_loops reached\n");
+    //  }
     move_fighter_units();
     move_bomber_units();
     stage_transport_units();
