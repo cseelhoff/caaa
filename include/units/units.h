@@ -16,31 +16,41 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SEA_UNIT_TYPES_COUNT 15
-#define FIGHTERS 0
-#define TRANS_EMPTY 1
-#define TRANS_1I 2
-#define TRANS_1A 3
-#define TRANS_1T 4
-#define TRANS_2I 5
-#define TRANS_1I_1A 6
-#define TRANS_1I_1T 7
-#define SUBMARINES 8
-#define DESTROYERS 9
-#define CARRIERS 10
-#define CRUISERS 11
-#define BATTLESHIPS 12
-#define BS_DAMAGED 13
-#define BOMBERS_SEA 14
+typedef enum {
+  FIGHTERS_SEA,
+  TRANS_EMPTY,
+  TRANS_1I,
+  TRANS_1A,
+  TRANS_1T,
+  TRANS_2I,
+  TRANS_1I_1A,
+  TRANS_1I_1T,
+  SUBMARINES,
+  CARRIERS,
+  DESTROYERS,
+  CRUISERS,
+  BATTLESHIPS,
+  BS_DAMAGED,
+  BOMBERS_SEA,
+  SEA_UNIT_TYPES_COUNT
+} SeaUnitType;
 
-#define LAND_UNIT_TYPES_COUNT 6
-#define BOMBERS_LAND_AIR 1
-#define INFANTRY 2
-#define ARTILLERY 3
-#define TANKS 4
-#define AA_GUNS 5
+typedef enum {
+  FIGHTERS_LAND,
+  BOMBERS_LAND,
+  INFANTRY,
+  ARTILLERY,
+  TANKS,
+  AA_GUNS,
+  LAND_UNIT_TYPES_COUNT
+} LandUnitType;
 
-#define AIR_UNIT_TYPES_COUNT 2
+typedef enum {
+  FIGHTERS_AIR,
+  BOMBERS_AIR,
+  AIR_UNIT_TYPES_COUNT
+} AirUnitType;
+
 #define MAX_UINT8_T 255
 
 #define COST_UNIT_SEA_COUNT 7
