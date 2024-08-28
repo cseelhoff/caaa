@@ -628,8 +628,17 @@ void refresh_quick_totals() {
       factory_locations[land_owner][total_factory_count[land_owner]++] = land_idx;
     }
     income_per_turn[land_owner] += LANDS[land_idx].land_value;
+    // TODO performance optimize loop/subloop order
+    for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+      current_player_land_unit_types[land_idx][unit_idx] = 0;
+      for (int unit_state_idx = 0; unit_state_idx < STATES_MOVE_LAND[unit_idx]; unit_state_idx++) {
+        current_player_land_unit_types[land_idx][unit_idx] +=
+            land_units_state[land_idx][unit_idx][unit_state_idx];
+      }
+    }
     for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-      uint8_t* cur_units_land_player_total = total_player_land_unit_types[player_idx][land_idx];
+      total_player_land_units[player_idx][land_idx] = 0;
+      int* cur_units_land_player_total = &total_player_land_units[player_idx][land_idx];
       *cur_units_land_player_total = 0;
       for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
         *cur_units_land_player_total +=
@@ -638,8 +647,15 @@ void refresh_quick_totals() {
     }
   }
   for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    for (int unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
+      current_player_sea_unit_types[sea_idx][unit_idx] = 0;
+      for (int unit_state_idx = 0; unit_state_idx < STATES_MOVE_SEA[unit_idx]; unit_state_idx++) {
+        current_player_sea_unit_types[sea_idx][unit_idx] +=
+            sea_units_state[sea_idx][unit_idx][unit_state_idx];
+      }
+    }
     for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-      uint8_t* cur_units_sea_player_total = total_player_sea_unit_types[player_idx][sea_idx];
+      int* cur_units_sea_player_total = &total_player_sea_units[player_idx][sea_idx];
       *cur_units_sea_player_total = 0;
       for (int unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
         *cur_units_sea_player_total += total_player_sea_unit_types[player_idx][sea_idx][unit_idx];
@@ -1039,6 +1055,7 @@ uint8_t getUserInput() {
 }
 uint8_t getAIInput() {
   answers_remaining--;
+  printf("selecting random action %d\n", RANDOM_NUMBERS[random_number_index]);
   return valid_moves[RANDOM_NUMBERS[random_number_index++] % valid_moves_count];
 }
 
@@ -3514,6 +3531,12 @@ double get_score() {
   return ((double)allied_score / (double)(enemy_score + allied_score));
 }
 
+GameState* get_game_state_copy() {
+  GameState* game_state = (GameState*)malloc(sizeof(GameState));
+  memcpy(game_state, &state, sizeof(GameState));
+  return game_state;
+}
+
 // Implement these functions based on your game logic
 GameState* clone_state(GameState* game_state) {
   // Deep copy the game state
@@ -3577,13 +3600,16 @@ uint8_t* get_possible_actions(GameState* game_state, int* num_actions) {
   return valid_moves;
 }
 
-void apply_action(GameState* game_state, uint8_t* action) {
+void apply_action(GameState* game_state, uint8_t action) {
   // Apply the action to the game state
+#ifdef DEBUG
+  printf("DEBUG: copying state and Applying action %d\n", action);
+#endif
   memcpy(&state, game_state, sizeof(GameState));
   refresh_quick_totals();
   refresh_cache();
   answers_remaining = 1;
-  RANDOM_NUMBERS[random_number_index] = *action;
+  RANDOM_NUMBERS[random_number_index] = action;
   while (true) {
     if (move_fighter_units())
       break;
@@ -3624,6 +3650,42 @@ void apply_action(GameState* game_state, uint8_t* action) {
     rotate_turns();
   }
   memcpy(game_state, &state, sizeof(GameState));
+}
+double random_play_until_terminal(GameState* game_state) {
+  memcpy(&state, game_state, sizeof(GameState));
+  uint8_t starting_player = state.player_index;
+  refresh_quick_totals();
+  refresh_cache();
+  answers_remaining = 10000;
+  double score = get_score();
+  while (score > 0.01 && score < 0.99) {
+    move_fighter_units();
+    move_bomber_units();
+    stage_transport_units();
+    move_land_unit_type(TANKS);
+    move_land_unit_type(ARTILLERY);
+    move_land_unit_type(INFANTRY);
+    move_transport_units();
+    move_subs();
+    move_destroyers_battleships();
+    resolve_sea_battles();
+    unload_transports();
+    resolve_land_battles();
+    move_land_unit_type(AA_GUNS);
+    land_fighter_units();
+    land_bomber_units();
+    buy_units();
+    crash_air_units();
+    reset_units_fully();
+    buy_factory();
+    collect_money();
+    rotate_turns();
+    score = get_score();
+  }
+  if (PLAYERS[game_state->player_index]
+          .is_allied[(game_state->player_index + starting_player) % PLAYERS_COUNT])
+    score = 1 - score;
+  return score;
 }
 
 bool is_terminal_state(GameState* game_state) {

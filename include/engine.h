@@ -114,11 +114,12 @@ void debug_checks();
 void sea_retreat(uint8_t src_sea, uint8_t retreat);
 void set_seed(uint16_t seed);
 
-GameState* clone_state(GameState* state);
-void free_state(GameState* state);
-uint8_t* get_possible_actions(GameState* state, int* num_actions);
-void apply_action(GameState* state, uint8_t* action);
-bool is_terminal_state(GameState* state);
-double evaluate_state(GameState* state);
-
+GameState* clone_state(GameState* game_state);
+void free_state(GameState* game_state);
+uint8_t* get_possible_actions(GameState* game_state, int* num_actions);
+void apply_action(GameState* game_state, uint8_t action);
+bool is_terminal_state(GameState* game_state);
+double evaluate_state(GameState* game_state);
+double random_play_until_terminal(GameState* game_state);
+GameState* get_game_state_copy();
 #endif

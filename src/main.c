@@ -5,16 +5,20 @@
 #include <sys/types.h>
 
 int main() {
-    GameState initial_state;
-    // Initialize the game state
+  printf("Starting CAAA \n");
+  initializeGameData();
+  load_game_data("game_data.json");
+  GameState* initial_state = get_game_state_copy();
+  // Initialize the game state
 
-    MCTSNode* root = mcts_search(&initial_state, 1000);
-    uint8_t best_action = select_best_action(root);
+  MCTSNode* root = mcts_search(initial_state, 100);
+  uint8_t best_action = select_best_action(root);
+  print_mcts(root);
+  printf("Best action: %d\n", best_action);
+  // Apply the best action to the game state
+  //apply_action(initial_state, best_action);
 
-    // Apply the best action to the game state
-    apply_action(&initial_state, &best_action);
-
-    // Continue with the game loop
+  // Continue with the game loop
 }
 int main2() {
   printf("Starting CAAA \n");
