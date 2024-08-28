@@ -21,7 +21,12 @@
             "displayName": "Clang 11.0.1 x86_64-pc-linux-gnu Release",
             "inherits": "x64-debug",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/clang",
+                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_FLAGS_RELEASE": "-O3",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3"
             }
         }
     ]

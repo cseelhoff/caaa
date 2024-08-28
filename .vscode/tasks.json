@@ -1,7 +1,7 @@
 {
     "tasks": [
         {
-            "label": "CMake: Build",
+            "label": "CMake: Build Debug",
             "type": "shell",
             "command": "cmake",
             "args": [
@@ -11,6 +11,52 @@
                 "Debug",
                 "--target",
                 "${workspaceFolderBasename}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "CMake: Build Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/out/build/x64-release",
+                "--config",
+                "Release",
+                "--target",
+                "${workspaceFolderBasename}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "CMake: Clean",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/out/build/x64-debug",
+                "--config",
+                "Debug",
+                "--target",
+                "clean"
             ],
             "group": {
                 "kind": "build",
