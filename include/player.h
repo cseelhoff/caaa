@@ -1,6 +1,4 @@
-#ifndef PLAYER_H
-#define PLAYER_H
-
+#pragma once
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -16,5 +14,3 @@ typedef struct {
 } Player;
 
 extern const Player PLAYERS[PLAYERS_COUNT];
-
-#endif

@@ -1,6 +1,4 @@
-#ifndef TEAM_H
-#define TEAM_H
-
+#pragma once
 #include "player.h"
 #include <stdint.h>
 
@@ -14,5 +12,3 @@ typedef struct {
 #define TEAMS_COUNT 2
 
 extern const uint8_t TEAM_PLAYERS[TEAMS_COUNT][MAX_TEAM_SIZE];
-
-#endif

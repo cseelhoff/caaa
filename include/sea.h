@@ -1,6 +1,5 @@
-#ifndef SEA_H
-#define SEA_H
-
+#pragma once
+#include "typedefs.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -8,14 +7,26 @@
 #define MAX_SEA_TO_LAND_CONNECTIONS 6
 #define MAX_SEA_TO_SEA_CONNECTIONS 7
 
+typedef uint8_t SeaIndex;
+typedef uint8_t Distance;
+typedef SeaIndex SeaToSeaConnections[MAX_SEA_TO_SEA_CONNECTIONS];
+typedef LandIndex SeaToLandConnections[MAX_SEA_TO_LAND_CONNECTIONS];
+typedef Distance SeaDistances[SEAS_COUNT];
+typedef SeaDistances SeaDistancesSources[SEAS_COUNT];
+typedef SeaIndex SeaArray[SEAS_COUNT];
+typedef SeaIndexCount SeaCountsArray[SEAS_COUNT];
+typedef SeaArray SeaMatrix[SEAS_COUNT];
+typedef SeaToSeaConnections SeaConnArray[SEAS_COUNT];
+
 typedef struct {
   char* name;
-  uint8_t sea_conn_count;
-  uint8_t land_conn_count;
-  uint8_t connected_sea_index[MAX_SEA_TO_SEA_CONNECTIONS];
-  uint8_t connected_land_index[MAX_SEA_TO_LAND_CONNECTIONS];
+  SeaIndexCount sea_conn_count;
+  LandIndexCount land_conn_count;
+  SeaIndex connected_sea_index[MAX_SEA_TO_SEA_CONNECTIONS];
+  LandIndex connected_land_index[MAX_SEA_TO_LAND_CONNECTIONS];
 } Sea;
 
 extern const Sea SEAS[SEAS_COUNT];
-
-#endif
+inline SeaIndexCount get_sea_to_sea_count(SeaIndex src_sea);
+static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndexCount sea_to_sea_count);
+inline SeaToSeaConnections* get_sea_to_sea_conn(SeaIndex src_sea);
