@@ -83,8 +83,8 @@ inline SeaIndex* get_land_to_sea_conn(LandIndex land_idx) {
 inline LandIndexCount get_lands_within_2_moves_count(LandIndex land_idx) {
     return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
 }
-inline LandIndexArray get_lands_within_2_moves(LandIndex land_idx) {
-    return LANDS_WITHIN_2_MOVES[land_idx];
+inline LandIndexArray* get_lands_within_2_moves(LandIndex land_idx) {
+    return &LANDS_WITHIN_2_MOVES[land_idx];
 }
 
 void generate_land_value_array() {

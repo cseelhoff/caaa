@@ -8,12 +8,14 @@
 #include "destroyer.h"
 #include "fighter.h"
 #include "infantry.h"
+#include "land.h"
+#include "sea.h"
 #include "sub.h"
 #include "tank.h"
 #include "transport.h"
+#include "typedefs.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "typedefs.h"
 
 #define DEFENDER_LAND_UNIT_TYPES_COUNT 6
 #define ATTACKER_LAND_UNIT_TYPES_COUNT_1 3
@@ -84,8 +86,8 @@ typedef SeaUnitStateSum BombersSeaStateSums[BOMBER_SEA_STATES];
 typedef AirUnitStateSum FightersAirStateSum[FIGHTER_STATES];
 typedef AirUnitStateSum BombersAirStateSum[BOMBER_LAND_STATES];
 
-typedef LandUnitTypeSum LandUnitSumArray[LAND_UNIT_TYPES_COUNT];
-typedef SeaUnitTypeSum SeaUnitSumArray[SEA_UNIT_TYPES_COUNT];
+typedef LandUnitSum LandUnitSumArray[LAND_UNIT_TYPES_COUNT];
+typedef SeaUnitSum SeaUnitSumArray[SEA_UNIT_TYPES_COUNT];
 
 typedef LandUnitSumArray LandUnitTypesSumArrayLands[LANDS_COUNT];
 typedef SeaUnitSumArray SeaUnitTypesSumArraySeas[SEAS_COUNT];

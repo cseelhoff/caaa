@@ -23,9 +23,15 @@ SeaCountsArray SEAS_WITHIN_2_MOVES_COUNT[CANAL_STATES] = {0};
 LandIndexCount SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
 SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
-SeaMatrix SEA_PATH_ALT[CANAL_STATES] = {MAX_UINT8_T};
+SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
 
 inline SeaIndexCount get_sea_to_sea_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_PATH1[canal_state][src_sea][dst_sea];
+}
+inline SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_PATH1_ALT[canal_state][src_sea][dst_sea];
+}
 
 static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndexCount sea_to_sea_count) {
   SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
@@ -133,7 +139,7 @@ void generate_seaMoveAllDestination() {
         int min_dist = SEA_DIST[canal_state][src_sea][dst_sea];
         generate_SeaMoveDst(1, src_sea, dst_sea, src_sea, min_dist);
         if (min_dist <= 1)
-          SEA_PATH_ALT[canal_state][src_sea][dst_sea] = src_sea;
+          SEA_PATH1_ALT[canal_state][src_sea][dst_sea] = src_sea;
         for (int conn_idx = SEA_TO_SEA_COUNT[src_sea]; conn_idx >= 0; conn_idx--) {
           int next_sea = SEA_TO_SEA_CONN[src_sea][conn_idx];
           int next_dist = SEA_DIST[canal_state][next_sea][dst_sea];

@@ -1,7 +1,7 @@
 #pragma once
-#include "typedefs.h"
 #include "land.h"
 #include "sea.h"
+#include "typedefs.h"
 #include "units/bomber.h"
 
 #define AIRS_COUNT (LANDS_COUNT + SEAS_COUNT)

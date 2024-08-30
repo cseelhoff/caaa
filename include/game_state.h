@@ -1,9 +1,9 @@
 #pragma once
+#include "air.h"
 #include "canal.h"
 #include "land.h"
 #include "player.h"
 #include "sea.h"
-#include "air.h"
 #include "team.h"
 #include "typedefs.h"
 #include "units/units.h"

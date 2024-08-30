@@ -11,6 +11,8 @@
 #define MAX_LAND_HOPS 2
 #define LAND_MOVE_SIZE (1 + MAX_LAND_HOPS - MIN_LAND_HOPS)
 
+typedef LandIndex LandIndexArray[LANDS_COUNT - 1];
+
 typedef struct {
   char* name;
   PlayerIndex original_owner_index;
@@ -33,4 +35,4 @@ inline LandIndex* get_land_to_land_conn(LandIndex land_idx);
 inline SeaIndexCount get_land_to_sea_count(LandIndex land_idx);
 inline SeaIndex* get_land_to_sea_conn(LandIndex land_idx);
 inline LandIndexCount get_lands_within_2_moves_count(LandIndex land_idx);
-inline LandIndexArray get_lands_within_2_moves(LandIndex land_idx);
+inline LandIndexArray* get_lands_within_2_moves(LandIndex land_idx);
