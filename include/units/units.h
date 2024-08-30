@@ -26,6 +26,7 @@
 #define ATTACKER_SEA_UNIT_TYPES_COUNT_3 8
 #define COST_UNIT_SEA_COUNT 7
 #define BLOCKADE_UNIT_TYPES_COUNT 5
+#define MAX_UNIT_STATES BOMBERS_LAND_STATES
 
 typedef enum : uint8_t {
   FIGHTERS_SEA,
@@ -62,6 +63,8 @@ typedef enum : uint8_t {
   AIR_UNIT_TYPES_COUNT
 } AirUnitType;
 
+typedef uint8_t GenericLandUnitState;
+typedef uint8_t GenericSeaUnitState;
 typedef LandUnitStateSum FighterStateSums[FIGHTER_STATES];
 typedef LandUnitStateSum BomberLandStateSums[BOMBER_LAND_STATES];
 typedef LandUnitStateSum InfantryStateSums[INFANTRY_STATES];
