@@ -58,9 +58,11 @@ LandUnitTypesSumArrayLands* player_land_unit_types[PLAYERS_COUNT] = {
 SeaUnitTypesSumArraySeas* player_sea_unit_types[PLAYERS_COUNT] = {
     &my_sea_unit_types, &state.other_sea_units[0], &state.other_sea_units[1],
     &state.other_sea_units[2], &state.other_sea_units[3]};
-typedef LandUnitStateSum* LandUnitStates[LAND_UNIT_TYPES_COUNT];
+typedef LandUnitStateSum LandUnitStateSums[MAX_LAND_UNIT_STATES];
+typedef LandUnitStateSums* LandUnitStates[LAND_UNIT_TYPES_COUNT];
 LandUnitStates my_land_unit_states[LANDS_COUNT] = {0};
-typedef SeaUnitStateSum* SeaUnitStates[SEA_UNIT_TYPES_COUNT];
+typedef SeaUnitStateSum SeaUnitStateSums[MAX_SEA_UNIT_STATES];
+typedef SeaUnitStateSums* SeaUnitStates[SEA_UNIT_TYPES_COUNT];
 SeaUnitStates my_sea_unit_states[SEAS_COUNT] = {0};
 
 PlayerIndex* owner_idx[LANDS_COUNT];
@@ -293,6 +295,9 @@ inline void acc_LandUnitSumArray(LandUnitSumArray* land_units, LandUnitType unit
                                  GenericLandUnitState land_unit_state) {
   (*land_units)[unit_type] += *(land_unit_states)[unit_type][land_unit_state];
 }
+inline LandUnitStates* get_my_land_unit_states(LandIndex land_idx) {
+  return &my_land_unit_states[land_idx];
+}
 
 void refresh_quick_totals_land() {
   for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
@@ -305,7 +310,7 @@ void refresh_quick_totals_land() {
     *army_sum = 0;
     LandTerr* land_terr = get_land_terr(land_idx);
     LandUnitSumArray* land_units = get_my_land_unit_types(land_idx);
-    LandUnitStates* land_unit_states = &my_land_unit_states[land_idx];
+    LandUnitStates* land_unit_states = get_my_land_unit_states(land_idx);
 
     (*land_unit_states)[FIGHTERS_LAND] = land_terr->fighters;
     (*land_unit_states)[BOMBERS_LAND] = land_terr->bombers;
@@ -375,13 +380,17 @@ inline void acc_NavySumArray(NavySum* navy_sum, SeaUnitSumArray* sea_units, SeaU
   *navy_sum += get_sea_unit_sum(sea_units, unit_type);
 }
 
+inline SeaUnitStates* get_my_sea_unit_states(SeaIndex sea_idx) {
+  return &my_sea_unit_states[sea_idx];
+}
+
 void refresh_quick_totals_sea() {
   for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     NavySum* navy_sum = get_player_navies_ref(0, sea_idx);
     *navy_sum = 0;
     SeaTerr* sea_terr = get_sea_terr(sea_idx);
     SeaUnitSumArray* sea_units = get_my_sea_unit_types(sea_idx);
-    SeaUnitStates* sea_unit_states = &my_sea_unit_states[sea_idx];
+    SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
 
     (*sea_unit_states)[FIGHTERS_SEA] = sea_terr->fighters;
     (*sea_unit_states)[TRANS_EMPTY] = sea_terr->trans_empty;
@@ -717,12 +726,22 @@ inline int8_t get_factory_hp(LandIndex land_idx) { return *factory_hp[land_idx];
 
 inline bool is_flagged_for_combat(LandIndex land_idx) { return state.flagged_for_combat[land_idx]; }
 
+inline LandUnitStateSums* get_land_unit_state_sums(LandUnitStates* land_unit_states, LandUnitType unit_type) {
+  return (*land_unit_states)[unit_type];
+}
+
+inline LandUnitStateSum get_land_unit_state_sum_at(LandUnitStateSums* landUnitStateSums,
+                                                   GenericLandUnitState unit_state) {
+  return (*landUnitStateSums)[unit_state];
+}
+
 void setPrintableStatusLands() {
   char threeCharStr[6];
   char paddedStr[32];
   char* my_color = PLAYERS[state.player_index].color;
   char* my_name = PLAYERS[state.player_index].name;
   for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    LandUnitStates* land_unit_states = get_my_land_unit_states(land_idx);
     //    LandState land_state = gameData.land_state[i];
     PlayerIndex land_owner = get_land_owner(land_idx);
     strcat(printableGameStatus, get_player_color(land_owner));
@@ -770,9 +789,9 @@ void setPrintableStatusLands() {
           strcat(printableGameStatus, paddedStr);
           sprintf(threeCharStr, "%3d", unit_sum);
           strcat(printableGameStatus, threeCharStr);
-          uint8_t* units_here = state.land_terr[land_idx].[land_unit_idx];
-          for (int cur_state = 0; cur_state < STATES_MOVE_LAND[unit_type]; cur_state++) {
-            sprintf(threeCharStr, "%3d", units_here[cur_state]);
+          LandUnitStateSums* landUnitStateSums = get_land_unit_state_sums(land_unit_states, unit_type);
+          for (int unit_state = 0; unit_state < STATES_MOVE_LAND[unit_type]; unit_state++) {
+            sprintf(threeCharStr, "%3d", get_land_unit_state_sum_at(landUnitStateSums, unit_state));
             strcat(printableGameStatus, threeCharStr);
           }
           strcat(printableGameStatus, "\n");
