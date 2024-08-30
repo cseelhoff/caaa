@@ -17,7 +17,7 @@ void generate_airMoveAllDestination();
 void generate_seaMoveAllDestination();
 void generate_within_x_moves();
 void generate_random_numbers();
-void generate_unit_pointers();
+void generate_land_info_pointers();
 
 void load_game_data();
 

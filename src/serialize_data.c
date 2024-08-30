@@ -103,7 +103,7 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
     int array_size = cJSON_GetArraySize(land_state_array);
     for (int i = 0; i < array_size && i < LANDS_COUNT; i++) {
       cJSON* land_state_item = cJSON_GetArrayItem(land_state_array, i);
-      deserialize_land_state_from_json(&data->land_state[i], land_state_item);
+      deserialize_land_state_from_json(&data->land_terr[i], land_state_item);
     }
   } else {
     fprintf(stderr, "Invalid land_state array\n");
@@ -114,7 +114,7 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
     int array_size = cJSON_GetArraySize(units_sea_array);
     for (int i = 0; i < array_size && i < SEAS_COUNT; i++) {
       cJSON* units_sea_item = cJSON_GetArrayItem(units_sea_array, i);
-      deserialize_units_sea_from_json(&data->units_sea[i], units_sea_item);
+      deserialize_units_sea_from_json(&data->sea_terr[i], units_sea_item);
     }
   } else {
     fprintf(stderr, "Invalid units_sea array\n");
@@ -187,7 +187,7 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
     fprintf(stderr, "Invalid other_sea_units array\n");
   }
 }
-void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
+void deserialize_land_state_from_json(LandTerr* land_state, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
@@ -251,13 +251,13 @@ cJSON* serialize_game_data_to_json(GameState* data) {
   // Serialize land_state and units_sea if needed
   cJSON* land_state_array = cJSON_CreateArray();
   for (int i = 0; i < LANDS_COUNT; i++) {
-    cJSON_AddItemToArray(land_state_array, serialize_land_state_to_json(&data->land_state[i]));
+    cJSON_AddItemToArray(land_state_array, serialize_land_state_to_json(&data->land_terr[i]));
   }
   cJSON_AddItemToObject(json, "land_state", land_state_array);
 
   cJSON* units_sea_array = cJSON_CreateArray();
   for (int i = 0; i < SEAS_COUNT; i++) {
-    cJSON_AddItemToArray(units_sea_array, serialize_units_sea_to_json(&data->units_sea[i]));
+    cJSON_AddItemToArray(units_sea_array, serialize_units_sea_to_json(&data->sea_terr[i]));
   }
   cJSON_AddItemToObject(json, "units_sea", units_sea_array);
 
@@ -305,7 +305,7 @@ void add_array_to_json(cJSON* json, const char* key, uint8_t* array, int size) {
   cJSON_AddItemToObject(json, key, json_array);
 }
 
-cJSON* serialize_units_sea_to_json(UnitsSea* units_sea) {
+cJSON* serialize_units_sea_to_json(SeaTerr* units_sea) {
   cJSON* json = cJSON_CreateObject();
 
   add_array_to_json(json, NAMES_UNIT_SEA[FIGHTERS], units_sea->fighters, STATES_MOVE_SEA[FIGHTERS]);
@@ -335,7 +335,7 @@ cJSON* serialize_units_sea_to_json(UnitsSea* units_sea) {
   return json;
 }
 
-void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
+void deserialize_units_sea_from_json(SeaTerr* units_sea, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
@@ -358,7 +358,7 @@ void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
   extract_and_assign(json, NAMES_UNIT_SEA[BOMBERS_SEA], units_sea->bombers);
 }
 
-cJSON* serialize_land_state_to_json(LandState* land_state) {
+cJSON* serialize_land_state_to_json(LandTerr* land_state) {
   cJSON* json = cJSON_CreateObject();
 
   cJSON_AddNumberToObject(json, "owner_index", land_state->owner_idx);

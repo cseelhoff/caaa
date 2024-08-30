@@ -24,8 +24,8 @@ typedef uint8_t SeaUnitStateSum;
 typedef uint8_t AirUnitStateSum;
 typedef uint8_t LandUnitTypeSum;
 typedef uint8_t SeaUnitTypeSum;
-typedef uint8_t LandArmySum;
-typedef uint8_t SeaNavySum;
+typedef uint8_t ArmySum;
+typedef uint8_t NavySum;
 
 typedef uint8_t Tonnes;
 typedef uint8_t Power;

@@ -60,29 +60,35 @@ typedef enum : uint8_t {
   AIR_UNIT_TYPES_COUNT
 } AirUnitType;
 
-typedef LandUnitStateSum FighterStateSum[FIGHTER_STATES];
-typedef LandUnitStateSum BomberLandStateSum[BOMBER_LAND_STATES];
-typedef LandUnitStateSum InfantryStateSum[INFANTRY_STATES];
-typedef LandUnitStateSum ArtilleryStateSum[ARTILLERY_STATES];
-typedef LandUnitStateSum TanksStateSum[TANK_STATES];
-typedef LandUnitStateSum AAGunsStateSum[AA_GUN_STATES];
-typedef SeaUnitStateSum FightersSeaStateSum[FIGHTER_STATES];
-typedef SeaUnitStateSum TransEmptyStateSum[TRANS_EMPTY_STATES];
-typedef SeaUnitStateSum Trans1IStateSum[TRANS_1I_STATES];
-typedef SeaUnitStateSum Trans1AStateSum[TRANS_1A_STATES];
-typedef SeaUnitStateSum Trans1TStateSum[TRANS_1T_STATES];
-typedef SeaUnitStateSum Trans2IStateSum[TRANS_2I_STATES];
-typedef SeaUnitStateSum Trans1I1AStateSum[TRANS_1I_1A_STATES];
-typedef SeaUnitStateSum Trans1I1TStateSum[TRANS_1I_1T_STATES];
-typedef SeaUnitStateSum SubmarinesStateSum[SUB_STATES];
-typedef SeaUnitStateSum DestroyersStateSum[DESTROYER_STATES];
-typedef SeaUnitStateSum CarriersStateSum[CARRIER_STATES];
-typedef SeaUnitStateSum CruisersStateSum[CRUISER_STATES];
-typedef SeaUnitStateSum BattleshipsStateSum[BATTLESHIP_STATES];
-typedef SeaUnitStateSum BSDamagedStateSum[BATTLESHIP_STATES];
-typedef SeaUnitStateSum BombersSeaStateSum[BOMBER_SEA_STATES];
+typedef LandUnitStateSum FighterStateSums[FIGHTER_STATES];
+typedef LandUnitStateSum BomberLandStateSums[BOMBER_LAND_STATES];
+typedef LandUnitStateSum InfantryStateSums[INFANTRY_STATES];
+typedef LandUnitStateSum ArtilleryStateSums[ARTILLERY_STATES];
+typedef LandUnitStateSum TanksStateSums[TANK_STATES];
+typedef LandUnitStateSum AAGunsStateSums[AA_GUN_STATES];
+typedef SeaUnitStateSum FightersSeaStateSums[FIGHTER_STATES];
+typedef SeaUnitStateSum TransEmptyStateSums[TRANS_EMPTY_STATES];
+typedef SeaUnitStateSum Trans1IStateSums[TRANS_1I_STATES];
+typedef SeaUnitStateSum Trans1AStateSums[TRANS_1A_STATES];
+typedef SeaUnitStateSum Trans1TStateSums[TRANS_1T_STATES];
+typedef SeaUnitStateSum Trans2IStateSums[TRANS_2I_STATES];
+typedef SeaUnitStateSum Trans1I1AStateSums[TRANS_1I_1A_STATES];
+typedef SeaUnitStateSum Trans1I1TStateSums[TRANS_1I_1T_STATES];
+typedef SeaUnitStateSum SubmarinesStateSums[SUBMARINE_STATES];
+typedef SeaUnitStateSum DestroyersStateSums[DESTROYER_STATES];
+typedef SeaUnitStateSum CarriersStateSums[CARRIER_STATES];
+typedef SeaUnitStateSum CruisersStateSums[CRUISER_STATES];
+typedef SeaUnitStateSum BattleshipsStateSums[BATTLESHIP_STATES];
+typedef SeaUnitStateSum BSDamagedStateSums[BATTLESHIP_STATES];
+typedef SeaUnitStateSum BombersSeaStateSums[BOMBER_SEA_STATES];
 typedef AirUnitStateSum FightersAirStateSum[FIGHTER_STATES];
 typedef AirUnitStateSum BombersAirStateSum[BOMBER_LAND_STATES];
+
+typedef LandUnitTypeSum LandUnitSumArray[LAND_UNIT_TYPES_COUNT];
+typedef SeaUnitTypeSum SeaUnitSumArray[SEA_UNIT_TYPES_COUNT];
+
+typedef LandUnitSumArray LandUnitTypesSumArrayLands[LANDS_COUNT];
+typedef SeaUnitSumArray SeaUnitTypesSumArraySeas[SEAS_COUNT];
 
 extern const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
 extern const Tonnes UNIT_WEIGHTS[LAND_UNIT_TYPES_COUNT];

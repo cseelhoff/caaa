@@ -9,5 +9,5 @@ typedef enum {
     SUB_DONE_MOVING,
     SUB_1_MOVE_LEFT,
     SUB_UNMOVED,
-    SUB_STATES
-} SubState;
+    SUBMARINE_STATES
+} SubmarineState;
