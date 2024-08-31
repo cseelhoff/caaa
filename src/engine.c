@@ -273,7 +273,8 @@ inline ArmySum* get_player_armies_ref(PlayerIndex player_idx, LandIndex land_idx
   return &player_armies[player_idx][land_idx];
 }
 
-inline LandUnitSumArray* get_player_land_unit_types(PlayerIndex player_idx, LandIndex land_idx) {
+inline LandUnitSumArray* get_player_land_unit_types_ref(PlayerIndex player_idx,
+                                                        LandIndex land_idx) {
   return player_land_unit_types[player_idx][land_idx];
 }
 
@@ -331,7 +332,7 @@ void refresh_quick_totals_land() {
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       army_sum = get_player_armies_ref(player_idx, land_idx);
       *army_sum = 0;
-      land_units = get_player_land_unit_types(player_idx, land_idx);
+      land_units = get_player_land_unit_types_ref(player_idx, land_idx);
       for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
         acc_ArmySumArray(army_sum, land_units, unit_type);
       }
@@ -368,7 +369,8 @@ inline void acc_SeaNavySum(NavySum* sum, SeaUnitSumArray* seaUnitTypesSumArray,
 }
 
 inline void acc_SeaUnitSumArray(SeaUnitSumArray* sea_units, SeaUnitType unit_type,
-                                SeaUnitStates* sea_unit_states, GenericSeaUnitState sea_unit_state) {
+                                SeaUnitStates* sea_unit_states,
+                                GenericSeaUnitState sea_unit_state) {
   (*sea_units)[unit_type] += (*sea_unit_states)[unit_type][sea_unit_state];
 }
 
@@ -392,21 +394,21 @@ void refresh_quick_totals_sea() {
     SeaUnitSumArray* sea_units = get_my_sea_unit_types(sea_idx);
     SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
 
-    (*sea_unit_states)[FIGHTERS_SEA] = sea_terr->fighters;
-    (*sea_unit_states)[TRANS_EMPTY] = sea_terr->trans_empty;
-    (*sea_unit_states)[TRANS_1I] = sea_terr->trans_1i;
-    (*sea_unit_states)[TRANS_1A] = sea_terr->trans_1a;
-    (*sea_unit_states)[TRANS_1T] = sea_terr->trans_1t;
-    (*sea_unit_states)[TRANS_2I] = sea_terr->trans_2i;
-    (*sea_unit_states)[TRANS_1I_1A] = sea_terr->trans_1i_1a;
-    (*sea_unit_states)[TRANS_1I_1T] = sea_terr->trans_1i_1t;
-    (*sea_unit_states)[SUBMARINES] = sea_terr->submarines;
-    (*sea_unit_states)[DESTROYERS] = sea_terr->destroyers;
-    (*sea_unit_states)[CARRIERS] = sea_terr->carriers;
-    (*sea_unit_states)[CRUISERS] = sea_terr->cruisers;
-    (*sea_unit_states)[BATTLESHIPS] = sea_terr->battleships;
-    (*sea_unit_states)[BS_DAMAGED] = sea_terr->bs_damaged;
-    (*sea_unit_states)[BOMBERS_SEA] = sea_terr->bombers;
+    (*sea_unit_states)[FIGHTERS_SEA] = &sea_terr->fighters;
+    (*sea_unit_states)[TRANS_EMPTY] = &sea_terr->trans_empty;
+    (*sea_unit_states)[TRANS_1I] = &sea_terr->trans_1i;
+    (*sea_unit_states)[TRANS_1A] = &sea_terr->trans_1a;
+    (*sea_unit_states)[TRANS_1T] = &sea_terr->trans_1t;
+    (*sea_unit_states)[TRANS_2I] = &sea_terr->trans_2i;
+    (*sea_unit_states)[TRANS_1I_1A] = &sea_terr->trans_1i_1a;
+    (*sea_unit_states)[TRANS_1I_1T] = &sea_terr->trans_1i_1t;
+    (*sea_unit_states)[SUBMARINES] = &sea_terr->submarines;
+    (*sea_unit_states)[DESTROYERS] = &sea_terr->destroyers;
+    (*sea_unit_states)[CARRIERS] = &sea_terr->carriers;
+    (*sea_unit_states)[CRUISERS] = &sea_terr->cruisers;
+    (*sea_unit_states)[BATTLESHIPS] = &sea_terr->battleships;
+    (*sea_unit_states)[BS_DAMAGED] = &sea_terr->bs_damaged;
+    (*sea_unit_states)[BOMBERS_SEA] = &sea_terr->bombers;
 
     for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
       clear_SeaUnitSumArray(sea_units, unit_type);
@@ -724,15 +726,26 @@ inline char* get_player_name(PlayerIndex player_idx) { return get_player(player_
 
 inline int8_t get_factory_hp(LandIndex land_idx) { return *factory_hp[land_idx]; }
 
-inline bool is_flagged_for_combat(LandIndex land_idx) { return state.flagged_for_combat[land_idx]; }
+inline bool is_flagged_for_combat(AirIndex air_idx) { return state.flagged_for_combat[air_idx]; }
 
-inline LandUnitStateSums* get_land_unit_state_sums(LandUnitStates* land_unit_states, LandUnitType unit_type) {
+inline LandUnitStateSums* get_land_unit_state_sums(LandUnitStates* land_unit_states,
+                                                   LandUnitType unit_type) {
   return (*land_unit_states)[unit_type];
 }
 
 inline LandUnitStateSum get_land_unit_state_sum_at(LandUnitStateSums* landUnitStateSums,
                                                    GenericLandUnitState unit_state) {
   return (*landUnitStateSums)[unit_state];
+}
+
+inline SeaUnitStateSums* get_sea_unit_state_sums(SeaUnitStates* sea_unit_states,
+                                                 SeaUnitType unit_type) {
+  return (*sea_unit_states)[unit_type];
+}
+
+inline SeaUnitStateSum get_sea_unit_state_sum_at(SeaUnitStateSums* seaUnitStateSums,
+                                                 GenericSeaUnitState unit_state) {
+  return (*seaUnitStateSums)[unit_state];
 }
 
 void setPrintableStatusLands() {
@@ -763,13 +776,13 @@ void setPrintableStatusLands() {
     sprintf(threeCharStr, "%d", get_land_value(land_idx));
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, " Combat:");
-    if (is_flagged_for_combat(land_idx)) {
+    if (is_flagged_for_combat(convert_land_to_air(land_idx))) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
     }
-    int all_players_armies = 0;
-    for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    ArmySum all_players_armies = 0;
+    for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       all_players_armies += get_player_armies(player_idx, land_idx);
     }
     if (all_players_armies == 0) {
@@ -777,42 +790,43 @@ void setPrintableStatusLands() {
       continue;
     }
     strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
-    if (get_player_armies(0, land_idx) > 0) {
-      strcat(printableGameStatus, my_color);
-      LandUnitSumArray* land_units = get_my_land_unit_types(land_idx);
+    if (get_player_armies(0, land_idx) == 0)
+      continue;
+    strcat(printableGameStatus, my_color);
+    LandUnitSumArray* land_units = get_my_land_unit_types(land_idx);
+    for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
+      LandUnitSum unit_sum = get_land_unit_sum(land_units, unit_type);
+      if (unit_sum > 0) {
+        strcat(printableGameStatus, my_name);
+        strcat(printableGameStatus, " ");
+        sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[unit_type]);
+        strcat(printableGameStatus, paddedStr);
+        sprintf(threeCharStr, "%3d", unit_sum);
+        strcat(printableGameStatus, threeCharStr);
+        LandUnitStateSums* landUnitStateSums =
+            get_land_unit_state_sums(land_unit_states, unit_type);
+        for (GenericLandUnitState unit_state = 0; unit_state < STATES_MOVE_LAND[unit_type];
+             unit_state++) {
+          sprintf(threeCharStr, "%3d", get_land_unit_state_sum_at(landUnitStateSums, unit_state));
+          strcat(printableGameStatus, threeCharStr);
+        }
+        strcat(printableGameStatus, "\n");
+      }
+    }
+    strcat(printableGameStatus, "\033[0m");
+    for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
+      if (get_player_armies(player_idx, land_idx) == 0)
+        continue;
+      strcat(printableGameStatus, get_player_color(player_idx));
+      LandUnitSumArray* land_units = get_player_land_unit_types_ref(player_idx, land_idx);
       for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
         LandUnitSum unit_sum = get_land_unit_sum(land_units, unit_type);
         if (unit_sum > 0) {
-          strcat(printableGameStatus, my_name);
+          strcat(printableGameStatus, get_player_name(player_idx));
           strcat(printableGameStatus, " ");
           sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[unit_type]);
           strcat(printableGameStatus, paddedStr);
           sprintf(threeCharStr, "%3d", unit_sum);
-          strcat(printableGameStatus, threeCharStr);
-          LandUnitStateSums* landUnitStateSums = get_land_unit_state_sums(land_unit_states, unit_type);
-          for (int unit_state = 0; unit_state < STATES_MOVE_LAND[unit_type]; unit_state++) {
-            sprintf(threeCharStr, "%3d", get_land_unit_state_sum_at(landUnitStateSums, unit_state));
-            strcat(printableGameStatus, threeCharStr);
-          }
-          strcat(printableGameStatus, "\n");
-        }
-      }
-    }
-    strcat(printableGameStatus, "\033[0m");
-    for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-      if (player_armies[player_idx][land_idx] == 0)
-        continue;
-      int current_player_idx = (player_idx + player_idx) % PLAYERS_COUNT;
-      strcat(printableGameStatus, PLAYERS[current_player_idx].color);
-      uint8_t* other_land_units_here = player_land_unit_types[player_idx][land_idx];
-      for (int land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
-        uint8_t unit_count = other_land_units_here[land_unit_idx];
-        if (unit_count > 0) {
-          strcat(printableGameStatus, PLAYERS[current_player_idx].name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[land_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
           strcat(printableGameStatus, threeCharStr);
           strcat(printableGameStatus, "\n");
         }
@@ -823,60 +837,66 @@ void setPrintableStatusLands() {
   }
 }
 void setPrintableStatusSeas() {
-  char threeCharStr[4];
+  char threeCharStr[6];
   char paddedStr[32];
-  for (int sea_index = 0; sea_index < SEAS_COUNT; sea_index++) {
-    int grand_total = 0;
-    for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-      grand_total += player_navies[player_idx][sea_index];
+  char* my_color = PLAYERS[state.player_index].color;
+  char* my_name = PLAYERS[state.player_index].name;
+  for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
+    NavySum all_players_navies = 0;
+    for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+      all_players_navies += get_player_navies(player_idx, sea_idx);
     }
-    if (grand_total == 0) {
+    if (all_players_navies == 0) {
       continue;
     }
-    SeaTerr units_sea = state.sea_terr[sea_index];
-    sprintf(threeCharStr, "%d ", LANDS_COUNT + sea_index);
+    sprintf(threeCharStr, "%d ", convert_sea_to_air(sea_idx));
     strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, SEAS[sea_index].name);
+    strcat(printableGameStatus, SEAS[sea_idx].name);
     strcat(printableGameStatus, " Combat:");
-    if (state.flagged_for_combat[sea_index + LANDS_COUNT]) {
+    if (is_flagged_for_combat(convert_sea_to_air(sea_idx))) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
     }
     strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
-    strcat(printableGameStatus, PLAYERS[state.player_index].color);
-    if (player_navies[0][sea_index] > 0) {
-      for (int sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT; sea_unit_idx++) {
-        uint8_t unit_count = my_sea_unit_types[sea_index][sea_unit_idx];
-        if (unit_count > 0) {
-          strcat(printableGameStatus, PLAYERS[state.player_index].name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[sea_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
+    strcat(printableGameStatus, my_color);
+    if (get_player_navies(0, sea_idx) == 0)
+      continue;
+    SeaUnitSumArray* sea_units = get_my_sea_unit_types(sea_idx);
+    for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
+      SeaUnitSum unit_sum = get_sea_unit_sum(sea_units, unit_type);
+      if (unit_sum > 0) {
+        strcat(printableGameStatus, my_name);
+        strcat(printableGameStatus, " ");
+        sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[unit_type]);
+        strcat(printableGameStatus, paddedStr);
+        sprintf(threeCharStr, "%3d", unit_sum);
+        strcat(printableGameStatus, threeCharStr);
+        SeaUnitStateSums* seaUnitStateSums = get_sea_unit_state_sums(sea_unit_states, unit_type);
+        for (GenericSeaUnitState unit_state = 0; unit_state < STATES_MOVE_SEA[unit_type];
+             unit_state++) {
+          sprintf(threeCharStr, "%3d", get_sea_unit_state_sum_at(seaUnitStateSums, unit_state));
           strcat(printableGameStatus, threeCharStr);
-          for (int cur_state = 0; cur_state < STATES_MOVE_SEA[sea_unit_idx]; cur_state++) {
-            sprintf(threeCharStr, "%3d", sea_units_state[sea_index][sea_unit_idx][cur_state]);
-            strcat(printableGameStatus, threeCharStr);
-          }
-          strcat(printableGameStatus, "\n");
         }
+        strcat(printableGameStatus, "\n");
       }
     }
+
     strcat(printableGameStatus, "\033[0m");
-    for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-      if (player_navies[player_idx][sea_index] == 0)
+    for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
+      if (get_player_navies(player_idx, sea_idx) == 0)
         continue;
-      strcat(printableGameStatus, PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].color);
-      for (int sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT - 1; sea_unit_idx++) {
-        uint8_t unit_count = player_sea_unit_types[player_idx][sea_index][sea_unit_idx];
-        if (unit_count > 0) {
-          strcat(printableGameStatus,
-                 PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].name);
+      strcat(printableGameStatus, get_player_color(player_idx));
+      SeaUnitSumArray* sea_units = get_player_sea_unit_types_ref(player_idx, sea_idx);
+      for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT - 1; unit_type++) {
+        SeaUnitSum unit_sum = player_sea_unit_types[player_idx][sea_idx][unit_type];
+        if (unit_sum > 0) {
+          strcat(printableGameStatus, get_player_name(player_idx));
           strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[sea_unit_idx]);
+          sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[unit_type]);
           strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
+          sprintf(threeCharStr, "%3d", unit_sum);
           strcat(printableGameStatus, threeCharStr);
           strcat(printableGameStatus, "\n");
         }
@@ -912,6 +932,28 @@ uint8_t getAIInput() {
   return valid_actions[RANDOM_NUMBERS[random_number_index++] % valid_actions_count];
 }
 
+inline LandIndex get_land_from_l2l_conn(LandToLandConnection* land_to_land_conn,
+                                        LandConnectionIndex conn_idx) {
+  return (*land_to_land_conn)[conn_idx];
+}
+
+inline AirIndexCount get_source_terr_count(LandIndex land_idx) {
+  return hist_source_territories_count[land_idx];
+}
+
+inline AirIndexArray* get_source_territories(LandIndex land_idx) {
+  return &hist_source_territories[land_idx];
+}
+
+inline AirIndex get_source_territory(AirIndexArray* source_territories, uint8_t source_terr_idx) {
+  return (*source_territories)[source_terr_idx];
+}
+
+inline SeaIndex get_sea_from_l2s_conn(LandToSeaConnection* land_to_sea_conn,
+                                      SeaConnectionIndex conn_idx) {
+  return (*land_to_sea_conn)[conn_idx];
+}
+
 void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land) {
   // get a list of all of the source territories that moved a unit into a territory that I can
   // also reach for each source territory, get a list of possible territory moves that were
@@ -919,16 +961,16 @@ void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land) 
   bool has_checked_territory[AIRS_COUNT] = {0};
   AirIndex shared_dst;
   AirIndex src_air;
-  AirIndexCount hist_source_territories_count_shared_dst;
+  AirIndexCount source_terr_count;
   LandIndexCount land_to_land_count = get_land_to_land_count(src_land);
-  AirIndex* hist_source_territories_shared_dst;
-  LandIndex* land_to_land_conn = get_land_to_land_conn(src_land);
-  for (LandIndex land_idx = 0; land_idx < land_to_land_count; land_idx++) {
-    shared_dst = land_to_land_conn[land_idx];
-    hist_source_territories_count_shared_dst = hist_source_territories_count[shared_dst];
-    hist_source_territories_shared_dst = hist_source_territories[shared_dst];
-    for (int i = 0; i < hist_source_territories_count_shared_dst; i++) {
-      src_air = hist_source_territories_shared_dst[i];
+  AirIndexArray* source_territories;
+  LandToLandConnection* land_to_land_conn = get_land_to_land_conn(src_land);
+  for (LandConnectionIndex conn_idx = 0; conn_idx < land_to_land_count; conn_idx++) {
+    shared_dst = convert_land_to_air(get_land_from_l2l_conn(land_to_land_conn, conn_idx));
+    source_terr_count = get_source_terr_count(shared_dst);
+    source_territories = get_source_territories(shared_dst);
+    for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
+      src_air = get_source_territory(source_territories, source_terr_idx);
       if (has_checked_territory[src_air]) {
         continue;
       }
@@ -938,14 +980,14 @@ void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land) 
       }
     }
   }
-  SeaIndex* land_to_sea_conn = get_land_to_sea_conn(src_land);
+  LandToSeaConnection* land_to_sea_conn = get_land_to_sea_conn(src_land);
   SeaIndexCount land_to_sea_count = get_land_to_sea_count(src_land);
-  for (SeaConnectionIndex sea_idx = 0; sea_idx < land_to_sea_count; sea_idx++) {
-    shared_dst = convert_sea_to_air(land_to_sea_conn[sea_idx]);
-    hist_source_territories_count_shared_dst = hist_source_territories_count[shared_dst];
-    hist_source_territories_shared_dst = hist_source_territories[shared_dst];
-    for (int i = 0; i < hist_source_territories_count_shared_dst; i++) {
-      src_air = hist_source_territories_shared_dst[i];
+  for (SeaConnectionIndex conn_idx = 0; conn_idx < land_to_sea_count; conn_idx++) {
+    shared_dst = convert_sea_to_air(get_sea_from_l2s_conn(land_to_sea_conn, conn_idx));
+    source_terr_count = get_source_terr_count(shared_dst);
+    source_territories = get_source_territories(shared_dst);
+    for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
+      src_air = get_source_territory(source_territories, source_terr_idx);
       if (has_checked_territory[src_air]) {
         continue;
       }
@@ -967,7 +1009,7 @@ void add_valid_land_move_if_history_allows_2(uint8_t dst_air, uint8_t src_land) 
   AirIndex src_air;
   AirIndexCount hist_source_territories_count_shared_dst;
   LandIndexCount lands_within_2_moves_count = get_lands_within_2_moves_count(src_land);
-  LandIndexArray lands_within_2_moves = get_lands_within_2_moves(src_land);
+  LandIndexArray* lands_within_2_moves = get_lands_within_2_moves(src_land);
 
   for (int land_idx = 0; land_idx < lands_within_2_moves_count; land_idx++) {
     shared_dst = lands_within_2_moves[land_idx];
