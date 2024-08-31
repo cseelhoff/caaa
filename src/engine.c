@@ -954,73 +954,81 @@ inline SeaIndex get_sea_from_l2s_conn(LandToSeaConnection* land_to_sea_conn,
   return (*land_to_sea_conn)[conn_idx];
 }
 
-void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land) {
+inline bool has_checked_territory(bool* checked_territories, AirIndex src_air) {
+  return checked_territories[src_air];
+}
+
+inline void check_territory(bool* checked_territories, AirIndex src_air) {
+  checked_territories[src_air] = true;
+}
+
+inline bool was_terr_skipped(AirIndex src_air, AirIndex dst_air) {
+  return hist_skipped_airs[src_air][dst_air];
+}
+
+bool check_valid1(AirIndex shared_dst, bool checked_territories[AIRS_COUNT], AirIndex dst_air) {
+  AirIndexArray* source_territories = get_source_territories(shared_dst);
+  AirIndexCount source_terr_count = get_source_terr_count(shared_dst);
+  for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
+    AirIndex src_air = get_source_territory(source_territories, source_terr_idx);
+    if (has_checked_territory(checked_territories, src_air)) {
+      continue;
+    }
+    check_territory(checked_territories, src_air);
+    if (was_terr_skipped(src_air, dst_air)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void add_valid_land_move_if_history_allows_1(AirIndex dst_air, LandIndex src_land) {
   // get a list of all of the source territories that moved a unit into a territory that I can
   // also reach for each source territory, get a list of possible territory moves that were
   // purposefully skipped these skipped territories are also invalid moves
-  bool has_checked_territory[AIRS_COUNT] = {0};
-  AirIndex shared_dst;
-  AirIndex src_air;
-  AirIndexCount source_terr_count;
-  LandIndexCount land_to_land_count = get_land_to_land_count(src_land);
-  AirIndexArray* source_territories;
+  bool checked_territories[AIRS_COUNT] = {0};
   LandToLandConnection* land_to_land_conn = get_land_to_land_conn(src_land);
+  LandIndexCount land_to_land_count = get_land_to_land_count(src_land);
   for (LandConnectionIndex conn_idx = 0; conn_idx < land_to_land_count; conn_idx++) {
-    shared_dst = convert_land_to_air(get_land_from_l2l_conn(land_to_land_conn, conn_idx));
-    source_terr_count = get_source_terr_count(shared_dst);
-    source_territories = get_source_territories(shared_dst);
-    for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
-      src_air = get_source_territory(source_territories, source_terr_idx);
-      if (has_checked_territory[src_air]) {
-        continue;
-      }
-      has_checked_territory[src_air] = true;
-      if (hist_skipped_airs[src_air][dst_air]) {
-        return;
-      }
-    }
+    if (!check_valid1(convert_land_to_air(get_land_from_l2l_conn(land_to_land_conn, conn_idx)),
+                      checked_territories, dst_air))
+      return;
   }
   LandToSeaConnection* land_to_sea_conn = get_land_to_sea_conn(src_land);
   SeaIndexCount land_to_sea_count = get_land_to_sea_count(src_land);
   for (SeaConnectionIndex conn_idx = 0; conn_idx < land_to_sea_count; conn_idx++) {
-    shared_dst = convert_sea_to_air(get_sea_from_l2s_conn(land_to_sea_conn, conn_idx));
-    source_terr_count = get_source_terr_count(shared_dst);
-    source_territories = get_source_territories(shared_dst);
-    for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
-      src_air = get_source_territory(source_territories, source_terr_idx);
-      if (has_checked_territory[src_air]) {
-        continue;
-      }
-      has_checked_territory[src_air] = true;
-      if (hist_skipped_airs[src_air][dst_air]) {
-        return;
-      }
-    }
+    if (!check_valid1(convert_sea_to_air(get_sea_from_l2s_conn(land_to_sea_conn, conn_idx)),
+                      checked_territories, dst_air))
+      return;
   }
   valid_actions[valid_actions_count++] = dst_air;
+}
+
+inline AirIndex get_land_from_array(LandIndexArray* lands, uint8_t land_array_idx) {
+  return (*lands)[land_array_idx];
 }
 
 void add_valid_land_move_if_history_allows_2(uint8_t dst_air, uint8_t src_land) {
   // get a list of all of the source territories that moved a unit into a territory that I can
   // also reach for each source territory, get a list of possible territory moves that were
   // purposefully skipped these skipped territories are also invalid moves
-  bool has_checked_territory[AIRS_COUNT] = {0};
+  bool checked_territories[AIRS_COUNT] = {0};
   AirIndex shared_dst;
   AirIndex src_air;
-  AirIndexCount hist_source_territories_count_shared_dst;
-  LandIndexCount lands_within_2_moves_count = get_lands_within_2_moves_count(src_land);
+  AirIndexCount source_terr_count;
+  AirIndexArray* source_territories;
   LandIndexArray* lands_within_2_moves = get_lands_within_2_moves(src_land);
-
-  for (int land_idx = 0; land_idx < lands_within_2_moves_count; land_idx++) {
-    shared_dst = lands_within_2_moves[land_idx];
-    hist_source_territories_count_shared_dst = hist_source_territories_count[shared_dst];
-    int* hist_source_territories_shared_dst = hist_source_territories[shared_dst];
-    for (int i = 0; i < hist_source_territories_count_shared_dst; i++) {
-      src_air = hist_source_territories[shared_dst][i];
-      if (has_checked_territory[src_air]) {
+  LandIndexCount lands_within_2_moves_count = get_lands_within_2_moves_count(src_land);
+  for (uint8_t land_array_idx = 0; land_array_idx < lands_within_2_moves_count; land_array_idx++) {
+    shared_dst = convert_land_to_air(get_land_from_array(lands_within_2_moves, land_array_idx));
+    source_terr_count = get_source_terr_count(shared_dst);
+    source_territories = get_source_territories(shared_dst);
+    for (uint8_t source_terr_idx = 0; source_terr_idx < source_terr_count; source_terr_idx++) {
+      src_air = get_source_territory(source_territories, source_terr_idx);
+      if (has_checked_territory(checked_territories, src_air)) {
         continue;
       }
-      has_checked_territory[src_air] = true;
+      check_territory(checked_territories, src_air);
       if (hist_skipped_airs[src_air][dst_air] && !is_land_path_blocked[src_land][shared_dst]) {
         return;
       }
@@ -1030,14 +1038,14 @@ void add_valid_land_move_if_history_allows_2(uint8_t dst_air, uint8_t src_land) 
   uint8_t* load_within_2_moves = LOAD_WITHIN_2_MOVES[src_land];
   for (int sea_idx = 0; sea_idx < load_within_2_moves_count; sea_idx++) {
     shared_dst = load_within_2_moves[sea_idx] + LANDS_COUNT;
-    hist_source_territories_count_shared_dst = hist_source_territories_count[shared_dst];
+    source_terr_count = hist_source_territories_count[shared_dst];
     int* hist_source_territories_shared_dst = hist_source_territories[shared_dst];
-    for (int i = 0; i < hist_source_territories_count_shared_dst; i++) {
+    for (int i = 0; i < source_terr_count; i++) {
       src_air = hist_source_territories_shared_dst[i];
-      if (has_checked_territory[src_air]) {
+      if (checked_territories[src_air]) {
         continue;
       }
-      has_checked_territory[src_air] = true;
+      checked_territories[src_air] = true;
       if (hist_skipped_airs[src_air][dst_air] && !is_land_path_blocked[src_land][shared_dst]) {
         return;
       }
