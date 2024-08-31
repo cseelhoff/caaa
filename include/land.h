@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define LANDS_COUNT 5
-#define MAX_LAND_TO_SEA_CONNECTIONS 4
+#define MAX_LAND_TO_SEA_CONNECTIONS 4 //land to sea within 2 moves
 #define MAX_LAND_TO_LAND_CONNECTIONS 6
 #define MIN_LAND_HOPS 1
 #define MAX_LAND_HOPS 2
@@ -13,7 +13,7 @@
 
 typedef LandIndex LandIndexArray[LANDS_COUNT - 1];
 typedef LandIndex LandToLandConnection[MAX_LAND_TO_LAND_CONNECTIONS];
-typedef SeaIndex LandToSeaConnection[MAX_LAND_TO_LAND_CONNECTIONS];
+typedef SeaIndex LandToSeaConnection[MAX_LAND_TO_SEA_CONNECTIONS];
 
 typedef struct {
   char* name;

@@ -91,7 +91,7 @@ void initialize_air_dist() {
   }
 }
 
-void populate_initial_distances() {
+void populate_initial_distances2() {
   int conn_idx = 0;
   int dst_air = 0;
   for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
