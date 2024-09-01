@@ -1024,19 +1024,18 @@ inline bool was_terr_skipped(AirIndex src_air, AirIndex dst_air) {
 }
 
 // Notes on how allowed moves from history are calculated:
-// When final unit for a unit_type is moved, set bool SkippedMoves[SourceTerr][DestTerr] = {0}				
-// Loop through territories with units to move				
-// 	I. Set LowestActionYet to be 256, or the lowest number set to True in bool SkippedMoves[SourceTerr][DestTerr]			
-// 	II. After a move is taken, loop as follows:			
-// 		1. if new action is < lowestaction yet		
-// 			a. loop each action that was now marked as skipped	
+// When final unit for a unit_type is moved, set bool SkippedMoves[SourceTerr][DestTerr] = {0}
+// Loop through territories with units to move
+// 	I. Set LowestActionYet to be 256, or the lowest number set to True in bool
+// SkippedMoves[SourceTerr][DestTerr] 	II. After a move is taken, loop as follows:
+// 		1. if new action is < lowestaction yet
+// 			a. loop each action that was now marked as skipped
 // 				i. SkippedMove[source_terr][skipped_terr] = true
-// 		2. get the distance to the destination		
-// 		3. loop through every territory with range of 4 of destination		
-// 			a. continue loop if iterated_territory's distance to destination is less than source territory's distance	
-// 			b. loop each action that was now marked as skipped	
-// 				i. Set SkippedMove[iterated_terr][skipped_terr] = true
-
+// 		2. get the distance to the destination
+// 		3. loop through every territory with range of 4 of destination
+// 			a. continue loop if iterated_territory's distance to destination is less
+// than source territory's distance 			b. loop each action that was now marked as
+// skipped 				i. Set SkippedMove[iterated_terr][skipped_terr] = true
 
 bool check_valid1(AirIndex shared_dst, bool checked_territories[AIRS_COUNT], AirIndex dst_air) {
   AirIndexArray* source_territories = get_source_territories(shared_dst);
@@ -2946,21 +2945,21 @@ bool resolve_land_battles() {
   return false;
 }
 
-void add_valid_unload_moves(uint8_t src_sea) {
+void add_valid_unload_moves(SeaIndex src_sea) {
   SeaToLandConnections* near_land = get_sea_to_land_conn(src_sea);
   LandIndexCount near_land_count = get_sea_to_land_count(src_sea);
   for (int conn_idx = 0; conn_idx < near_land_count; conn_idx++) {
-    LandIndex dst_land = get_land_from_s2l_conn(near_land,conn_idx);
+    LandIndex dst_land = get_land_from_s2l_conn(near_land, conn_idx);
     add_valid_air_move_if_history_allows_X(dst_land, src_sea + LANDS_COUNT, 1);
   }
 }
 
-void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves) {
-  AirIndexArray* near_air = get_airs_within_x_moves(remaining_moves - 1,src_air);
-  uint8_t near_air_count = get_airs_within_x_moves_count(remaining_moves - 1,src_air);
+void add_valid_fighter_moves(AirIndex src_air, MovesRemaining remaining_moves) {
+  AirIndexArray* near_air = get_airs_within_x_moves(remaining_moves - 1, src_air);
+  uint8_t near_air_count = get_airs_within_x_moves_count(remaining_moves - 1, src_air);
   for (int conn_idx = 0; conn_idx < near_air_count; conn_idx++) {
-    AirIndex dst_air = get_air_from_array(near_air,conn_idx);
-    Distance air_dist = get_air_dist(src_air,dst_air);
+    AirIndex dst_air = get_air_from_array(near_air, conn_idx);
+    Distance air_dist = get_air_dist(src_air, dst_air);
     if (air_dist <= 2 || canFighterLandHere[dst_air] ||
         (air_dist == 3 && canFighterLandIn1Move[dst_air])) {
       if (!canFighterLandHere[dst_air] && enemy_units_count[dst_air] == 0) // waste of a move
@@ -2970,11 +2969,11 @@ void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves) {
   }
 }
 
-void add_valid_fighter_landing(uint8_t src_air, uint8_t remaining_moves) {
-  uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
-  uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
-  for (int i = 0; i < near_air_count; i++) {
-    uint8_t dst_air = near_air[i];
+void add_valid_fighter_landing(AirIndex src_air, MovesRemaining remaining_moves) {
+  AirIndexArray* near_air = get_airs_within_x_moves(remaining_moves - 1, src_air);
+  uint8_t near_air_count = get_airs_within_x_moves_count(remaining_moves - 1, src_air);
+  for (uint8_t conn_idx = 0; conn_idx < near_air_count; conn_idx++) {
+    AirIndex dst_air = get_air_from_array(near_air, conn_idx);
     if (canFighterLandHere[dst_air]) {
       add_valid_air_move_if_history_allows_X(dst_air, src_air, remaining_moves);
     }
@@ -2982,11 +2981,11 @@ void add_valid_fighter_landing(uint8_t src_air, uint8_t remaining_moves) {
 }
 
 void add_valid_bomber_moves(uint8_t src_air, uint8_t remaining_moves) {
-  uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
-  uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
-  for (int i = 0; i < near_air_count; i++) {
-    uint8_t dst_air = near_air[i];
-    uint8_t air_dist = AIR_DIST[src_air][dst_air];
+  AirIndexArray* near_air = get_airs_within_x_moves(remaining_moves - 1, src_air);
+  uint8_t near_air_count = get_airs_within_x_moves_count(remaining_moves - 1, src_air);
+  for (int conn_idx = 0; conn_idx < near_air_count; conn_idx++) {
+    AirIndex dst_air = get_air_from_array(near_air, conn_idx);
+    Distance air_dist = get_air_dist(src_air, dst_air);
     if (air_dist <= 3 || canBomberLandHere[dst_air] ||
         (air_dist == 4 && canBomberLandIn2Moves[dst_air]) ||
         (air_dist == 5 && canBomberLandIn1Move[dst_air])) {
@@ -2998,6 +2997,20 @@ void add_valid_bomber_moves(uint8_t src_air, uint8_t remaining_moves) {
       add_valid_air_move_if_history_allows_X(dst_air, src_air, air_dist);
     }
   }
+}
+
+inline uint8_t get_air_unit_states(AirIndex air_idx, uint8_t unit_type, uint8_t unit_state) {
+  LandUnitStates* land_unit_states = get_my_land_unit_states(convert_air_to_land(air_idx));
+  SeaUnitStates* sea_unit_states = get_my_sea_unit_states(convert_air_to_sea(air_idx));
+  return (air_idx < LANDS_COUNT)
+             ? get_land_unit_state_sum_at(
+                   get_land_unit_state_sums(get_my_land_unit_states(convert_air_to_land(air_idx)),
+                                            unit_type),
+                   unit_state)
+             : get_sea_unit_state_sum_at(
+                   get_sea_unit_state_sums(get_my_sea_unit_states(convert_air_to_sea(air_idx)),
+                                           unit_type),
+                   unit_state);
 }
 
 bool land_fighter_units() {
@@ -3013,18 +3026,20 @@ bool land_fighter_units() {
     canFighterLandHere[land_idx] = is_allied_0[land_owner] && !state.flagged_for_combat[land_idx];
     // check for possiblity to build carrier under fighter
     if (*factory_max[land_idx] > 0 && land_owner == state.player_index) {
-      int land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
-      for (int conn_idx = 0; conn_idx < land_to_sea_count; conn_idx++) {
-        canFighterLandHere[LANDS_COUNT + LAND_TO_SEA_CONN[land_idx][conn_idx]] = true;
+      LandToSeaConnection* land_to_sea_conn = get_land_to_sea_conn(land_idx);
+      uint8_t land_to_sea_count = get_land_to_land_count(land_idx);
+      for (uint8_t conn_idx = 0; conn_idx < land_to_sea_count; conn_idx++) {
+        canFighterLandHere[convert_sea_to_air(get_sea_from_l2s_conn(land_to_sea_conn, conn_idx))] =
+            true;
       }
     }
   }
   //  check if any fighters have moves remaining
   for (uint8_t cur_state = 1; cur_state < FIGHTER_STATES - 1;
-       cur_state++) { // TODO optimize to find next fighter faster
+       cur_state++) { // todo optimize to find next fighter faster
     clear_move_history();
     for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {
-      uint8_t* total_fighter_count = &air_units_state[src_air][FIGHTERS_AIR][cur_state];
+      uint8_t* total_fighter_count = get_air_unit_states(src_air, FIGHTERS_AIR, cur_state);
       if (*total_fighter_count == 0)
         continue;
 

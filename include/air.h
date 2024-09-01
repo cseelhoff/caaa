@@ -28,3 +28,5 @@ inline AirToAirConnection* get_air_conn(AirIndex air_idx);
 inline Distance get_air_dist(AirIndex src_air, AirIndex dst_air);
 inline AirIndexArray* get_airs_within_x_moves(Movement moves, AirIndex src_air);
 inline uint8_t get_airs_within_x_moves_count(Movement moves, AirIndex src_air);
+inline LandIndex convert_air_to_land(AirIndex air_idx);
+inline SeaIndex convert_air_to_sea(AirIndex air_idx);

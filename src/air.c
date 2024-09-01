@@ -50,6 +50,8 @@ inline LandIndex get_land_path_alt(LandIndex src_land, AirIndex dst_air) {
   return LAND_PATH_ALT[src_land][dst_air];
 }
 inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
+inline LandIndex convert_air_to_land(AirIndex air_idx) { return air_idx; }
+inline SeaIndex convert_air_to_sea(AirIndex air_idx) { return air_idx - LANDS_COUNT; }
 inline AirIndexArray* get_land_dist_array(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
 inline Distance get_land_dist(LandIndex src_land, AirIndex dst_air) { return LAND_DIST[src_land][dst_air]; }
 
