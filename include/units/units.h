@@ -118,3 +118,7 @@ extern const LandUnitType UNLOAD_CARGO2[SEA_UNIT_TYPES_COUNT];
 extern const SeaUnitState UNMOVED_SEA[SEA_UNIT_TYPES_COUNT];
 extern const SeaUnitState DONE_MOVING_SEA[SEA_UNIT_TYPES_COUNT];
 extern const SeaUnitType BLOCKADE_UNIT_TYPES[BLOCKADE_UNIT_TYPES_COUNT];
+
+inline bool is_non_combat_unit(LandUnitType unit_type);
+inline bool is_non_loadable_unit(LandUnitType unit_type);
+inline bool is_heavy_unit(LandUnitType unit_type);

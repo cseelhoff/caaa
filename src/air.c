@@ -1,16 +1,17 @@
 #include "air.h"
 #include "land.h"
+#include "sea.h"
 #include "typedefs.h"
 #include <string.h>
 
 static AirIndexCount AIR_CONN_COUNT[AIRS_COUNT] = {0};
-static AirIndex AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {0};
+static AirToAirConnection AIR_CONNECTIONS[AIRS_COUNT] = {0};
 static Distance AIR_DIST[AIRS_COUNT][AIRS_COUNT] = {0};
-static Distance LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {0};
+static AirIndexArray LAND_DIST[LANDS_COUNT] = {0};
 static LandIndex LAND_PATH[LAND_MOVE_SIZE][LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static LandIndex LAND_PATH_ALT[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static LandIndex land_path1[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
-static AirIndex AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT][AIRS_COUNT - 1] = {0};
+static AirIndexArray AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
 static AirIndexCount AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
 static LandIndex AIR_TO_LAND_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT][LANDS_COUNT] = {0};
 static LandIndexCount AIR_TO_LAND_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
@@ -21,6 +22,14 @@ static AirIndex air_path4[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static AirIndex air_path5[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static AirIndex air_path6[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 
+inline AirIndexCount get_air_conn_count(AirIndex air_idx) { return AIR_CONN_COUNT[air_idx]; }
+
+inline AirToAirConnection* get_air_conn(AirIndex air_idx) { return &AIR_CONNECTIONS[air_idx]; }
+
+inline AirIndex get_air_from_a2a(AirToAirConnection* air_conn, uint8_t air_conn_idx) {
+  return (*air_conn)[air_conn_idx];
+}
+
 inline LandIndex get_land_path1(LandIndex src_land, AirIndex dst_air) {
   return land_path1[src_land][dst_air];
 }
@@ -29,6 +38,9 @@ inline LandIndex get_land_path_alt(LandIndex src_land, AirIndex dst_air) {
   return LAND_PATH_ALT[src_land][dst_air];
 }
 inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
+inline AirIndexArray* get_land_dist(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
+
+inline Distance get_air_dist(AirIndex src_air, AirIndex dst_air) { return AIR_DIST[src_air][dst_air]; }
 
 void generate_land_dist() {
   // Initialize the total_land_distance array
@@ -134,6 +146,20 @@ void populate_initial_distances2() {
   }
 }
 
+inline AirIndexArray* get_airs_winthin_x_moves(Movement moves, AirIndex src_air) {
+  return &AIR_WITHIN_X_MOVES[moves][src_air];
+}
+inline AirIndexCount get_airs_winthin_x_moves_count(Movement moves, AirIndex src_air) {
+  return AIR_WITHIN_X_MOVES_COUNT[moves][src_air];
+}
+inline AirIndex get_air_from_array(AirIndexArray* air_array, uint8_t air_array_idx) {
+  return (*air_array)[air_array_idx];
+}
+inline char* get_air_name(AirIndex air_idx) {
+  if (air_idx < LANDS_COUNT)
+    return get_land_name(air_idx);
+  return get_sea_name(air_idx - LANDS_COUNT);
+}
 void floyd_warshall_air() {
   for (int air_index = 0; air_index < AIRS_COUNT; air_index++) {
     for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {

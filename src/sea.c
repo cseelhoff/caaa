@@ -1,6 +1,7 @@
 #include "sea.h"
 #include "canal.h"
 #include "typedefs.h"
+#include "units/units.h"
 //  ATLANTIC         BALTIC         ATLANTIC
 //  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
 
@@ -24,6 +25,32 @@ LandIndexCount SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
 SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
+
+inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_DIST[canal_state][src_sea][dst_sea];
+}
+
+inline SeaToSeaConnections* get_seas_within_1_move(CanalState canal_state, SeaIndex src_sea) {
+  return &SEAS_WITHIN_1_MOVE[canal_state][src_sea];
+}
+
+inline SeaIndexCount get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea) {
+  return SEAS_WITHIN_1_MOVE_COUNT[canal_state][src_sea];
+}
+
+inline SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_sea) {
+  return &SEAS_WITHIN_2_MOVES[canal_state][src_sea];
+}
+
+inline SeaIndexCount get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea) {
+  return SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
+}
+
+inline SeaIndex get_sea_from_array(SeaArray* sea_array, SeaConnectionIndex conn_idx) {
+  return (*sea_array)[conn_idx];
+}
+
+inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
 
 inline SeaIndexCount get_sea_to_sea_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
 inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {

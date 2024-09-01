@@ -25,8 +25,8 @@ typedef struct {
   LandIndex connected_land_index[MAX_LAND_TO_LAND_CONNECTIONS];
 } __attribute__((aligned(ALIGNMENT_32))) Land;
 
-static inline LandIndexCount get_land_conn_count(LandIndex land_idx);
-inline LandIndex get_connected_land_index(LandIndex land_idx, LandConnectionIndex conn_idx);
+inline LandIndexCount get_land_conn_count(LandIndex land_idx);
+inline const LandIndex* get_connected_land_index(LandIndex land_idx);
 inline SeaIndexCount get_sea_conn_count(LandIndex land_idx);
 inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnectionIndex sea_conn_idx);
 inline Dollars get_land_value(LandIndex land_idx);
@@ -38,3 +38,7 @@ inline SeaIndexCount get_land_to_sea_count(LandIndex land_idx);
 inline LandToSeaConnection* get_land_to_sea_conn(LandIndex land_idx);
 inline LandIndexCount get_lands_within_2_moves_count(LandIndex land_idx);
 inline LandIndexArray* get_lands_within_2_moves(LandIndex land_idx);
+inline LandIndexCount get_load_within_2_moves_count(LandIndex land_idx);
+inline LandToSeaConnection* get_load_within_2_moves(LandIndex land_idx);
+inline LandIndex get_land_from_array(LandIndexArray* land_array, uint8_t land_array_idx);
+inline PlayerIndex get_original_owner_index(LandIndex land_idx);

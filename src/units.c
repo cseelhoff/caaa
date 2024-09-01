@@ -175,3 +175,17 @@ const SeaUnitState DONE_MOVING_SEA[SEA_UNIT_TYPES_COUNT] = {
 
 const SeaUnitType BLOCKADE_UNIT_TYPES[BLOCKADE_UNIT_TYPES_COUNT] = {DESTROYERS, CARRIERS, CRUISERS,
                                                                     BATTLESHIPS, BS_DAMAGED};
+
+inline bool is_non_combat_unit(LandUnitType unit_type) {
+    return ATTACK_UNIT_LAND[unit_type] == 0;
+}
+
+#define TRANSPORT_CARGO_SIZE 5
+inline bool is_non_loadable_unit(LandUnitType unit_type) {
+    return UNIT_WEIGHTS[unit_type] > TRANSPORT_CARGO_SIZE;
+}
+
+inline bool is_heavy_unit(LandUnitType unit_type) {
+    return UNIT_WEIGHTS[unit_type] > INFANTRY_WEIGHT;
+}
+

@@ -32,3 +32,12 @@ static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndexCount sea_to_s
 inline SeaToSeaConnections* get_sea_to_sea_conn(SeaIndex src_sea);
 inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
 inline SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+inline SeaToSeaConnections* get_seas_within_1_move(CanalState canal_state, SeaIndex src_sea);
+inline SeaIndexCount get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea);
+inline SeaIndex get_sea_from_s2s_conn(SeaToSeaConnections* sea_to_sea_conn,
+                                      SeaConnectionIndex conn_idx);
+inline SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_sea);
+inline SeaIndexCount get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea);
+inline SeaIndex get_sea_from_array(SeaArray* sea_array, SeaConnectionIndex conn_idx);
+inline char* get_sea_name(SeaIndex sea_idx);
+inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);

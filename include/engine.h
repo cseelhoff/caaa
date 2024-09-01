@@ -100,3 +100,11 @@ bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
+
+static bool check_land_connectionsX(LandIndex src_land, bool* checked_territories, AirIndex dst_air);
+static bool check_sea_connectionsX(LandIndex src_land, bool* checked_territories, AirIndex dst_air);
+static bool check_lands_within_2_movesX(LandIndex src_land, bool* checked_territories, AirIndex dst_air);
+static bool check_load_within_2_movesX(LandIndex src_land, bool* checked_territories, AirIndex dst_air);
+static bool check_seas_within_1_moveX(SeaIndex src_sea, bool* checked_territories, AirIndex dst_air);
+static bool check_seas_within_2_movesX(SeaIndex src_sea, bool* checked_territories, AirIndex dst_air);
+static bool check_airs_within_X_moves(AirIndex src_air, bool* checked_territories, AirIndex dst_air, Movement moves);
