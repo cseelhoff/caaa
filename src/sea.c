@@ -26,6 +26,18 @@ SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
 
+inline LandIndex get_land_from_s2l_conn(SeaToLandConnections* sea_to_land_conn,
+                                        LandConnectionIndex conn_idx) {
+  return (*sea_to_land_conn)[conn_idx];
+}
+
+inline LandIndexCount get_sea_to_land_count(SeaIndex sea_idx) {
+  return SEA_TO_LAND_COUNT[sea_idx];
+}
+inline SeaToLandConnections* get_sea_to_land_conn(SeaIndex sea_idx) {
+  return &SEA_TO_LAND_CONN[sea_idx];
+}
+
 inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
   return SEA_DIST[canal_state][src_sea][dst_sea];
 }

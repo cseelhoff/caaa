@@ -11,7 +11,7 @@ static AirIndexArray LAND_DIST[LANDS_COUNT] = {0};
 static LandIndex LAND_PATH[LAND_MOVE_SIZE][LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static LandIndex LAND_PATH_ALT[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static LandIndex land_path1[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
-static AirIndexArray AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
+static AirIndexMatrix AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX] = {0};
 static AirIndexCount AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
 static LandIndex AIR_TO_LAND_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT][LANDS_COUNT] = {0};
 static LandIndexCount AIR_TO_LAND_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
@@ -21,6 +21,18 @@ static AirIndex air_path3[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static AirIndex air_path4[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static AirIndex air_path5[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 static AirIndex air_path6[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
+
+inline AirIndexArray* get_airs_within_x_moves(Movement moves, AirIndex src_air) {
+  return &AIR_WITHIN_X_MOVES[moves][src_air];
+}
+
+inline uint8_t get_airs_within_x_moves_count(Movement moves, AirIndex src_air) {
+  return AIR_WITHIN_X_MOVES_COUNT[moves][src_air];
+}
+
+inline AirIndex get_air_from_array(AirIndexArray* air_array, uint8_t air_array_idx) {
+  return (*air_array)[air_array_idx];
+}
 
 inline AirIndexCount get_air_conn_count(AirIndex air_idx) { return AIR_CONN_COUNT[air_idx]; }
 
@@ -38,7 +50,8 @@ inline LandIndex get_land_path_alt(LandIndex src_land, AirIndex dst_air) {
   return LAND_PATH_ALT[src_land][dst_air];
 }
 inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
-inline AirIndexArray* get_land_dist(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
+inline AirIndexArray* get_land_dist_array(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
+inline Distance get_land_dist(LandIndex src_land, AirIndex dst_air) { return LAND_DIST[src_land][dst_air]; }
 
 inline Distance get_air_dist(AirIndex src_air, AirIndex dst_air) { return AIR_DIST[src_air][dst_air]; }
 

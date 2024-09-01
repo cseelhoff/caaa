@@ -41,3 +41,8 @@ inline SeaIndexCount get_seas_within_2_moves_count(CanalState canal_state, SeaIn
 inline SeaIndex get_sea_from_array(SeaArray* sea_array, SeaConnectionIndex conn_idx);
 inline char* get_sea_name(SeaIndex sea_idx);
 inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+inline SeaToLandConnections* get_sea_to_land_conn(SeaIndex sea_idx);
+inline LandIndexCount get_sea_to_land_count(SeaIndex sea_idx);
+inline LandIndex get_land_from_s2l_conn(SeaToLandConnections* sea_to_land_conn,
+                                        LandConnectionIndex conn_idx);
+                                        

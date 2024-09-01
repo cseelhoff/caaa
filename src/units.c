@@ -1,4 +1,5 @@
 #include "units/units.h"
+#include "sea.h"
 #include "typedefs.h"
 #include <stdint.h>
 
@@ -189,3 +190,28 @@ inline bool is_heavy_unit(LandUnitType unit_type) {
     return UNIT_WEIGHTS[unit_type] > INFANTRY_WEIGHT;
 }
 
+inline LandUnitType get_order_of_land_defenders(uint8_t idx) {
+    return ORDER_OF_LAND_DEFENDERS[idx];
+}
+
+inline LandUnitType get_order_of_land_attackers_1(uint8_t idx) {
+    return ORDER_OF_LAND_ATTACKERS_1[idx];
+}
+inline LandUnitType get_order_of_land_attackers_2(uint8_t idx) {
+    return ORDER_OF_LAND_ATTACKERS_2[idx];
+}
+
+inline SeaUnitType get_order_of_sea_defenders(uint8_t idx) {
+    return ORDER_OF_SEA_DEFENDERS[idx];
+}
+
+inline SeaUnitType get_order_of_sea_attackers_1(uint8_t idx) {
+    return ORDER_OF_SEA_ATTACKERS_1[idx];
+}
+
+inline SeaUnitType get_order_of_sea_attackers_2(uint8_t idx) {
+    return ORDER_OF_SEA_ATTACKERS_2[idx];
+}
+inline SeaUnitType get_order_of_sea_attackers_3(uint8_t idx) {
+    return ORDER_OF_SEA_ATTACKERS_3[idx];
+}
