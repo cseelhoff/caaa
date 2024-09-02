@@ -13,6 +13,7 @@
 typedef AirIndex AirIndexArray[AIRS_COUNT];
 typedef AirIndexArray AirIndexMatrix[AIRS_COUNT];
 typedef AirIndex AirToAirConnection[MAX_AIR_TO_AIR_CONNECTIONS];
+typedef LandIndex AirToLandConnection[LANDS_COUNT];
 
 inline LandIndex get_land_path1(LandIndex src_land, AirIndex dst_air);
 inline LandIndex get_land_path_alt(LandIndex src_land, AirIndex dst_air);
@@ -30,3 +31,6 @@ inline AirIndexArray* get_airs_within_x_moves(Movement moves, AirIndex src_air);
 inline uint8_t get_airs_within_x_moves_count(Movement moves, AirIndex src_air);
 inline LandIndex convert_air_to_land(AirIndex air_idx);
 inline SeaIndex convert_air_to_sea(AirIndex air_idx);
+inline AirToLandConnection* get_air_to_land_within_x_moves(Movement moves, AirIndex src_air);
+inline LandIndex get_land_from_a2l(AirToLandConnection* air_to_land_conn, uint8_t land_conn_idx);
+inline LandIndexCount get_air_to_land_within_x_moves_count(Movement moves, AirIndex src_air);

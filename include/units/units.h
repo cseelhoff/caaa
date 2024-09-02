@@ -28,6 +28,7 @@
 #define BLOCKADE_UNIT_TYPES_COUNT 5
 #define MAX_LAND_UNIT_STATES 7
 #define MAX_SEA_UNIT_STATES 5
+#define MAX_AIR_UNIT_STATES 7
 
 typedef enum : uint8_t {
   FIGHTERS_SEA,
