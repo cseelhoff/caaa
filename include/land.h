@@ -25,9 +25,8 @@ typedef struct {
   LandToLandConnections land_connections;
 } __attribute__((aligned(ALIGNMENT_32))) Land;
 
-inline LandIndexCount get_land_conn_count(LandIndex land_idx);
-inline const LandIndex* get_connected_land_index(LandIndex land_idx);
-inline SeaIndexCount get_sea_conn_count(LandIndex land_idx);
+LandIndexCount get_land_conn_count(LandIndex land_idx);
+SeaIndexCount get_sea_conn_count(SeaIndex sea_idx);
 inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnectionIndex sea_conn_idx);
 inline Dollars get_land_value(LandIndex land_idx);
 inline char* get_land_name(LandIndex land_idx);
@@ -45,3 +44,4 @@ inline LandIndex get_land_from_l2l_conn(LandToLandConnections* land_to_land_conn
                                         LandConnectionIndex conn_idx);
 inline const LandToLandConnections* get_land_connections(LandIndex land_idx);
 inline LandIndexCount* get_land_to_land_count_ref(LandIndex land_idx);
+const extern Land LANDS[LANDS_COUNT];

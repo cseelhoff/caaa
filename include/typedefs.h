@@ -7,7 +7,6 @@
 #define ALIGNMENT_16 16
 #define MAX_UINT8_T 255
 
-typedef uint8_t MovesRemaining;
 typedef uint8_t LandIndex;
 typedef uint8_t SeaIndex;
 typedef uint8_t AirIndex;
@@ -17,8 +16,13 @@ typedef uint8_t SeaIndexCount;
 typedef uint8_t AirIndexCount;
 typedef uint8_t SeaConnectionIndex;
 typedef uint8_t LandConnectionIndex;
+typedef uint8_t AirConnectionIndex;
+typedef uint8_t HitPoints;
+typedef uint8_t FactoryLocationIndex;
 
 typedef uint8_t PlayerIndex;
+typedef uint8_t EnemyIndex;
+
 typedef uint8_t LandUnitStateSum;
 typedef uint8_t SeaUnitStateSum;
 typedef uint8_t AirUnitStateSum;
@@ -29,9 +33,18 @@ typedef uint8_t NavySum;
 
 typedef uint8_t Tonnes;
 typedef uint8_t Power;
-typedef uint8_t Movement;
+typedef uint8_t Distance;
 typedef uint8_t LandUnitStateCount;
 typedef uint8_t SeaUnitStateCount;
 typedef uint8_t SeaUnitState;
 
 typedef uint8_t CanalState;
+typedef uint8_t SourceTerritoryIndex;
+typedef uint8_t UnitTypeIndex;
+
+typedef uint8_t CarrierSpace;
+
+typedef uint8_t Action;
+typedef uint8_t ActionCount;
+#define VALID_ACTIONS_SIZE 256
+typedef Action ActionArray[VALID_ACTIONS_SIZE];

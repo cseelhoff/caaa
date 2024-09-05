@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include "typedefs.h"
 
 int main() {
   printf("Starting CAAA \n");
@@ -12,7 +13,7 @@ int main() {
   // Initialize the game state
 
   MCTSNode* root = mcts_search(initial_state, 19000);
-  uint8_t best_action = select_best_action(root);
+  Action best_action = select_best_action(root);
   print_mcts(root);
   printf("Best action: %d\n", best_action);
   // Apply the best action to the game state

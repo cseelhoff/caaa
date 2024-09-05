@@ -52,7 +52,7 @@ static LandToSeaConnections LAND_TO_SEA_CONN[LANDS_COUNT] = {0};
 
 inline PlayerIndex get_original_owner_index(LandIndex land_idx) { return LANDS[land_idx].original_owner_index; }
 
-inline LandIndexCount get_land_conn_count(LandIndex land_idx) {
+LandIndexCount get_land_conn_count(LandIndex land_idx) {
   return LANDS[land_idx].land_conn_count;
 }
 inline LandIndex get_land_to_land(LandIndex land_idx, LandConnectionIndex conn_idx) {
@@ -63,13 +63,13 @@ inline const LandToLandConnections* get_land_connections(LandIndex land_idx) {
   return &LANDS[land_idx].land_connections;
 }
 
-inline SeaIndexCount get_sea_conn_count(LandIndex land_idx) {
+SeaIndexCount get_sea_conn_count(LandIndex land_idx) {
   return LANDS[land_idx].sea_conn_count;
 }
 inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnectionIndex sea_conn_idx) {
   return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
 }
-inline LandIndex get_land_from_array(LandIndexArray* land_array, uint8_t land_array_idx) {
+inline LandIndex get_land_from_array(LandIndexArray* land_array, LandConnectionIndex land_array_idx) {
   return (*land_array)[land_array_idx];
 }
 
@@ -125,7 +125,7 @@ void generate_land_value_array() {
     }
     LAND_TO_SEA_COUNT[land_idx] = LANDS[land_idx].sea_conn_count;
 #pragma unroll 4 // Adjust the number based on your optimization needs
-    for (int conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[land_idx]; conn_idx++) {
+    for (SeaConnectionIndex conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[land_idx]; conn_idx++) {
       LAND_TO_SEA_CONN[land_idx][conn_idx] = LANDS[land_idx].sea_connections[conn_idx];
     }
   }

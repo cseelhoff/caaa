@@ -94,7 +94,7 @@ void set_seed(uint16_t seed);
 
 GameState* clone_state(GameState* game_state);
 void free_state(GameState* game_state);
-uint8_t* get_possible_actions(GameState* game_state, int* num_actions);
+ActionArray* get_possible_actions(GameState* game_state, int* num_actions);
 void apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
@@ -107,4 +107,4 @@ static bool check_lands_within_2_movesX(LandIndex src_land, bool* checked_territ
 static bool check_load_within_2_movesX(LandIndex src_land, bool* checked_territories, AirIndex dst_air);
 static bool check_seas_within_1_moveX(SeaIndex src_sea, bool* checked_territories, AirIndex dst_air);
 static bool check_seas_within_2_movesX(SeaIndex src_sea, bool* checked_territories, AirIndex dst_air);
-static bool check_airs_within_X_moves(AirIndex src_air, bool* checked_territories, AirIndex dst_air, Movement moves);
+static bool check_airs_within_X_moves(AirIndex src_air, bool* checked_territories, AirIndex dst_air, Distance moves);

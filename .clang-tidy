@@ -1,2 +1,2 @@
-Checks: '*,-llvmlibc-restrict-system-libc-headers,-cppcoreguidelines-avoid-non-const-global-variables'
+Checks: '-llvmlibc-restrict-system-libc-headers,-cppcoreguidelines-avoid-non-const-global-variables'
 WarningsAsErrors: '-*'

@@ -22,8 +22,8 @@ typedef struct {
   char* name;
   SeaIndexCount sea_conn_count;
   LandIndexCount land_conn_count;
-  SeaIndex connected_sea_index[MAX_SEA_TO_SEA_CONNECTIONS];
-  LandIndex connected_land_index[MAX_SEA_TO_LAND_CONNECTIONS];
+  SeaIndex sea_connections[MAX_SEA_TO_SEA_CONNECTIONS];
+  LandIndex land_connections[MAX_SEA_TO_LAND_CONNECTIONS];
 } __attribute__((aligned(ALIGNMENT_32))) Sea;
 
 extern const Sea SEAS[SEAS_COUNT];
@@ -45,4 +45,10 @@ inline SeaToLandConnections* get_sea_to_land_conn(SeaIndex sea_idx);
 inline LandIndexCount get_sea_to_land_count(SeaIndex sea_idx);
 inline LandIndex get_land_from_s2l_conn(SeaToLandConnections* sea_to_land_conn,
                                         LandConnectionIndex conn_idx);
-                                        
+inline void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+void generate_SeaMoveDst(int hop, int src_sea, int dst_sea, int cur_sea, int min_dist, CanalState canal_state);
+void initialize_sea_connections();
+void initialize_sea_dist(CanalState canal_idx);
+void populate_initial_distances_sea(CanalState canal_idx);
+void process_canals(CanalState canal_idx);
+void floyd_warshall_sea(CanalState canal_idx);
