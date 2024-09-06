@@ -21,6 +21,7 @@
 #include "units/tank.h"
 #include "units/transport.h"
 #include "units/units.h"
+#include <cjson/cJSON.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,7 +30,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-//#include <cjson/cJSON.h> todo does this work?
 
 /*
 typedef struct {
@@ -62,14 +62,8 @@ LandUnitTypesSumArrayLands* player_land_unit_types[PLAYERS_COUNT] = {
 SeaUnitTypesSumArraySeas* player_sea_unit_types[PLAYERS_COUNT] = {
     &my_sea_unit_types, &state.other_sea_units[0], &state.other_sea_units[1],
     &state.other_sea_units[2], &state.other_sea_units[3]};
-typedef LandUnitStateSum* LandUnitStateSums[MAX_LAND_UNIT_STATES];
-typedef LandUnitStateSums LandUnitStates[LAND_UNIT_TYPES_COUNT];
 LandUnitStates my_land_unit_states[LANDS_COUNT] = {0};
-typedef SeaUnitStateSum* SeaUnitStateSums[MAX_SEA_UNIT_STATES];
-typedef SeaUnitStateSums SeaUnitStates[SEA_UNIT_TYPES_COUNT];
 SeaUnitStates my_sea_unit_states[SEAS_COUNT] = {0};
-typedef AirUnitStateSum* AirUnitStateSums[MAX_AIR_UNIT_STATES];
-typedef AirUnitStateSums AirUnitStates[AIR_UNIT_TYPES_COUNT];
 AirUnitStates my_air_unit_states[AIRS_COUNT] = {0};
 
 PlayerIndex* owner_idx[LANDS_COUNT];
@@ -106,8 +100,6 @@ BoolSeaArray is_sub_path_blocked[SEAS_COUNT] = {0};
 NavySum transports_with_large_cargo_space[SEAS_COUNT];
 NavySum transports_with_small_cargo_space[SEAS_COUNT];
 
-typedef uint8_t PlayerIndexCount;
-typedef uint8_t AirMilitaryCount;
 
 PlayerIndex enemies_0[PLAYERS_COUNT - 1] = {0};
 bool is_allied_0[PLAYERS_COUNT] = {0};
@@ -152,7 +144,7 @@ inline PlayerIndex get_enemy_player(EnemyIndex enemy_idx) { return enemies_0[ene
 inline ArmySum get_player_armies(PlayerIndex player_idx, LandIndex land_idx) {
   return player_armies[player_idx][land_idx];
 }
-inline AirIndex convert_land_to_air(LandIndex land_idx) { return (AirIndex)land_idx; }
+//inline AirIndex convert_land_to_air(LandIndex land_idx) { return (AirIndex)land_idx; }
 inline void acc_enemy_units_count(AirIndex air_idx, AirMilitaryCount sum) {
   enemy_units_count[air_idx] += sum;
 }
@@ -182,7 +174,7 @@ inline SeaUnitSumArray* get_my_sea_unit_types(SeaIndex sea_idx) {
 inline void set_allied_carriers(SeaIndex sea_idx, NavySum carriers) {
   allied_carriers[sea_idx] = carriers;
 }
-inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
+//inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
 inline SeaUnitSumArray* get_player_sea_unit_types_ref(PlayerIndex player_idx, SeaIndex sea_idx) {
   return player_sea_unit_types[player_idx][sea_idx];
 }
@@ -395,19 +387,19 @@ inline void check_territory(bool* checked_territories, AirIndex src_air) {
 inline bool was_terr_skipped(AirIndex src_air, AirIndex dst_air) {
   return hist_skipped_airs[src_air][dst_air];
 }
-inline LandConnections* get_l2l_conn(LandIndex land_idx) { return &LAND_TO_LAND_CONN[land_idx]; }
+//inline LandConnections* get_l2l_conn(LandIndex land_idx) { return &LAND_TO_LAND_CONN[land_idx]; }
 inline LandConnIndex get_l2l_count(LandIndex land_idx) { return LAND_TO_LAND_COUNT[land_idx]; }
-inline LandIndex get_land_from_conn(LandConnections* land_to_land_conn, LandConnIndex conn_idx) {
-  return (*land_to_land_conn)[conn_idx];
-}
-inline SeaConnections* get_l2s_conn(LandIndex land_idx) { return &LAND_TO_SEA_CONN[land_idx]; }
-inline SeaConnIndex get_l2s_count(LandIndex land_idx) { return LAND_TO_SEA_COUNT[land_idx]; }
+//inline LandIndex get_land_from_conn(LandConnections* land_to_land_conn, LandConnIndex conn_idx) {
+//  return (*land_to_land_conn)[conn_idx];
+//}
+//inline SeaConnections* get_l2s_conn(LandIndex land_idx) { return &LAND_TO_SEA_CONN[land_idx]; }
+//inline SeaConnIndex get_l2s_count(LandIndex land_idx) { return LAND_TO_SEA_COUNT[land_idx]; }
 inline LandIndex get_lands_within_2_moves_count(LandIndex land_idx) {
-  return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
+   return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
 }
-inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
-  return &LANDS_WITHIN_2_MOVES[land_idx];
-}
+// inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
+//   return &LANDS_WITHIN_2_MOVES[land_idx];
+// }
 inline LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_conn_idx) {
   return (*land_array)[land_conn_idx];
 }
@@ -443,9 +435,9 @@ inline AirIndex get_air_from_array(AirIndexArray* air_array, AirConnIndex air_ar
 inline SeaIndex get_load_within_2_moves_count(LandIndex land_idx) {
   return LOAD_WITHIN_2_MOVES_COUNT[land_idx];
 }
-inline SeaConnections* get_load_within_2_moves(LandIndex land_idx) {
-  return &LOAD_WITHIN_2_MOVES[land_idx];
-}
+// inline SeaConnections* get_load_within_2_moves(LandIndex land_idx) {
+//   return &LOAD_WITHIN_2_MOVES[land_idx];
+// }
 inline SeaIndex get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea) {
   return SEAS_WITHIN_X_MOVES_COUNT[0][canal_state][src_sea];
 }
@@ -464,7 +456,6 @@ inline SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_se
 inline SeaIndex get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea) {
   return SEAS_WITHIN_X_MOVES_COUNT[1][canal_state][src_sea];
 }
-inline AirDistances* get_land_to_air_dist(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
 
 inline bool is_non_combat_unit(LandUnitType unit_type) { return ATTACK_UNIT_LAND[unit_type] == 0; }
 
@@ -501,21 +492,21 @@ inline SeaUnitType get_order_of_sea_attackers_2(uint8_t idx) {
 inline SeaUnitType get_order_of_sea_attackers_3(uint8_t idx) {
   return ORDER_OF_SEA_ATTACKERS_3[idx];
 }
-inline SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx) {
-  return (*land_to_sea_conn)[conn_idx];
-}
+//inline SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx) {
+//  return (*land_to_sea_conn)[conn_idx];
+//}
 
 inline void acc_sea_state_sums(SeaUnitStateSums* sea_unit_states,
                                GenericSeaUnitState sea_unit_state, SeaUnitStateSum* sum) {
   (*sea_unit_states)[sea_unit_state] += *sum;
 }
 
-inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
-  return SEA_DIST[canal_state][src_sea][dst_sea];
-}
+// inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+//   return SEA_DIST[canal_state][src_sea][dst_sea];
+// }
 
-inline SeaConnections* get_s2s_conn(SeaIndex src_sea) { return &SEA_TO_SEA_CONN[src_sea]; }
-inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+//inline SeaConnections* get_s2s_conn(SeaIndex src_sea) { return &SEA_TO_SEA_CONN[src_sea]; }
+//inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
 
 inline AirConnection* get_a2a_conn(AirIndex air_idx) { return &AIR_CONNECTIONS[air_idx]; }
 
@@ -539,16 +530,16 @@ inline PlayerIndex get_original_owner_index(LandIndex land_idx) {
   return LANDS[land_idx].original_owner_index;
 }
 
-inline Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx) {
-  return (*air_dist)[air_idx];
-}
+// inline Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx) {
+//   return (*air_dist)[air_idx];
+// }
 
 inline void flag_for_combat(AirIndex air_idx) { state.flagged_for_combat[air_idx] = true; }
 inline void unflag_for_combat(AirIndex air_idx) { state.flagged_for_combat[air_idx] = false; }
 
-inline LandConnIndex get_s2l_count(SeaIndex src_sea) { return SEAS[src_sea].land_conn_count; }
+//inline LandConnIndex get_s2l_count(SeaIndex src_sea) { return SEAS[src_sea].land_conn_count; }
 
-inline LandConnections* get_s2l_conn(SeaIndex src_sea) { return &SEA_TO_LAND_CONN[src_sea]; }
+//inline LandConnections* get_s2l_conn(SeaIndex src_sea) { return &SEA_TO_LAND_CONN[src_sea]; }
 
 inline AirIndexArray* get_airs_within_x_moves(Distance moves, AirIndex src_air) {
   return &AIR_WITHIN_X_MOVES[moves][src_air];

@@ -42,3 +42,7 @@ void populate_initial_distances_sea(CanalState canal_idx);
 void process_canals(CanalState canal_idx);
 void floyd_warshall_sea(CanalState canal_idx);
 void generate_seaMoveAllDestination();
+SeaIndex get_sea_conn_count(LandIndex land_idx);
+void set_sea_dist(CanalState canal_idx, SeaIndex src_sea, SeaIndex dst_sea, Distance dist);
+void set_sea_path(Distance hop, CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea,
+                  SeaIndex cur_sea);

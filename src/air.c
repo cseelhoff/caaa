@@ -25,15 +25,16 @@ AirIndex air_path4[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path5[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path6[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 
-inline LandIndex get_land_from_conn(LandConnections* land_connections, LandConnIndex land_conn_idx) {
+inline LandIndex get_land_from_conn(LandConnections* land_connections,
+                                    LandConnIndex land_conn_idx) {
   return (*land_connections)[land_conn_idx];
 }
+inline AirDistances* get_land_to_air_dist(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
 
 inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
 inline AirDistances* get_land_dist_land(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
 
 inline AirIndex convert_land_to_air(LandIndex land_idx) { return (AirIndex)land_idx; }
-
 
 inline char* get_land_name(LandIndex land_idx) { return LANDS[land_idx].name; }
 
@@ -43,8 +44,57 @@ inline void set_air_distance(AirDistances* air_dist, AirIndex dst_air, Distance 
   (*air_dist)[dst_air] = dist;
 }
 
-inline AirDistances* get_land_to_air_dist(LandIndex land_idx) {
-  return &LAND_DIST[land_idx];
+
+inline void set_land_dist(LandIndex src_land, AirIndex dst_air, Distance dist) {
+  LAND_DIST[src_land][dst_air] = dist;
+}
+
+inline LandConnections* get_l2l_conn(LandIndex land_idx) {
+  return &LANDS[land_idx].land_connections;
+}
+
+inline LandConnIndex get_l2l_count(LandIndex land_idx) { return LANDS[land_idx].land_conn_count; }
+inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx) {
+  return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
+}
+inline SeaConnIndex get_l2s_count(LandIndex land_idx) { return LANDS[land_idx].sea_conn_count; }
+inline SeaConnections* get_l2s_conn(LandIndex land_idx) { return &LAND_TO_SEA_CONN[land_idx]; }
+inline SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx) {
+  return (*land_to_sea_conn)[conn_idx];
+}
+
+inline LandConnections* get_s2l_conn(SeaIndex src_sea) { return &SEA_TO_LAND_CONN[src_sea]; }
+inline LandConnIndex get_s2l_count(SeaIndex src_sea) { return SEAS[src_sea].land_conn_count; }
+
+inline SeaConnections* get_s2s_conn(SeaIndex src_sea) { return &SEA_TO_SEA_CONN[src_sea]; }
+
+inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline LandIndex* get_l2l_count_ref(LandIndex land_idx) { return &LAND_TO_LAND_COUNT[land_idx]; }
+inline LandIndex* get_lands_within_2_moves_count_ref(LandIndex land_idx) {
+  return &LANDS_WITHIN_2_MOVES_COUNT[land_idx];
+}
+inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
+  return &LANDS_WITHIN_2_MOVES[land_idx];
+}
+
+inline SeaConnections* get_load_within_2_moves(LandIndex land_idx) {
+  return &LOAD_WITHIN_2_MOVES[land_idx];
+}
+
+inline LandIndex* get_load_within_2_moves_count_ref(LandIndex land_idx) {
+  return &LOAD_WITHIN_2_MOVES_COUNT[land_idx];
+}
+inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_DIST[canal_state][src_sea][dst_sea];
+}
+inline void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
+                                    SeaIndex dst_sea) {
+  SEAS_WITHIN_X_MOVES[moves][canal_state][src_sea]
+                     [SEAS_WITHIN_X_MOVES_COUNT[moves][canal_state][src_sea]++] = dst_sea;
+}
+
+inline Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx) {
+  return (*air_dist)[air_idx];
 }
 
 void generate_land_dist() {
@@ -60,25 +110,6 @@ void generate_land_dist() {
   }
 }
 
-inline void set_land_dist(LandIndex src_land, AirIndex dst_air, Distance dist) {
-  LAND_DIST[src_land][dst_air] = dist;
-}
-
-inline LandConnections* get_l2l_conn(LandIndex land_idx) {
-  return &LANDS[land_idx].land_connections;
-}
-
-inline LandConnIndex get_l2l_count(LandIndex land_idx) {
-  return LANDS[land_idx].land_conn_count;
-}
-inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx) {
-  return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
-}
-inline SeaConnIndex get_l2s_count(LandIndex land_idx) {
-  return LANDS[land_idx].sea_conn_count;
-}
-
-
 void populate_initial_distances() {
   for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
     for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
@@ -86,7 +117,8 @@ void populate_initial_distances() {
       LandIndex land_conn_count = get_l2l_count(land_idx);
 #pragma unroll 4 // Adjust the number based on your optimization needs
       for (LandConnIndex land_conn_idx = 0; land_conn_idx < land_conn_count; land_conn_idx++) {
-        AirIndex dst_air = convert_land_to_air(get_land_from_conn(land_to_land_conn, land_conn_idx));
+        AirIndex dst_air =
+            convert_land_to_air(get_land_from_conn(land_to_land_conn, land_conn_idx));
         set_land_dist(src_land, dst_air, 1);
         set_land_dist(dst_air, src_land, 1);
       }
@@ -103,16 +135,15 @@ void populate_initial_distances() {
 void floyd_warshall() {
   // Floyd-Warshall algorithm to compute shortest paths
   for (LandIndex land_idx2 = 0; land_idx2 < LANDS_COUNT; land_idx2++) {
-        AirDistances* land_dist_ref2 = get_land_to_air_dist(land_idx2);
+    AirDistances* land_dist_ref2 = get_land_to_air_dist(land_idx2);
     for (LandIndex land_idx1 = 0; land_idx1 < LANDS_COUNT; land_idx1++) {
-        AirDistances* land_dist_ref1 = get_land_to_air_dist(land_idx1);
+      AirDistances* land_dist_ref1 = get_land_to_air_dist(land_idx1);
 #pragma unroll
       for (AirIndex air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
 
         if ((*land_dist_ref2)[land_idx1] + (*land_dist_ref1)[air_idx] <
             (*land_dist_ref2)[air_idx]) {
-          (*land_dist_ref2)[air_idx] =
-              (*land_dist_ref2)[land_idx1] + (*land_dist_ref1)[air_idx];
+          (*land_dist_ref2)[air_idx] = (*land_dist_ref2)[land_idx1] + (*land_dist_ref1)[air_idx];
         }
       }
     }
@@ -138,7 +169,7 @@ void populate_initial_distances2() {
   AirIndex dst_air = 0;
   for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
     LandConnections* land_to_land_conn = get_l2l_conn(src_land);
-    LandIndex land_to_land_count = get_land_to_land_count(src_land);
+    LandIndex land_to_land_count = get_l2l_count(src_land);
 #pragma unroll 4 // Adjust the number based on your optimization needs
     for (land_conn_idx = 0; land_conn_idx < land_to_land_count; land_conn_idx++) {
       dst_air = convert_land_to_air(get_land_from_conn(land_to_land_conn, land_conn_idx));
@@ -151,7 +182,7 @@ void populate_initial_distances2() {
     SeaIndex land_to_sea_count = get_l2s_count(src_land);
 #pragma unroll 4 // Adjust the number based on your optimization needs
     for (sea_conn_idx = 0; sea_conn_idx < land_to_sea_count; sea_conn_idx++) {
-      dst_air = convert_sea_to_air(get_sea_from_l2s_conn(land_to_sea_conn, sea_conn_idx));
+      dst_air = convert_sea_to_air(get_sea_from_conn(land_to_sea_conn, sea_conn_idx));
       AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
       AIR_CONN_COUNT[src_land]++;
       AIR_DIST[src_land][dst_air] = 1;
@@ -197,7 +228,8 @@ void floyd_warshall_air() {
     }
   }
 }
-void generate_LandMoveDst(Distance hop, LandIndex src_land, AirIndex dst_air, LandIndex cur_land, Distance min_dist) {
+void generate_LandMoveDst(Distance hop, LandIndex src_land, AirIndex dst_air, LandIndex cur_land,
+                          Distance min_dist) {
   if (hop > MAX_LAND_HOPS) {
     return;
   }
@@ -205,7 +237,7 @@ void generate_LandMoveDst(Distance hop, LandIndex src_land, AirIndex dst_air, La
   if (min_dist <= hop)
     LAND_PATH[hop - MIN_LAND_HOPS][src_land][dst_air] = cur_land;
   LandConnections* land_to_land_conn = get_l2l_conn(cur_land);
-  LandIndex land_conn_count = get_land_to_land_count(cur_land);
+  LandIndex land_conn_count = get_l2l_count(cur_land);
   for (LandConnIndex conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
     LandIndex next_land = get_land_from_conn(land_to_land_conn, conn_idx);
     Distance next_dist = LAND_DIST[next_land][dst_air];
@@ -214,7 +246,8 @@ void generate_LandMoveDst(Distance hop, LandIndex src_land, AirIndex dst_air, La
     }
   }
 }
-void generate_AirMoveDst(Distance hop, AirIndex src_air, AirIndex dst_air, AirIndex cur_air, Distance min_dist) {
+void generate_AirMoveDst(Distance hop, AirIndex src_air, AirIndex dst_air, AirIndex cur_air,
+                         Distance min_dist) {
   if (hop > MAX_AIR_HOPS)
     return;
   if (min_dist <= hop)
@@ -236,10 +269,9 @@ void generate_airMoveAllDestination() {
   }
 }
 
-
 void generate_within_x_moves() {
-  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {    
-    LandIndex* lands_within_1_move_count = get_land_to_land_count_ref(src_land);
+  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    LandIndex* lands_within_1_move_count = get_l2l_count_ref(src_land);
     LandConnections* lands_within_1_move = get_l2l_conn(src_land);
     LandIndex* lands_within_2_moves_count = get_lands_within_2_moves_count_ref(src_land);
     LandArray* lands_within_2_moves = get_lands_within_2_moves(src_land);
@@ -268,12 +300,12 @@ void generate_within_x_moves() {
         if (src_sea == dst_sea) {
           continue;
         }
-        Distance sea_dist = get_sea_dist(canal_state_idx,src_sea,dst_sea);
+        Distance sea_dist = get_sea_dist(canal_state_idx, src_sea, dst_sea);
         if (sea_dist <= 1) {
-          add_seas_within_x_moves(0, canal_state_idx,  src_sea,  dst_sea);
+          add_seas_within_x_moves(0, canal_state_idx, src_sea, dst_sea);
         }
         if (sea_dist <= 2) {
-          add_seas_within_x_moves(1, canal_state_idx,  src_sea,  dst_sea);
+          add_seas_within_x_moves(1, canal_state_idx, src_sea, dst_sea);
         }
       }
     }
@@ -292,7 +324,8 @@ void generate_within_x_moves() {
         continue;
       }
       if (AIR_DIST[src_air][dst_air] <= BOMBER_MOVES_MAX) {
-        AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX - 1][src_air][AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX - 1][src_air]] = dst_air;
+        AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX - 1][src_air]
+                          [AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX - 1][src_air]] = dst_air;
         AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX - 1][src_air]++;
       }
     }
@@ -323,12 +356,12 @@ void generate_landMoveAllDestination() {
       if (min_dist <= 1)
         LAND_PATH_ALT[src_land][dst_air] = src_land;
       LandConnections* land_to_land_conn = get_l2l_conn(src_land);
-      LandIndex land_conn_count = get_land_to_land_count(src_land);
+      LandIndex land_conn_count = get_l2l_count(src_land);
       for (LandConnIndex conn_idx = land_conn_count; conn_idx >= 0; conn_idx--) {
         LandIndex next_land = get_land_from_conn(land_to_land_conn, conn_idx);
         Distance next_dist = LAND_DIST[next_land][dst_air];
       }
     }
-  }  
+  }
   memcpy(land_path1, LAND_PATH[0], sizeof(land_path1));
 }

@@ -63,9 +63,6 @@ inline LandConnections* get_land_connections(LandIndex land_idx) {
   return &LANDS[land_idx].land_connections;
 }
 
-SeaIndex get_sea_conn_count(LandIndex land_idx) {
-  return LANDS[land_idx].sea_conn_count;
-}
 inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx) {
   return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
 }

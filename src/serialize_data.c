@@ -1,5 +1,5 @@
 #include "serialize_data.h"
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 #include "typedefs.h"
 #include "units/units.h"
 #include <stdio.h>
@@ -197,7 +197,7 @@ void deserialize_land_state_from_json(LandTerr* land_state, cJSON* json) {
   set_land_state_field(json, "owner_index", &land_state->owner_idx);
   // set_land_state_field(json, "builds_left", &land_state->builds_left);
   set_land_state_signed_field(json, "factory_hp", &land_state->factory_hp);
-  set_land_state_field(json, "factory_max", &land_state->factory_max);
+  set_land_state_signed_field(json, "factory_max", &land_state->factory_max);
   extract_and_assign(json, FIGHTER_NAME, land_state->fighters);
   extract_and_assign(json, BOMBER_NAME, land_state->bombers);
   extract_and_assign(json, INFANTRY_NAME, land_state->infantry);

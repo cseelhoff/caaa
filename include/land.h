@@ -37,3 +37,4 @@ extern SeaIndex LAND_TO_SEA_COUNT[LANDS_COUNT];
 extern SeaConnections LAND_TO_SEA_CONN[LANDS_COUNT];
 
 void generate_land_value_array();
+LandIndex get_land_to_land(LandIndex land_idx, LandConnIndex conn_idx);

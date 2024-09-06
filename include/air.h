@@ -26,6 +26,32 @@ extern AirDistances AIR_DIST[AIRS_COUNT];
 extern LandArray AIR_TO_LAND_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT];
 extern LandConnIndex AIR_TO_LAND_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT];
 
+AirDistances* get_land_to_air_dist(LandIndex land_idx);
+void set_air_distance(AirDistances* air_dist, AirIndex dst_air, Distance dist);
+LandConnections* get_l2l_conn(LandIndex land_idx);
+LandIndex get_land_from_conn(LandConnections* land_connections, LandConnIndex land_conn_idx);
+AirIndex convert_land_to_air(LandIndex land_idx);
+void set_land_dist(LandIndex src_land, AirIndex dst_air, Distance dist);
+SeaConnIndex get_l2s_count(LandIndex land_idx);
+AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx);
+SeaConnections* get_l2s_conn(LandIndex land_idx);
+SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx);
+AirIndex convert_sea_to_air(SeaIndex sea_idx);
+LandConnections* get_s2l_conn(SeaIndex src_sea);
+LandConnIndex get_s2l_count(SeaIndex src_sea);
+SeaConnections* get_s2s_conn(SeaIndex src_sea);
+SeaIndex get_s2s_count(SeaIndex src_sea);
+LandIndex* get_l2l_count_ref(LandIndex land_idx);
+LandIndex* get_lands_within_2_moves_count_ref(LandIndex land_idx);
+LandArray* get_lands_within_2_moves(LandIndex land_idx);
+SeaConnections* get_load_within_2_moves(LandIndex land_idx);
+LandIndex* get_load_within_2_moves_count_ref(LandIndex land_idx);
+Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
+                             SeaIndex dst_sea);
+AirDistances* get_land_dist_land(LandIndex land_idx);
+Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx);
+
 void generate_landMoveAllDestination();
 void floyd_warshall();
 void generate_airMoveAllDestination();

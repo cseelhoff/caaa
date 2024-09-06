@@ -1,5 +1,5 @@
 #pragma once
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 #include "game_state.h"
 
 cJSON* read_json_from_file(const char *filename);

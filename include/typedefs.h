@@ -14,7 +14,7 @@ typedef uint8_t Dollars;
 typedef uint8_t SeaConnIndex;
 typedef uint8_t LandConnIndex;
 typedef uint8_t AirConnIndex;
-typedef uint8_t HitPoints;
+typedef int8_t HitPoints;
 typedef uint8_t FactoryLocIndex;
 
 typedef uint8_t PlayerIndex;

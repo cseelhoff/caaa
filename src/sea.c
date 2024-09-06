@@ -27,12 +27,6 @@ SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
 
-inline void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
-                                    SeaIndex dst_sea) {
-  SEAS_WITHIN_X_MOVES[moves][canal_state][src_sea]
-                     [SEAS_WITHIN_X_MOVES_COUNT[moves][canal_state][src_sea]++] = dst_sea;
-}
-
 inline LandIndex get_land_from_s2l_conn(LandConnections* sea_to_land_conn,
                                         LandConnIndex conn_idx) {
   return (*sea_to_land_conn)[conn_idx];
@@ -47,8 +41,9 @@ inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex 
   return SEA_DIST[canal_state][src_sea][dst_sea];
 }
 
-
-
+inline SeaIndex get_sea_conn_count(LandIndex land_idx) {
+  return LANDS[land_idx].sea_conn_count;
+}
 
 inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
 
@@ -106,7 +101,7 @@ void process_canals(CanalState canal_idx) {
   }
 }
 
-void floyd_warshall(CanalState canal_idx) {
+void floyd_warshall_sea(CanalState canal_idx) {
   for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
 #pragma unroll
