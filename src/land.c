@@ -40,7 +40,7 @@ Land LANDS[LANDS_COUNT] = {"Washington",
 
 // static LandIndex LANDS_WITHIN_1_MOVE[LANDS_COUNT][LANDS_COUNT - 1] = {0};
 // static LandIndex LANDS_WITHIN_1_MOVE_COUNT[LANDS_COUNT] = {0};
-LandIndexArray LANDS_WITHIN_2_MOVES[LANDS_COUNT] = {0};
+LandArray LANDS_WITHIN_2_MOVES[LANDS_COUNT] = {0};
 LandIndex LANDS_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
 SeaConnections LOAD_WITHIN_2_MOVES[LANDS_COUNT] = {0};
 LandIndex LOAD_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
@@ -51,7 +51,6 @@ SeaConnections LAND_TO_SEA_CONN[LANDS_COUNT] = {0};
 
 Dollars LAND_VALUE[LANDS_COUNT] = {0};
 
-inline PlayerIndex get_original_owner_index(LandIndex land_idx) { return LANDS[land_idx].original_owner_index; }
 
 LandIndex get_l2l_count(LandIndex land_idx) {
   return LANDS[land_idx].land_conn_count;
@@ -96,7 +95,7 @@ inline SeaConnections* get_l2s_conn(LandIndex land_idx) {
 inline LandIndex get_lands_within_2_moves_count(LandIndex land_idx) {
   return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
 }
-inline LandIndexArray* get_lands_within_2_moves(LandIndex land_idx) {
+inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
   return &LANDS_WITHIN_2_MOVES[land_idx];
 }
 

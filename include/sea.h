@@ -24,14 +24,18 @@ typedef struct {
   LandConnections land_connections;
 } __attribute__((aligned(ALIGNMENT_32))) Sea;
 
-extern Sea SEAS[SEAS_COUNT];
+extern const Sea SEAS[SEAS_COUNT];
 extern SeaMatrix SEA_PATH1[CANAL_STATES];
 extern SeaMatrix SEA_PATH2[CANAL_STATES];
 extern SeaMatrix SEA_PATH1_ALT[CANAL_STATES];
 extern SeaCountsArray SEAS_WITHIN_X_MOVES_COUNT[2][CANAL_STATES];
 extern SeaMatrix SEAS_WITHIN_X_MOVES[2][CANAL_STATES];
+extern SeaDistancesSources SEA_DIST[CANAL_STATES];
+extern SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT];
+extern SeaIndex SEA_TO_SEA_COUNT[SEAS_COUNT];
+extern SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT];
+extern LandConnections SEA_TO_LAND_CONN[SEAS_COUNT];
 
-void generate_SeaMoveDst(int hop, int src_sea, int dst_sea, int cur_sea, int min_dist, CanalState canal_state);
 void initialize_sea_connections();
 void initialize_sea_dist(CanalState canal_idx);
 void populate_initial_distances_sea(CanalState canal_idx);

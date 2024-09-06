@@ -8,7 +8,7 @@
 #include <string.h>
 
 AirIndex AIR_CONN_COUNT[AIRS_COUNT] = {0};
-AirToAirConnection AIR_CONNECTIONS[AIRS_COUNT] = {0};
+AirConnection AIR_CONNECTIONS[AIRS_COUNT] = {0};
 Distance AIR_DIST[AIRS_COUNT][AIRS_COUNT] = {0};
 AirDistances LAND_DIST[LANDS_COUNT] = {0};
 LandIndex LAND_PATH[LAND_MOVE_SIZE][LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
@@ -16,8 +16,8 @@ LandIndex LAND_PATH_ALT[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 LandIndex land_path1[LANDS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndexMatrix AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX] = {0};
 AirIndex AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
-LandConnection AIR_TO_LAND_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
-LandIndex AIR_TO_LAND_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
+LandArray AIR_TO_LAND_WITHIN_X_MOVES[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
+LandConnIndex AIR_TO_LAND_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX][AIRS_COUNT] = {0};
 AirIndex AIR_PATH[AIR_MOVE_SIZE][AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path2[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path3[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
@@ -25,36 +25,12 @@ AirIndex air_path4[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path5[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 AirIndex air_path6[AIRS_COUNT][AIRS_COUNT] = {MAX_UINT8_T};
 
-inline LandConnection* get_air_to_land_within_x_moves(Distance moves, AirIndex src_air) {
-  return &AIR_TO_LAND_WITHIN_X_MOVES[moves][src_air];
-}
-
-inline LandIndex get_air_to_land_within_x_moves_count(Distance moves, AirIndex src_air) {
-  return AIR_TO_LAND_WITHIN_X_MOVES_COUNT[moves][src_air];
-}
-
-inline LandIndex get_land_from_conn(LandConnection* land_connections, LandConnIndex land_conn_idx) {
+inline LandIndex get_land_from_conn(LandConnections* land_connections, LandConnIndex land_conn_idx) {
   return (*land_connections)[land_conn_idx];
 }
 
-inline AirIndexArray* get_airs_within_x_moves(Distance moves, AirIndex src_air) {
-  return &AIR_WITHIN_X_MOVES[moves][src_air];
-}
-
-inline AirIndex get_airs_within_x_moves_count(Distance moves, AirIndex src_air) {
-  return AIR_WITHIN_X_MOVES_COUNT[moves][src_air];
-}
-
-
-inline AirToAirConnection* get_air_conn(AirIndex air_idx) { return &AIR_CONNECTIONS[air_idx]; }
-
 inline AirIndex convert_sea_to_air(SeaIndex sea_idx) { return sea_idx + LANDS_COUNT; }
 inline AirDistances* get_land_dist_land(LandIndex land_idx) { return &LAND_DIST[land_idx]; }
-
-
-inline Distance get_air_dist(AirIndex src_air, AirIndex dst_air) {
-  return AIR_DIST[src_air][dst_air];
-}
 
 inline AirIndex convert_land_to_air(LandIndex land_idx) { return (AirIndex)land_idx; }
 
@@ -102,9 +78,6 @@ inline SeaConnIndex get_l2s_count(LandIndex land_idx) {
   return LANDS[land_idx].sea_conn_count;
 }
 
-inline Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx) {
-  return (*air_dist)[air_idx];
-}
 
 void populate_initial_distances() {
   for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
@@ -186,23 +159,23 @@ void populate_initial_distances2() {
     }
   }
 
-  for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+  for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
     AirIndex src_air = convert_sea_to_air(src_sea);
-    LandConnections* sea_to_land_conn = get_sea_to_land_conn(src_sea);
-    SeaIndex sea_conn_count = get_sea_conn_count(src_sea);
+    LandConnections* sea_to_land_conn = get_s2l_conn(src_sea);
+    SeaIndex sea_conn_count = get_s2l_count(src_sea);
 #pragma unroll 4 // Adjust the number based on your optimization needs
     for (land_conn_idx = 0; land_conn_idx < sea_conn_count; land_conn_idx++) {
-      dst_air = convert_land_to_air(get_land_from_s2l_conn(sea_to_land_conn, land_conn_idx));
+      dst_air = convert_land_to_air(get_land_from_conn(sea_to_land_conn, land_conn_idx));
       AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
       AIR_CONN_COUNT[src_air]++;
       AIR_DIST[src_air][dst_air] = 1;
       AIR_DIST[dst_air][src_air] = 1;
     }
-    SeaConnections* sea_to_sea_conn = get_sea_to_sea_conn(src_sea);
-    SeaIndex sea_to_sea_count = get_sea_to_sea_count(src_sea);
+    SeaConnections* sea_to_sea_conn = get_s2s_conn(src_sea);
+    SeaIndex sea_to_sea_count = get_s2s_count(src_sea);
 #pragma unroll 4 // Adjust the number based on your optimization needs
     for (sea_conn_idx = 0; sea_conn_idx < sea_to_sea_count; sea_conn_idx++) {
-      dst_air = convert_sea_to_air(get_sea_from_s2s_conn(sea_to_sea_conn, sea_conn_idx));
+      dst_air = convert_sea_to_air(get_sea_from_conn(sea_to_sea_conn, sea_conn_idx));
       AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
       AIR_CONN_COUNT[src_air]++;
       AIR_DIST[src_air][dst_air] = 1;
@@ -269,7 +242,7 @@ void generate_within_x_moves() {
     LandIndex* lands_within_1_move_count = get_land_to_land_count_ref(src_land);
     LandConnections* lands_within_1_move = get_l2l_conn(src_land);
     LandIndex* lands_within_2_moves_count = get_lands_within_2_moves_count_ref(src_land);
-    LandIndexArray* lands_within_2_moves = get_lands_within_2_moves(src_land);
+    LandArray* lands_within_2_moves = get_lands_within_2_moves(src_land);
     for (LandIndex dst_land = 0; dst_land < LANDS_COUNT; dst_land++) {
       if (src_land == dst_land) {
         continue;

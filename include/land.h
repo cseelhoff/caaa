@@ -11,7 +11,7 @@
 #define MAX_LAND_HOPS 2
 #define LAND_MOVE_SIZE (1 + MAX_LAND_HOPS - MIN_LAND_HOPS)
 
-typedef LandIndex LandIndexArray[LANDS_COUNT - 1];
+typedef LandIndex LandArray[LANDS_COUNT];
 //typedef LandIndex L2LConnections[MAX_LAND_TO_LAND_CONNECTIONS];
 //typedef SeaIndex L2SConnections[MAX_LAND_TO_SEA_CONNECTIONS];
 
@@ -27,7 +27,7 @@ typedef struct {
 
 extern Land LANDS[LANDS_COUNT];
 extern Dollars LAND_VALUE[LANDS_COUNT];
-extern LandIndexArray LANDS_WITHIN_2_MOVES[LANDS_COUNT];
+extern LandArray LANDS_WITHIN_2_MOVES[LANDS_COUNT];
 extern LandIndex LANDS_WITHIN_2_MOVES_COUNT[LANDS_COUNT];
 extern SeaConnections LOAD_WITHIN_2_MOVES[LANDS_COUNT];
 extern LandIndex LOAD_WITHIN_2_MOVES_COUNT[LANDS_COUNT];

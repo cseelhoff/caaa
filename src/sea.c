@@ -10,9 +10,9 @@ const Sea SEAS[SEAS_COUNT] = {"Pacific",  1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0,
                               "Atlantic", 2, 2, {0, 2, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
                               "Baltic",   1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0, 0, 0, 0}};
 
-static SeaIndex SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
-static SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT] = {0};
-static LandConnections SEA_TO_LAND_CONN[SEAS_COUNT] = {0};
+SeaIndex SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
+SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT] = {0};
+LandConnections SEA_TO_LAND_CONN[SEAS_COUNT] = {0};
 
 SeaDistancesSources SEA_DIST[CANAL_STATES] = {0};
 SeaMatrix SEAS_WITHIN_X_MOVES[2][CANAL_STATES] = {0};
@@ -52,7 +52,7 @@ inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex 
 
 inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
 
-inline SeaIndex get_sea_to_sea_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
 inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
   return SEA_PATH1[canal_state][src_sea][dst_sea];
 }
@@ -64,7 +64,7 @@ static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndex sea_to_sea_co
   SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
 }
 
-inline SeaConnections* get_sea_to_sea_conn(SeaIndex src_sea) {
+inline SeaConnections* get_s2s_conn(SeaIndex src_sea) {
   return &SEA_TO_SEA_CONN[src_sea];
 }
 
@@ -123,9 +123,9 @@ void floyd_warshall(CanalState canal_idx) {
 
 void initialize_sea_connections() {
   for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    SeaIndex sea_to_sea_count = get_sea_to_sea_count(src_sea);
+    SeaIndex sea_to_sea_count = get_s2s_count(src_sea);
     set_sea_to_sea_count(src_sea, sea_to_sea_count);
-    SeaConnections* sea_to_sea_conn = get_sea_to_sea_conn(src_sea);
+    SeaConnections* sea_to_sea_conn = get_s2s_conn(src_sea);
     const Sea* sea = &SEAS[src_sea];
 
 #pragma unroll 4 // Adjust the number based on your optimization needs
