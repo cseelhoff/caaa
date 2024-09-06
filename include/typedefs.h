@@ -11,14 +11,11 @@ typedef uint8_t LandIndex;
 typedef uint8_t SeaIndex;
 typedef uint8_t AirIndex;
 typedef uint8_t Dollars;
-typedef uint8_t LandIndexCount;
-typedef uint8_t SeaIndexCount;
-typedef uint8_t AirIndexCount;
-typedef uint8_t SeaConnectionIndex;
-typedef uint8_t LandConnectionIndex;
-typedef uint8_t AirConnectionIndex;
+typedef uint8_t SeaConnIndex;
+typedef uint8_t LandConnIndex;
+typedef uint8_t AirConnIndex;
 typedef uint8_t HitPoints;
-typedef uint8_t FactoryLocationIndex;
+typedef uint8_t FactoryLocIndex;
 
 typedef uint8_t PlayerIndex;
 typedef uint8_t EnemyIndex;

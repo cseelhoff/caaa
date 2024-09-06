@@ -10,9 +10,9 @@ const Sea SEAS[SEAS_COUNT] = {"Pacific",  1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0,
                               "Atlantic", 2, 2, {0, 2, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
                               "Baltic",   1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0, 0, 0, 0}};
 
-static SeaIndexCount SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
-static SeaToSeaConnections SEA_TO_SEA_CONN[SEAS_COUNT] = {0};
-static SeaToLandConnections SEA_TO_LAND_CONN[SEAS_COUNT] = {0};
+static SeaIndex SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
+static SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT] = {0};
+static LandConnections SEA_TO_LAND_CONN[SEAS_COUNT] = {0};
 
 SeaDistancesSources SEA_DIST[CANAL_STATES] = {0};
 SeaMatrix SEAS_WITHIN_X_MOVES[2][CANAL_STATES] = {0};
@@ -22,7 +22,7 @@ SeaCountsArray SEAS_WITHIN_X_MOVES_COUNT[2][CANAL_STATES] = {0};
 #define MIN_SEA_HOPS 1
 #define MAX_SEA_HOPS 2
 //#define SEA_MOVE_SIZE (1 + MAX_SEA_HOPS - MIN_SEA_HOPS)
-LandIndexCount SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
+LandIndex SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
 SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
@@ -33,43 +33,26 @@ inline void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaI
                      [SEAS_WITHIN_X_MOVES_COUNT[moves][canal_state][src_sea]++] = dst_sea;
 }
 
-inline LandIndex get_land_from_s2l_conn(SeaToLandConnections* sea_to_land_conn,
-                                        LandConnectionIndex conn_idx) {
+inline LandIndex get_land_from_s2l_conn(LandConnections* sea_to_land_conn,
+                                        LandConnIndex conn_idx) {
   return (*sea_to_land_conn)[conn_idx];
 }
 
-inline LandIndexCount get_sea_to_land_count(SeaIndex sea_idx) { return SEA_TO_LAND_COUNT[sea_idx]; }
-inline SeaToLandConnections* get_sea_to_land_conn(SeaIndex sea_idx) {
+inline LandIndex get_sea_to_land_count(SeaIndex sea_idx) { return SEA_TO_LAND_COUNT[sea_idx]; }
+inline LandConnections* get_sea_to_land_conn(SeaIndex sea_idx) {
   return &SEA_TO_LAND_CONN[sea_idx];
 }
 
 inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
   return SEA_DIST[canal_state][src_sea][dst_sea];
 }
-/*
-inline SeaArray* get_seas_within_1_move(CanalState canal_state, SeaIndex src_sea) {
-  return &SEAS_WITHIN_X_MOVES[0][canal_state][src_sea];
-}
-*/
-inline SeaIndexCount get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea) {
-  return SEAS_WITHIN_X_MOVES_COUNT[0][canal_state][src_sea];
-}
 
-inline SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_sea) {
-  return &SEAS_WITHIN_X_MOVES[1][canal_state][src_sea];
-}
 
-inline SeaIndexCount get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea) {
-  return SEAS_WITHIN_X_MOVES_COUNT[1][canal_state][src_sea];
-}
 
-inline SeaIndex get_sea_from_array(SeaArray* sea_array, SeaConnectionIndex conn_idx) {
-  return (*sea_array)[conn_idx];
-}
 
 inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
 
-inline SeaIndexCount get_sea_to_sea_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline SeaIndex get_sea_to_sea_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
 inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
   return SEA_PATH1[canal_state][src_sea][dst_sea];
 }
@@ -77,11 +60,11 @@ inline SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaI
   return SEA_PATH1_ALT[canal_state][src_sea][dst_sea];
 }
 
-static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndexCount sea_to_sea_count) {
+static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndex sea_to_sea_count) {
   SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
 }
 
-inline SeaToSeaConnections* get_sea_to_sea_conn(SeaIndex src_sea) {
+inline SeaConnections* get_sea_to_sea_conn(SeaIndex src_sea) {
   return &SEA_TO_SEA_CONN[src_sea];
 }
 
@@ -102,9 +85,9 @@ inline void set_sea_dist(CanalState canal_idx, SeaIndex src_sea, SeaIndex dst_se
 
 void populate_initial_distances_sea(CanalState canal_idx) {
   for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    SeaIndexCount sea_conn_count = get_sea_conn_count(src_sea);
+    SeaIndex sea_conn_count = get_sea_conn_count(src_sea);
 #pragma unroll 4 // Adjust the number based on your optimization needs
-    for (SeaConnectionIndex conn_idx = 0; conn_idx < SEAS[src_sea].sea_conn_count; conn_idx++) {
+    for (SeaConnIndex conn_idx = 0; conn_idx < SEAS[src_sea].sea_conn_count; conn_idx++) {
       SeaIndex dst_sea = SEAS[src_sea].sea_connections[conn_idx];
       set_sea_dist(canal_idx, src_sea, dst_sea, 1);
       set_sea_dist(canal_idx, dst_sea, src_sea, 1);
@@ -140,13 +123,13 @@ void floyd_warshall(CanalState canal_idx) {
 
 void initialize_sea_connections() {
   for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    SeaIndexCount sea_to_sea_count = get_sea_to_sea_count(src_sea);
+    SeaIndex sea_to_sea_count = get_sea_to_sea_count(src_sea);
     set_sea_to_sea_count(src_sea, sea_to_sea_count);
-    SeaToSeaConnections* sea_to_sea_conn = get_sea_to_sea_conn(src_sea);
+    SeaConnections* sea_to_sea_conn = get_sea_to_sea_conn(src_sea);
     const Sea* sea = &SEAS[src_sea];
 
 #pragma unroll 4 // Adjust the number based on your optimization needs
-    for (SeaConnectionIndex sea_conn_idx = 0; sea_conn_idx < MAX_SEA_TO_SEA_CONNECTIONS;
+    for (SeaConnIndex sea_conn_idx = 0; sea_conn_idx < MAX_SEA_TO_SEA_CONNECTIONS;
          sea_conn_idx++) {
       if (sea_conn_idx < sea_to_sea_count) {
         (*sea_to_sea_conn)[sea_conn_idx] = sea->sea_connections[sea_conn_idx];
@@ -182,7 +165,7 @@ void generate_SeaMoveDst(Distance hop, SeaIndex src_sea, SeaIndex dst_sea, SeaIn
     return;
   if (min_dist <= hop)
     set_sea_path(hop - MIN_SEA_HOPS, canal_state, src_sea, dst_sea, cur_sea);
-  for (SeaConnectionIndex conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[cur_sea]; conn_idx++) {
+  for (SeaConnIndex conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[cur_sea]; conn_idx++) {
     SeaIndex next_sea = SEA_TO_SEA_CONN[cur_sea][conn_idx];
     Distance next_dist = get_sea_dist(canal_state, next_sea, dst_sea);
     if (next_dist < min_dist) {

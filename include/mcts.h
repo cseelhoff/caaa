@@ -15,5 +15,4 @@ typedef struct MCTSNode {
 
 MCTSNode* mcts_search(GameState* initial_state, int iterations);
 Action select_best_action(MCTSNode* root);
-static void print_mcts_tree(MCTSNode* node, int depth);
 void print_mcts(MCTSNode* root);

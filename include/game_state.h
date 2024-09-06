@@ -4,7 +4,6 @@
 #include "land.h"
 #include "player.h"
 #include "sea.h"
-#include "team.h"
 #include "typedefs.h"
 #include "units/units.h"
 #include <stdint.h>
@@ -12,8 +11,8 @@
 
 typedef struct {
   PlayerIndex owner_idx; // rotates
-  int8_t factory_hp;
-  uint8_t factory_max;
+  HitPoints factory_hp;
+  HitPoints factory_max;
   uint8_t bombard_max; // bombarded, resets
   FighterStateSums fighters;                        // rotates
   BomberLandStateSums bombers;                     // rotates
