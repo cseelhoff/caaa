@@ -90,7 +90,7 @@ void check_territory(bool* checked_territories, AirIndex src_air);
 bool was_terr_skipped(AirIndex src_air, AirIndex dst_air);
 bool has_checked_territory(bool* checked_territories, AirIndex src_air);
 AirIndex get_source_terr_count(LandIndex land_idx);
-SeaIndex get_sea_from_l2s_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx);
+SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx);
 LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_conn_idx);
 char* get_air_name(AirIndex air_idx);
 void replace_transport(SeaUnitStates* sea_unit_states, SeaUnitSumArray* sea_units,

@@ -42,7 +42,7 @@ Land LANDS[LANDS_COUNT] = {"Washington",
 // static LandIndex LANDS_WITHIN_1_MOVE_COUNT[LANDS_COUNT] = {0};
 LandArray LANDS_WITHIN_2_MOVES[LANDS_COUNT] = {0};
 LandIndex LANDS_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
-SeaConnections LOAD_WITHIN_2_MOVES[LANDS_COUNT] = {0};
+SeaArray LOAD_WITHIN_2_MOVES[LANDS_COUNT] = {0};
 LandIndex LOAD_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
 LandIndex LAND_TO_LAND_COUNT[LANDS_COUNT] = {0};
 LandConnections LAND_TO_LAND_CONN[LANDS_COUNT] = {0};
@@ -82,7 +82,7 @@ inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
   return &LANDS_WITHIN_2_MOVES[land_idx];
 }
 
-inline SeaConnections* get_load_within_2_moves(LandIndex land_idx) {
+inline SeaArray* get_load_within_2_moves(LandIndex land_idx) {
   return &LOAD_WITHIN_2_MOVES[land_idx];
 }
 
@@ -116,7 +116,7 @@ inline LandIndex* get_land_to_land_count_ref(LandIndex land_idx) {
   return &LAND_TO_LAND_COUNT[land_idx];
 }
 
-inline SeaIndex get_sea_from_l2s_conn(SeaConnections* land_to_sea_conn,
+inline SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn,
                                       SeaConnIndex conn_idx) {
   return (*land_to_sea_conn)[conn_idx];
 }
