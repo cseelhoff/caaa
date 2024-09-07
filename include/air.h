@@ -14,6 +14,7 @@ typedef Distance AirDistances[AIRS_COUNT];
 typedef AirIndex AirIndexArray[AIRS_COUNT];
 typedef AirIndexArray AirIndexMatrix[AIRS_COUNT];
 typedef AirIndex AirConnection[MAX_AIR_TO_AIR_CONNECTIONS];
+typedef Action ActionArray[AIRS_COUNT];
 
 LandIndex get_land_path1(LandIndex src_land, AirIndex dst_air);
 LandIndex get_land_path_alt(LandIndex src_land, AirIndex dst_air);

@@ -38,7 +38,7 @@ char* get_sea_name(SeaIndex sea_idx);
 LandConnections* get_s2l_conn(SeaIndex src_sea);
 LandConnIndex get_s2l_count(SeaIndex src_sea);
 SeaConnections* get_s2s_conn(SeaIndex src_sea);
-SeaIndex get_s2s_count(SeaIndex src_sea);
+SeaConnIndex get_s2s_count(SeaIndex src_sea);
 Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
 void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
                              SeaIndex dst_sea);

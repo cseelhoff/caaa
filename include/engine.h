@@ -90,19 +90,18 @@ void check_territory(bool* checked_territories, AirIndex src_air);
 bool was_terr_skipped(AirIndex src_air, AirIndex dst_air);
 bool has_checked_territory(bool* checked_territories, AirIndex src_air);
 AirIndex get_source_terr_count(LandIndex land_idx);
-SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx);
 LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_conn_idx);
 char* get_air_name(AirIndex air_idx);
 void replace_transport(SeaUnitStates* sea_unit_states, SeaUnitSumArray* sea_units,
-                       SeaUnitType new_trans_type, SeaUnitType old_trans_type,
-                       GenericSeaUnitState trans_state);
+                              SeaUnitType new_trans_type, GenericSeaUnitState new_trans_state,
+                              SeaUnitType old_trans_type, GenericSeaUnitState trans_state);
 void remove_my_land_unit_state(LandIndex land_idx, LandUnitType unit_type,
                                GenericLandUnitState land_unit_state);
 bool is_non_combat_unit(LandUnitType unit_type);
 bool is_non_loadable_unit(LandUnitType unit_type);
 bool is_heavy_unit(LandUnitType unit_type);
 void acc_sea_state_sums(SeaUnitStateSums* sea_unit_states, GenericSeaUnitState sea_unit_state,
-                        SeaUnitStateSum* sum);
+                        SeaUnitStateSum sum);
 SeaIndex convert_air_to_sea(AirIndex air_idx);
 void flag_for_combat(AirIndex air_idx);
 void unflag_for_combat(AirIndex air_idx);

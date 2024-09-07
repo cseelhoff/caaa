@@ -43,5 +43,3 @@ typedef uint8_t CarrierSpace;
 
 typedef uint8_t Action;
 typedef uint8_t ActionCount;
-#define VALID_ACTIONS_SIZE 256
-typedef Action ActionArray[VALID_ACTIONS_SIZE];

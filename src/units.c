@@ -176,3 +176,5 @@ const SeaUnitState DONE_MOVING_SEA[SEA_UNIT_TYPES_COUNT] = {
 
 const SeaUnitType BLOCKADE_UNIT_TYPES[BLOCKADE_UNIT_TYPES_COUNT] = {DESTROYERS, CARRIERS, CRUISERS,
                                                                     BATTLESHIPS, BS_DAMAGED};
+
+const SeaUnitType TRANSPORT_ORDER[4] = {TRANS_1T, TRANS_1A, TRANS_1I, TRANS_EMPTY};

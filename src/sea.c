@@ -32,7 +32,7 @@ inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
 
 inline SeaConnections* get_s2s_conn(SeaIndex src_sea) { return &SEA_TO_SEA_CONN[src_sea]; }
 
-inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline SeaConnIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
 inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
   return SEA_DIST[canal_state][src_sea][dst_sea];
 }
