@@ -376,8 +376,9 @@ inline LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_c
 inline SeaIndex convert_air_to_sea(AirIndex air_idx) { return air_idx - LANDS_COUNT; }
 
 inline char* get_air_name(AirIndex air_idx) {
-  if (air_idx < LANDS_COUNT)
+  if (air_idx < LANDS_COUNT) {
     return get_land_name(air_idx);
+  }
   return get_sea_name(convert_air_to_sea(air_idx));
 }
 inline LandIndex convert_air_to_land(AirIndex air_idx) { return air_idx; }
@@ -477,6 +478,7 @@ inline void set_builds_left(LandIndex land_idx, HitPoints value) {
 }
 
 void generate_land_info_pointers() {
+#pragma unroll
   for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     owner_idx[land_idx] = &state.land_terr[land_idx].owner_idx;
     bombard_max[land_idx] = &state.land_terr[land_idx].bombard_max;
@@ -514,6 +516,7 @@ void initializeGameData() {
 void refresh_cache_alliance() {
   // copy for quick cache lookups
   enemies_count_0 = 0;
+#pragma unroll
   for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     set_ally(player_idx);
     if (!is_allied(player_idx)) {
@@ -523,9 +526,10 @@ void refresh_cache_alliance() {
 }
 void refresh_cache_canals() {
   canal_state = 0;
+#pragma unroll
   for (CanalState canal_idx = 0; canal_idx < CANALS_COUNT; canal_idx++) {
     if (is_canal_controlled(canal_idx)) {
-      canal_state += 1 << canal_idx;
+      canal_state += 1U << canal_idx;
     }
   }
 }
@@ -533,10 +537,12 @@ void refresh_cache_canals() {
 void refresh_cache_enemy_armies() {
   memset(&enemy_units_count, 0, sizeof(enemy_units_count));
   for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
+#pragma unroll 3
     for (EnemyIndex enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
       acc_enemy_units_count(convert_land_to_air(src_land),
                             get_player_armies(get_enemy_player(enemy_idx), src_land));
     }
+#pragma unroll
     for (LandIndex dst_land = 0; dst_land < LANDS_COUNT; dst_land++) {
       set_is_land_path_blocked(src_land, dst_land);
     }
@@ -550,6 +556,7 @@ void refresh_cache_enemy_navies() {
     SeaUnitSumArray* sea_units_0 = get_my_sea_unit_types(src_sea);
     set_allied_carriers(src_sea, *sea_units_0[CARRIERS]);
     AirIndex air_idx = convert_sea_to_air(src_sea);
+#pragma unroll
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       SeaUnitSumArray* sea_units = get_player_sea_unit_types_ref(player_idx, src_sea);
       if (!is_allied(player_idx)) {
@@ -561,6 +568,7 @@ void refresh_cache_enemy_navies() {
       }
     }
     recalc_transports_cargo_space(src_sea, sea_units_0);
+#pragma unroll
     for (SeaIndex dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
       SeaIndex nextSeaMovement = get_sea_path1(canal_state, src_sea, dst_sea);
       SeaIndex nextSeaMovementAlt = get_sea_path1_alt(canal_state, src_sea, dst_sea);
@@ -584,23 +592,29 @@ void generate_quick_state_land() {
     LandUnitStates* land_unit_states = get_my_land_unit_states(land_idx);
     AirUnitStates* air_unit_states = get_my_air_unit_states(convert_land_to_air(land_idx));
     GenericLandUnitState state = 0;
+#pragma unroll 5
     for (state = 0; state < FIGHTER_STATES; state++) {
       (*land_unit_states)[FIGHTERS_LAND][state] = &land_terr->fighters[state];
       (*air_unit_states)[FIGHTERS_AIR][state] = &land_terr->fighters[state];
     }
+#pragma unroll 7
     for (state = 0; state < BOMBER_LAND_STATES; state++) {
       (*land_unit_states)[BOMBERS_LAND][state] = &land_terr->bombers[state];
       (*air_unit_states)[BOMBERS_AIR][state] = &land_terr->bombers[state];
     }
+#pragma unroll 2
     for (state = 0; state < INFANTRY_STATES; state++) {
       (*land_unit_states)[INFANTRY][state] = &land_terr->infantry[state];
     }
+#pragma unroll 2
     for (state = 0; state < ARTILLERY_STATES; state++) {
       (*land_unit_states)[ARTILLERY][state] = &land_terr->artillery[state];
     }
+#pragma unroll 3
     for (state = 0; state < TANK_STATES; state++) {
       (*land_unit_states)[TANKS][state] = &land_terr->tanks[state];
     }
+#pragma unroll 2
     for (state = 0; state < AA_GUN_STATES; state++) {
       (*land_unit_states)[AA_GUNS][state] = &land_terr->aa_guns[state];
     }
@@ -627,6 +641,7 @@ void refresh_quick_totals_land() {
     LandUnitStates* land_unit_states = get_my_land_unit_states(land_idx);
 
     for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
+#pragma unroll 7
       for (GenericLandUnitState land_unit_state = 0; land_unit_state < STATES_MOVE_LAND[unit_type];
            land_unit_state++) {
         acc_LandUnitSumArray(land_units, unit_type, land_unit_states, land_unit_state);
@@ -637,6 +652,7 @@ void refresh_quick_totals_land() {
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       army_sum = get_player_armies_ref(player_idx, land_idx);
       land_units = get_player_land_unit_types_ref(player_idx, land_idx);
+#pragma unroll
       for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
         acc_ArmySumArray(army_sum, land_units, unit_type);
       }
@@ -649,49 +665,64 @@ void generate_quick_state_sea() {
     SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
     AirUnitStates* air_unit_states = get_my_air_unit_states(convert_sea_to_air(sea_idx));
     GenericSeaUnitState state = 0;
+#pragma unroll 5
     for (state = 0; state < FIGHTER_STATES; state++) {
       (*sea_unit_states)[FIGHTERS_SEA][state] = &sea_terr->fighters[state];
       (*air_unit_states)[FIGHTERS_AIR][state] = &sea_terr->fighters[state];
     }
+#pragma unroll 4
     for (state = 0; state < TRANS_EMPTY_STATES; state++) {
       (*sea_unit_states)[TRANS_EMPTY][state] = &sea_terr->trans_empty[state];
     }
+#pragma unroll 5
     for (state = 0; state < TRANS_1I_STATES; state++) {
       (*sea_unit_states)[TRANS_1I][state] = &sea_terr->trans_1i[state];
     }
+#pragma unroll 5
     for (state = 0; state < TRANS_1A_STATES; state++) {
       (*sea_unit_states)[TRANS_1A][state] = &sea_terr->trans_1a[state];
     }
+#pragma unroll 5
     for (state = 0; state < TRANS_1T_STATES; state++) {
       (*sea_unit_states)[TRANS_1T][state] = &sea_terr->trans_1t[state];
     }
+#pragma unroll 4
     for (state = 0; state < TRANS_2I_STATES; state++) {
       (*sea_unit_states)[TRANS_2I][state] = &sea_terr->trans_2i[state];
     }
+#pragma unroll 4
     for (state = 0; state < TRANS_1I_1A_STATES; state++) {
       (*sea_unit_states)[TRANS_1I_1A][state] = &sea_terr->trans_1i_1a[state];
     }
+#pragma unroll 4
     for (state = 0; state < TRANS_1I_1T_STATES; state++) {
       (*sea_unit_states)[TRANS_1I_1T][state] = &sea_terr->trans_1i_1t[state];
     }
+#pragma unroll 3
     for (state = 0; state < SUBMARINE_STATES; state++) {
       (*sea_unit_states)[SUBMARINES][state] = &sea_terr->submarines[state];
     }
+#pragma unroll 2
     for (state = 0; state < DESTROYER_STATES; state++) {
       (*sea_unit_states)[DESTROYERS][state] = &sea_terr->destroyers[state];
     }
+#pragma unroll 2
     for (state = 0; state < CARRIER_STATES; state++) {
       (*sea_unit_states)[CARRIERS][state] = &sea_terr->carriers[state];
     }
+#pragma unroll 2
     for (state = 0; state < CRUISER_STATES; state++) {
       (*sea_unit_states)[CRUISERS][state] = &sea_terr->cruisers[state];
     }
+#pragma unroll 2
     for (state = 0; state < BATTLESHIP_STATES; state++) {
       (*sea_unit_states)[BATTLESHIPS][state] = &sea_terr->battleships[state];
     }
+#pragma unroll 2
     for (state = 0; state < BATTLESHIP_STATES; state++) {
       (*sea_unit_states)[BS_DAMAGED][state] = &sea_terr->bs_damaged[state];
     }
+#pragma unroll 5
     for (state = 0; state < BOMBER_SEA_STATES; state++) {
       (*sea_unit_states)[BOMBERS_SEA][state] = &sea_terr->bombers[state];
       (*air_unit_states)[BOMBERS_AIR][state] = &sea_terr->bombers[state];
@@ -708,6 +739,7 @@ void refresh_quick_totals_sea() {
     SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
 
     for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
+      #pragma unroll 5
       for (GenericSeaUnitState sea_unit_state = 0; sea_unit_state < STATES_MOVE_SEA[unit_type];
            sea_unit_state++) {
         acc_SeaUnitSumArray(sea_units, unit_type, sea_unit_states, sea_unit_state);
@@ -718,6 +750,7 @@ void refresh_quick_totals_sea() {
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       navy_sum = get_player_navies_ref(player_idx, sea_idx);
       sea_units = get_player_sea_unit_types_ref(player_idx, sea_idx);
+      #pragma unroll
       for (SeaUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
         *navy_sum += get_sea_unit_sum(sea_units, unit_type);
       }
@@ -726,6 +759,7 @@ void refresh_quick_totals_sea() {
 }
 
 void refresh_quick_totals() {
+      #pragma unroll
   for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     set_income_per_turn(player_idx, 0);
     set_factory_count(player_idx, 0);

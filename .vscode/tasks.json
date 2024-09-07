@@ -68,6 +68,23 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             }
+        },
+        {
+            "label": "Run clang-tidy",
+            "type": "shell",
+            "command": "clang-tidy",
+            "args": [
+                "${file}",
+                "--",
+                "-I${workspaceFolder}/include"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ],
     "version": "2.0.0"

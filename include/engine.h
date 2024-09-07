@@ -26,10 +26,9 @@ bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
-void set_ally(PlayerIndex player_idx);
+void set_ally(PlayerIndex ally_idx)
 bool is_allied(PlayerIndex player_idx);
 void add_enemy(PlayerIndex player_idx);
-LandIndex get_canal_land(CanalState canal_idx, LandConnIndex conn_idx);
 PlayerIndex get_land_owner(LandIndex land_idx);
 bool is_canal_controlled(CanalState canal_idx);
 PlayerIndex get_enemy_player(EnemyIndex enemy_idx);
@@ -61,10 +60,8 @@ void acc_income_from_land(PlayerIndex player_idx, LandIndex land_idx);
 ArmySum* get_player_armies_ref(PlayerIndex player_idx, LandIndex land_idx);
 void acc_LandUnitSumArray(LandUnitSumArray* land_units, LandUnitType unit_type,
                           LandUnitStates* land_unit_states, GenericLandUnitState land_unit_state);
-void acc_income_from_land(PlayerIndex player_idx, LandIndex land_idx);
 void acc_ArmySumArray(ArmySum* army_sum, LandUnitSumArray* land_units, LandUnitType unit_type);
 LandUnitSumArray* get_player_land_unit_types_ref(PlayerIndex player_idx, LandIndex land_idx);
-void acc_ArmySumArray(ArmySum* army_sum, LandUnitSumArray* land_units, LandUnitType unit_type);
 SeaTerr* get_sea_terr(SeaIndex sea_idx);
 SeaUnitStates* get_my_sea_unit_states(SeaIndex sea_idx);
 NavySum* get_player_navies_ref(PlayerIndex player_idx, SeaIndex sea_idx);
@@ -75,17 +72,13 @@ void acc_NavySumArray(NavySum* navy_sum, SeaUnitSumArray* sea_units, SeaUnitType
 SeaUnitSum get_sea_unit_sum(SeaUnitSumArray* sea_units, SeaUnitType unit_type);
 void set_income_per_turn(PlayerIndex player_idx, Dollars income);
 void set_factory_count(PlayerIndex player_idx, LandIndex count);
-char* get_player_color(PlayerIndex player_idx);
-char* get_land_name(LandIndex land_idx);
 Player get_player_state_offset(PlayerIndex player_idx);
-char* get_player_name(PlayerIndex player_idx);
 HitPoints get_factory_hp(LandIndex land_idx);
 bool is_flagged_for_combat(AirIndex air_idx);
 LandUnitStateSums* get_land_unit_state_sums(LandUnitStates* land_unit_states,
                                             LandUnitType unit_type);
 LandUnitStateSum get_land_unit_state_sum_at(LandUnitStateSums* landUnitStateSums,
                                             GenericLandUnitState unit_state);
-char* get_sea_name(SeaIndex sea_idx);
 SeaUnitStateSums* get_sea_unit_state_sums(SeaUnitStates* sea_unit_states, SeaUnitType unit_type);
 SeaUnitStateSum get_sea_unit_state_sum_at(SeaUnitStateSums* seaUnitStateSums,
                                           GenericSeaUnitState unit_state);

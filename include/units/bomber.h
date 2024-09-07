@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #define BOMBER_NAME "bombers"
 #define BOMBER_ATTACK 4
 #define BOMBER_DEFENSE 1
@@ -6,7 +7,7 @@
 #define BOMBER_COST 14
 #define BOMBER_RAID_STRENGTH 1
 
-typedef enum {
+typedef enum : uint8_t {
     BOMBER_LAND_DONE_MOVING,
     BOMBER_LAND_1_MOVE_LEFT,
     BOMBER_LAND_2_MOVES_LEFT,
@@ -17,7 +18,7 @@ typedef enum {
     BOMBER_LAND_STATES
 } BomberLandState;
 
-typedef enum {    
+typedef enum : uint8_t  {    
     BOMBER_SEA_1_MOVE_LEFT,
     BOMBER_SEA_2_MOVES_LEFT,
     BOMBER_SEA_3_MOVES_LEFT,
