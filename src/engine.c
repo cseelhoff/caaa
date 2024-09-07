@@ -30,6 +30,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 
 /*
 typedef struct {
@@ -45,6 +46,7 @@ typedef struct {
 
 #define STRING_BUFFER_SIZE 64
 #define PRINTABLE_GAME_STATUS_SIZE 4096
+#define NEAR_UINT8_T_OVERFLOW 240
 
 u_short random_number_index = 0;
 u_short seed = 0;
@@ -739,7 +741,7 @@ void refresh_quick_totals_sea() {
     SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
 
     for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
-      #pragma unroll 5
+#pragma unroll 5
       for (GenericSeaUnitState sea_unit_state = 0; sea_unit_state < STATES_MOVE_SEA[unit_type];
            sea_unit_state++) {
         acc_SeaUnitSumArray(sea_units, unit_type, sea_unit_states, sea_unit_state);
@@ -750,7 +752,7 @@ void refresh_quick_totals_sea() {
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       navy_sum = get_player_navies_ref(player_idx, sea_idx);
       sea_units = get_player_sea_unit_types_ref(player_idx, sea_idx);
-      #pragma unroll
+#pragma unroll
       for (SeaUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
         *navy_sum += get_sea_unit_sum(sea_units, unit_type);
       }
@@ -759,7 +761,7 @@ void refresh_quick_totals_sea() {
 }
 
 void refresh_quick_totals() {
-      #pragma unroll
+#pragma unroll
   for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     set_income_per_turn(player_idx, 0);
     set_factory_count(player_idx, 0);
@@ -798,6 +800,7 @@ void debug_checks() {
   for (land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
       temp_land_unit_total = 0;
+#pragma unroll 7
       for (cur_land_unit_state = 0; cur_land_unit_state < STATES_MOVE_LAND[land_unit_idx];
            cur_land_unit_state++) {
         temp_land_unit_total +=
@@ -816,6 +819,7 @@ void debug_checks() {
   for (sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     for (sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT; sea_unit_idx++) {
       temp_sea_unit_total = 0;
+#pragma unroll 5
       for (cur_sea_unit_state = 0; cur_sea_unit_state < STATES_MOVE_SEA[sea_unit_idx];
            cur_sea_unit_state++) {
         temp_sea_unit_total += *(my_sea_unit_states[sea_idx][sea_unit_idx][cur_sea_unit_state]);
@@ -836,14 +840,17 @@ void debug_checks() {
     for (land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
       land_unit_sum = 0;
       total_land_data = 0;
+#pragma unroll
       for (land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
-        if (player_idx == 0 || land_unit_idx < LAND_UNIT_TYPES_COUNT)
+        if (player_idx == 0 || land_unit_idx < LAND_UNIT_TYPES_COUNT) {
           land_unit_sum += (*(player_land_unit_types[player_idx]))[land_idx][land_unit_idx];
+        }
         if (player_idx == 0) {
           total_land_data += my_land_unit_types[land_idx][land_unit_idx];
         } else {
-          if (land_unit_idx < LAND_UNIT_TYPES_COUNT)
+          if (land_unit_idx < LAND_UNIT_TYPES_COUNT) {
             total_land_data += state.other_land_units[player_idx - 1][land_idx][land_unit_idx];
+          }
         }
       }
       if (land_unit_sum != player_armies[player_idx][land_idx] ||
@@ -852,16 +859,19 @@ void debug_checks() {
                land_unit_sum, player_armies[player_idx][land_idx], total_land_data);
       }
 
-      if (player_armies[player_idx][land_idx] < 0 || player_armies[player_idx][land_idx] > 240) {
+      if (player_armies[player_idx][land_idx] < 0 ||
+          player_armies[player_idx][land_idx] > NEAR_UINT8_T_OVERFLOW) {
         printf("units_land_player_total[player_idx][land_idx] < 0");
       }
-      if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > 240) {
+      if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > NEAR_UINT8_T_OVERFLOW) {
         printf("enemy_units_count[land_idx] < 0");
       }
       land_unit_sum = 0;
+#pragma unroll
       for (land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
         if ((*(player_land_unit_types[player_idx]))[land_idx][land_unit_idx] < 0 ||
-            (*(player_land_unit_types[player_idx]))[land_idx][land_unit_idx] > 240) {
+            (*(player_land_unit_types[player_idx]))[land_idx][land_unit_idx] >
+                NEAR_UINT8_T_OVERFLOW) {
           printf("total_player_land_unit_types[player_idx][land_idx][unit_idx] < 0");
         }
         land_unit_sum += (*(player_land_unit_types[player_idx]))[land_idx][land_unit_idx];
@@ -871,6 +881,7 @@ void debug_checks() {
                player_armies[player_idx][land_idx]);
       }
       enemy_total = 0;
+#pragma unroll 3
       for (enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
         enemy_player_idx = enemies_0[enemy_idx];
         enemy_total += player_armies[enemy_player_idx][land_idx];
@@ -881,29 +892,34 @@ void debug_checks() {
       }
     }
     for (sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-      if (player_navies[player_idx][sea_idx] < 0 || player_navies[player_idx][sea_idx] > 240) {
+      if (player_navies[player_idx][sea_idx] < 0 ||
+          player_navies[player_idx][sea_idx] > NEAR_UINT8_T_OVERFLOW) {
         printf("units_sea_player_total[player_idx][sea_idx] < 0");
       }
+#pragma unroll
       for (sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT; sea_unit_idx++) {
         if ((*(player_sea_unit_types[player_idx]))[sea_idx][sea_unit_idx] < 0 ||
-            (*(player_sea_unit_types[player_idx]))[sea_idx][sea_unit_idx] > 240) {
+            (*(player_sea_unit_types[player_idx]))[sea_idx][sea_unit_idx] > NEAR_UINT8_T_OVERFLOW) {
           printf("total_player_sea_unit_types[player_idx][sea_idx][unit_idx] < 0");
         }
       }
       if (enemy_units_count[sea_idx + LANDS_COUNT] < 0 ||
-          enemy_units_count[sea_idx + LANDS_COUNT] > 240) {
+          enemy_units_count[sea_idx + LANDS_COUNT] > NEAR_UINT8_T_OVERFLOW) {
         printf("enemy_units_count[land_idx] < 0");
       }
       int total = 0;
       int total_data = 0;
+#pragma unroll
       for (int unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
-        if (player_idx == 0 || unit_idx < SEA_UNIT_TYPES_COUNT - 1)
+        if (player_idx == 0 || unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
           total += (*(player_sea_unit_types[player_idx]))[sea_idx][unit_idx];
+        }
         if (player_idx == 0) {
           total_data += my_sea_unit_types[sea_idx][unit_idx];
         } else {
-          if (unit_idx < SEA_UNIT_TYPES_COUNT - 1)
+          if (unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
             total_data += state.other_sea_units[player_idx - 1][sea_idx][unit_idx];
+          }
         }
       }
       if (total != player_navies[player_idx][sea_idx] || total != total_data) {
@@ -911,6 +927,7 @@ void debug_checks() {
                player_navies[player_idx][sea_idx], total_data);
       }
       int enemy_total = 0;
+#pragma unroll 3
       for (enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
         enemy_player_idx = enemies_0[enemy_idx];
         enemy_total += player_navies[enemy_player_idx][sea_idx];
@@ -924,40 +941,23 @@ void debug_checks() {
 }
 
 void setPrintableStatusLands() {
-  char threeCharStr[6];
-  char paddedStr[32];
+  char paddedStr[STRING_BUFFER_SIZE];
   PlayerIndex player_idx = state.player_index;
   char* my_color = get_player_color(player_idx);
   char* my_name = get_player_name(player_idx);
   for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     LandUnitStates* land_unit_states = get_my_land_unit_states(land_idx);
-    //    LandState land_state = gameData.land_state[i];
     PlayerIndex land_owner = get_land_owner(land_idx);
-    strcat(printableGameStatus, get_player_color(land_owner));
-    sprintf(threeCharStr, "%d ", land_idx);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, get_land_name(land_idx));
-    strcat(printableGameStatus, ": ");
-    strcat(printableGameStatus, get_player_name(land_owner));
-    strcat(printableGameStatus, " ");
-    sprintf(threeCharStr, "%d", state.builds_left[land_idx]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", get_factory_hp(land_idx));
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", get_factory_max(land_idx));
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", get_land_value(land_idx));
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, " Combat:");
-    if (is_flagged_for_combat(convert_land_to_air(land_idx))) {
-      strcat(printableGameStatus, "true\n");
-    } else {
-      strcat(printableGameStatus, "false\n");
+    int result = sprintf(
+        paddedStr, "%s%d %s: %s %d/%d/%d/%d Combat:%s\n", get_player_color(land_owner), land_idx,
+        get_land_name(land_idx), get_player_name(land_owner), state.builds_left[land_idx],
+        get_factory_hp(land_idx), get_factory_max(land_idx), get_land_value(land_idx),
+        is_flagged_for_combat(convert_land_to_air(land_idx)) ? "true" : "false");
+    if (result >= 0) {
+      strcat(printableGameStatus, paddedStr);
     }
     ArmySum all_players_armies = 0;
+#pragma unroll
     for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       all_players_armies += get_player_armies(player_idx, land_idx);
     }
@@ -966,69 +966,68 @@ void setPrintableStatusLands() {
       continue;
     }
     strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
-    if (get_player_armies(0, land_idx) == 0)
+    if (get_player_armies(0, land_idx) == 0) {
       continue;
+    }
     strcat(printableGameStatus, my_color);
     LandUnitSumArray* land_units = get_my_land_unit_types(land_idx);
     for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
       LandUnitSum unit_sum = get_land_unit_sum(land_units, unit_type);
       if (unit_sum > 0) {
-        strcat(printableGameStatus, my_name);
-        strcat(printableGameStatus, " ");
-        sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[unit_type]);
-        strcat(printableGameStatus, paddedStr);
-        sprintf(threeCharStr, "%3d", unit_sum);
-        strcat(printableGameStatus, threeCharStr);
+        int offset = 0;
+        offset += sprintf(paddedStr + offset, "%s %-14s %3d", my_name, NAMES_UNIT_LAND[unit_type],
+                          unit_sum);
         LandUnitStateSums* landUnitStateSums =
             get_land_unit_state_sums(land_unit_states, unit_type);
+#pragma unroll 7
         for (GenericLandUnitState unit_state = 0; unit_state < STATES_MOVE_LAND[unit_type];
              unit_state++) {
-          sprintf(threeCharStr, "%3d", get_land_unit_state_sum_at(landUnitStateSums, unit_state));
-          strcat(printableGameStatus, threeCharStr);
+          offset += sprintf(paddedStr + offset, "%3d",
+                            get_land_unit_state_sum_at(landUnitStateSums, unit_state));
         }
-        strcat(printableGameStatus, "\n");
-      }
-    }
-    strcat(printableGameStatus, "\033[0m");
-    for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-      if (get_player_armies(player_idx, land_idx) == 0)
-        continue;
-      strcat(printableGameStatus, get_player_color(player_idx));
-      LandUnitSumArray* land_units = get_player_land_unit_types_ref(player_idx, land_idx);
-      for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
-        LandUnitSum unit_sum = get_land_unit_sum(land_units, unit_type);
-        if (unit_sum > 0) {
-          strcat(printableGameStatus, get_player_name(player_idx));
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[unit_type]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_sum);
-          strcat(printableGameStatus, threeCharStr);
-          strcat(printableGameStatus, "\n");
-        }
+        strcat(paddedStr, "\n");
+        strcat(printableGameStatus, paddedStr);
       }
       strcat(printableGameStatus, "\033[0m");
+      for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
+        if (get_player_armies(player_idx, land_idx) == 0) {
+          continue;
+        }
+        int offset = 0;
+        offset += sprintf(paddedStr + offset, "%s", get_player_color(player_idx));
+        LandUnitSumArray* land_units = get_player_land_unit_types_ref(player_idx, land_idx);
+#pragma unroll
+        for (LandUnitType unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
+          LandUnitSum unit_sum = get_land_unit_sum(land_units, unit_type);
+          if (unit_sum > 0) {
+            offset += sprintf(paddedStr + offset, "%s %-14s %3d\n", get_player_name(player_idx),
+                              NAMES_UNIT_LAND[unit_type], unit_sum);
+          }
+        }
+        offset += sprintf(paddedStr + offset, "\033[0m");
+        strcat(printableGameStatus, paddedStr);
+      }
+      strcat(printableGameStatus, "\n");
     }
-    strcat(printableGameStatus, "\n");
   }
 }
 void setPrintableStatusSeas() {
-  char threeCharStr[6];
-  char paddedStr[32];
+  char paddedStr[STRING_BUFFER_SIZE];
   PlayerIndex player_idx = state.player_index;
   char* my_color = get_player_color(player_idx);
   char* my_name = get_player_name(player_idx);
   for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     SeaUnitStates* sea_unit_states = get_my_sea_unit_states(sea_idx);
     NavySum all_players_navies = 0;
+#pragma unroll
     for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       all_players_navies += get_player_navies(player_idx, sea_idx);
     }
     if (all_players_navies == 0) {
       continue;
     }
-    sprintf(threeCharStr, "%d ", convert_sea_to_air(sea_idx));
-    strcat(printableGameStatus, threeCharStr);
+    sprintf(paddedStr, "%d ", convert_sea_to_air(sea_idx));
+    strcat(printableGameStatus, paddedStr);
     strcat(printableGameStatus, get_sea_name(sea_idx));
     strcat(printableGameStatus, " Combat:");
     if (is_flagged_for_combat(convert_sea_to_air(sea_idx))) {
@@ -1038,8 +1037,9 @@ void setPrintableStatusSeas() {
     }
     strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
     strcat(printableGameStatus, my_color);
-    if (get_player_navies(0, sea_idx) == 0)
+    if (get_player_navies(0, sea_idx) == 0) {
       continue;
+    }
     SeaUnitSumArray* sea_units = get_my_sea_unit_types(sea_idx);
     for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
       SeaUnitSum unit_sum = get_sea_unit_sum(sea_units, unit_type);
@@ -1048,13 +1048,14 @@ void setPrintableStatusSeas() {
         strcat(printableGameStatus, " ");
         sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[unit_type]);
         strcat(printableGameStatus, paddedStr);
-        sprintf(threeCharStr, "%3d", unit_sum);
-        strcat(printableGameStatus, threeCharStr);
+        sprintf(paddedStr, "%3d", unit_sum);
+        strcat(printableGameStatus, paddedStr);
         SeaUnitStateSums* seaUnitStateSums = get_sea_unit_state_sums(sea_unit_states, unit_type);
+#pragma unroll 5
         for (GenericSeaUnitState unit_state = 0; unit_state < STATES_MOVE_SEA[unit_type];
              unit_state++) {
-          sprintf(threeCharStr, "%3d", get_sea_unit_state_sum_at(seaUnitStateSums, unit_state));
-          strcat(printableGameStatus, threeCharStr);
+          sprintf(paddedStr, "%3d", get_sea_unit_state_sum_at(seaUnitStateSums, unit_state));
+          strcat(printableGameStatus, paddedStr);
         }
         strcat(printableGameStatus, "\n");
       }
@@ -1062,10 +1063,12 @@ void setPrintableStatusSeas() {
 
     strcat(printableGameStatus, "\033[0m");
     for (PlayerIndex player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-      if (get_player_navies(player_idx, sea_idx) == 0)
+      if (get_player_navies(player_idx, sea_idx) == 0) {
         continue;
+      }
       strcat(printableGameStatus, get_player_color(player_idx));
       SeaUnitSumArray* sea_units = get_player_sea_unit_types_ref(player_idx, sea_idx);
+#pragma unroll
       for (SeaUnitType unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT - 1; unit_type++) {
         SeaUnitSum unit_sum = (*sea_units)[unit_type];
         if (unit_sum > 0) {
@@ -1073,8 +1076,8 @@ void setPrintableStatusSeas() {
           strcat(printableGameStatus, " ");
           sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[unit_type]);
           strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_sum);
-          strcat(printableGameStatus, threeCharStr);
+          sprintf(paddedStr, "%3d", unit_sum);
+          strcat(printableGameStatus, paddedStr);
           strcat(printableGameStatus, "\n");
         }
       }
@@ -1086,7 +1089,7 @@ void setPrintableStatus() {
 #ifdef DEBUG
   debug_checks();
 #endif
-  char threeCharStr[4];
+  char paddedStr[STRING_BUFFER_SIZE];
   printableGameStatus[0] = '\0';
 
   strcat(printableGameStatus, "---\n");
@@ -1098,20 +1101,28 @@ void setPrintableStatus() {
   strcat(printableGameStatus, get_player_name(player_idx));
   strcat(printableGameStatus, "\033[0m");
   strcat(printableGameStatus, ": ");
-  sprintf(threeCharStr, "%d", get_money(0));
-  strcat(printableGameStatus, threeCharStr);
+  sprintf(paddedStr, "%d", get_money(0));
+  strcat(printableGameStatus, paddedStr);
   strcat(printableGameStatus, " IPC\n");
 }
 
 Action getUserInput() {
-  char buffer[4]; // Buffer to hold input string (3 digits + null terminator)
-  int user_input;
+  char buffer[STRING_BUFFER_SIZE]; // Buffer to hold input string (3 digits + null terminator)
+  int user_input = 0;
 
   while (true) {
     // 0-valid_moves_count
     // printf("Enter a number between 0 and 255: ");
     if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-      if (sscanf(buffer, "%d", &user_input) == 1 && user_input >= 0) {
+      char *endptr = NULL;
+      long temp_input = strtol(buffer, &endptr, 10);
+      if (temp_input >= INT_MIN && temp_input <= INT_MAX) {
+          user_input = (int)temp_input;
+      } else {
+          // Handle the error case where the input is out of range
+          user_input = 0; // or some other default/error value
+      }
+      if (*endptr == '\n' || *endptr == '\0') {
         for (int i = 0; i < valid_actions_count; i++) {
           if (user_input == valid_actions[i]) {
             return (Action)user_input;
@@ -1130,6 +1141,7 @@ Action getAIInput() {
   if (answers_remaining == 0) {
 #ifdef DEBUG
     bool action_found = false;
+    #pragma unroll 4
     for (int i = 0; i < valid_actions_count; i++) {
       if (valid_actions[i] == selected_answer) {
         action_found = true;
@@ -1162,6 +1174,7 @@ Action getAIInput() {
 bool check_valid1(AirIndex shared_dst, bool checked_territories[AIRS_COUNT], AirIndex dst_air) {
   AirIndexArray* source_territories = get_source_territories(shared_dst);
   AirIndex source_terr_count = get_source_terr_count(shared_dst);
+  #pragma unroll 4
   for (SourceTerritoryIndex source_terr_idx = 0; source_terr_idx < source_terr_count;
        source_terr_idx++) {
     AirIndex src_air = get_source_territory(source_territories, source_terr_idx);

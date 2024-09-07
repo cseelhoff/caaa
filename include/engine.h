@@ -26,7 +26,7 @@ bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
-void set_ally(PlayerIndex ally_idx)
+void set_ally(PlayerIndex ally_idx);
 bool is_allied(PlayerIndex player_idx);
 void add_enemy(PlayerIndex player_idx);
 PlayerIndex get_land_owner(LandIndex land_idx);
