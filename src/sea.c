@@ -26,6 +26,28 @@ LandIndex SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
 SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
 SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
+inline LandConnections* get_s2l_conn(SeaIndex src_sea) { return &SEA_TO_LAND_CONN[src_sea]; }
+inline LandConnIndex get_s2l_count(SeaIndex src_sea) { return SEAS[src_sea].land_conn_count; }
+inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
+
+inline SeaConnections* get_s2s_conn(SeaIndex src_sea) { return &SEA_TO_SEA_CONN[src_sea]; }
+
+inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
+inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_DIST[canal_state][src_sea][dst_sea];
+}
+inline void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
+                                    SeaIndex dst_sea) {
+  SEAS_WITHIN_X_MOVES[moves][canal_state][src_sea]
+                     [SEAS_WITHIN_X_MOVES_COUNT[moves][canal_state][src_sea]++] = dst_sea;
+}
+
+inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_PATH1[canal_state][src_sea][dst_sea];
+}
+inline SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
+  return SEA_PATH1_ALT[canal_state][src_sea][dst_sea];
+}
 
 inline LandIndex get_land_from_s2l_conn(LandConnections* sea_to_land_conn,
                                         LandConnIndex conn_idx) {
@@ -36,31 +58,24 @@ inline LandIndex get_sea_to_land_count(SeaIndex sea_idx) { return SEA_TO_LAND_CO
 inline LandConnections* get_sea_to_land_conn(SeaIndex sea_idx) {
   return &SEA_TO_LAND_CONN[sea_idx];
 }
-
-inline Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
-  return SEA_DIST[canal_state][src_sea][dst_sea];
+inline SeaIndex get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea) {
+  return SEAS_WITHIN_X_MOVES_COUNT[0][canal_state][src_sea];
+}
+inline SeaArray* get_seas_within_1_move(CanalState canal_state, SeaIndex src_sea) {
+  return &SEAS_WITHIN_X_MOVES[0][canal_state][src_sea];
 }
 
-inline SeaIndex get_sea_conn_count(LandIndex land_idx) {
-  return LANDS[land_idx].sea_conn_count;
+inline SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_sea) {
+  return &SEAS_WITHIN_X_MOVES[1][canal_state][src_sea];
 }
 
-inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
+inline SeaIndex get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea) {
+  return SEAS_WITHIN_X_MOVES_COUNT[1][canal_state][src_sea];
+}
 
-inline SeaIndex get_s2s_count(SeaIndex src_sea) { return SEAS[src_sea].sea_conn_count; }
-inline SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
-  return SEA_PATH1[canal_state][src_sea][dst_sea];
-}
-inline SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea) {
-  return SEA_PATH1_ALT[canal_state][src_sea][dst_sea];
-}
 
 static inline void set_sea_to_sea_count(SeaIndex src_sea, SeaIndex sea_to_sea_count) {
   SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
-}
-
-inline SeaConnections* get_s2s_conn(SeaIndex src_sea) {
-  return &SEA_TO_SEA_CONN[src_sea];
 }
 
 void initialize_sea_dist(CanalState canal_idx) {
@@ -96,8 +111,8 @@ void process_canals(CanalState canal_idx) {
     if ((canal_idx & (1U << cur_canal)) == 0) {
       continue;
     }
-    SEA_DIST[canal_idx][CANALS[cur_canal].seas[0]][CANALS[cur_canal].seas[1]] = 1;
-    SEA_DIST[canal_idx][CANALS[cur_canal].seas[1]][CANALS[cur_canal].seas[0]] = 1;
+    SEA_DIST[canal_idx][get_canal_sea(cur_canal,0)][get_canal_sea(cur_canal,1)] = 1;
+    SEA_DIST[canal_idx][get_canal_sea(cur_canal,1)][get_canal_sea(cur_canal,0)] = 1;
   }
 }
 

@@ -51,10 +51,51 @@ SeaConnections LAND_TO_SEA_CONN[LANDS_COUNT] = {0};
 
 Dollars LAND_VALUE[LANDS_COUNT] = {0};
 
-
-LandIndex get_l2l_count(LandIndex land_idx) {
-  return LANDS[land_idx].land_conn_count;
+inline PlayerIndex get_original_owner_index(LandIndex land_idx) {
+  return LANDS[land_idx].original_owner_index;
 }
+
+inline SeaIndex get_sea_conn_count(LandIndex land_idx) {
+  return LANDS[land_idx].sea_conn_count;
+}
+
+inline SeaIndex get_load_within_2_moves_count(LandIndex land_idx) {
+  return LOAD_WITHIN_2_MOVES_COUNT[land_idx];
+}
+inline Dollars get_land_value(LandIndex land_idx) { return LAND_VALUE[land_idx]; }
+
+inline LandConnIndex get_l2l_count(LandIndex land_idx) { return LAND_TO_LAND_COUNT[land_idx]; }
+
+inline LandIndex get_lands_within_2_moves_count(LandIndex land_idx) {
+   return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
+}
+inline char* get_land_name(LandIndex land_idx) { return LANDS[land_idx].name; }
+
+inline LandConnections* get_l2l_conn(LandIndex land_idx) {
+  return &LANDS[land_idx].land_connections;
+}
+inline LandIndex* get_l2l_count_ref(LandIndex land_idx) { return &LAND_TO_LAND_COUNT[land_idx]; }
+inline LandIndex* get_lands_within_2_moves_count_ref(LandIndex land_idx) {
+  return &LANDS_WITHIN_2_MOVES_COUNT[land_idx];
+}
+inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
+  return &LANDS_WITHIN_2_MOVES[land_idx];
+}
+
+inline SeaConnections* get_load_within_2_moves(LandIndex land_idx) {
+  return &LOAD_WITHIN_2_MOVES[land_idx];
+}
+
+inline LandIndex* get_load_within_2_moves_count_ref(LandIndex land_idx) {
+  return &LOAD_WITHIN_2_MOVES_COUNT[land_idx];
+}
+
+inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx) {
+  return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
+}
+inline SeaConnIndex get_l2s_count(LandIndex land_idx) { return LANDS[land_idx].sea_conn_count; }
+inline SeaConnections* get_l2s_conn(LandIndex land_idx) { return &LAND_TO_SEA_CONN[land_idx]; }
+
 inline LandIndex get_land_to_land(LandIndex land_idx, LandConnIndex conn_idx) {
   return LANDS[land_idx].land_connections[conn_idx];
 }
@@ -63,37 +104,16 @@ inline LandConnections* get_land_connections(LandIndex land_idx) {
   return &LANDS[land_idx].land_connections;
 }
 
-inline AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx) {
-  return LANDS[land_idx].sea_connections[sea_conn_idx] + LANDS_COUNT;
-}
-
 inline LandIndex get_land_from_conn(LandConnections* land_to_land_conn,
                                         LandConnIndex conn_idx) {
   return (*land_to_land_conn)[conn_idx];
 }
 
-inline Dollars get_land_value(LandIndex land_idx) { return LAND_VALUE[land_idx]; }
-inline char* get_land_name(LandIndex land_idx) { return LANDS[land_idx].name; }
 inline LandIndex get_land_to_land_count(LandIndex land_idx) {
   return LAND_TO_LAND_COUNT[land_idx];
 }
 inline LandIndex* get_land_to_land_count_ref(LandIndex land_idx) {
   return &LAND_TO_LAND_COUNT[land_idx];
-}
-inline LandConnections* get_l2l_conn(LandIndex land_idx) {
-  return &LAND_TO_LAND_CONN[land_idx];
-}
-inline SeaIndex get_l2s_count(LandIndex land_idx) {
-  return LAND_TO_SEA_COUNT[land_idx];
-}
-inline SeaConnections* get_l2s_conn(LandIndex land_idx) {
-  return &LAND_TO_SEA_CONN[land_idx];
-}
-inline LandIndex get_lands_within_2_moves_count(LandIndex land_idx) {
-  return LANDS_WITHIN_2_MOVES_COUNT[land_idx];
-}
-inline LandArray* get_lands_within_2_moves(LandIndex land_idx) {
-  return &LANDS_WITHIN_2_MOVES[land_idx];
 }
 
 inline SeaIndex get_sea_from_l2s_conn(SeaConnections* land_to_sea_conn,

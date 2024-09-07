@@ -24,18 +24,6 @@ typedef struct {
   LandConnections land_connections;
 } __attribute__((aligned(ALIGNMENT_32))) Sea;
 
-extern const Sea SEAS[SEAS_COUNT];
-extern SeaMatrix SEA_PATH1[CANAL_STATES];
-extern SeaMatrix SEA_PATH2[CANAL_STATES];
-extern SeaMatrix SEA_PATH1_ALT[CANAL_STATES];
-extern SeaCountsArray SEAS_WITHIN_X_MOVES_COUNT[2][CANAL_STATES];
-extern SeaMatrix SEAS_WITHIN_X_MOVES[2][CANAL_STATES];
-extern SeaDistancesSources SEA_DIST[CANAL_STATES];
-extern SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT];
-extern SeaIndex SEA_TO_SEA_COUNT[SEAS_COUNT];
-extern SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT];
-extern LandConnections SEA_TO_LAND_CONN[SEAS_COUNT];
-
 void initialize_sea_connections();
 void initialize_sea_dist(CanalState canal_idx);
 void populate_initial_distances_sea(CanalState canal_idx);
@@ -46,3 +34,18 @@ SeaIndex get_sea_conn_count(LandIndex land_idx);
 void set_sea_dist(CanalState canal_idx, SeaIndex src_sea, SeaIndex dst_sea, Distance dist);
 void set_sea_path(Distance hop, CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea,
                   SeaIndex cur_sea);
+char* get_sea_name(SeaIndex sea_idx);
+LandConnections* get_s2l_conn(SeaIndex src_sea);
+LandConnIndex get_s2l_count(SeaIndex src_sea);
+SeaConnections* get_s2s_conn(SeaIndex src_sea);
+SeaIndex get_s2s_count(SeaIndex src_sea);
+Distance get_sea_dist(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+void add_seas_within_x_moves(Distance moves, CanalState canal_state, SeaIndex src_sea,
+                             SeaIndex dst_sea);
+SeaIndex get_sea_path1(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+SeaIndex get_sea_path1_alt(CanalState canal_state, SeaIndex src_sea, SeaIndex dst_sea);
+SeaIndex get_seas_within_1_move_count(CanalState canal_state, SeaIndex src_sea);
+SeaArray* get_seas_within_1_move(CanalState canal_state, SeaIndex src_sea);
+SeaIndex get_seas_within_2_moves_count(CanalState canal_state, SeaIndex src_sea);
+SeaArray* get_seas_within_2_moves(CanalState canal_state, SeaIndex src_sea);
+SeaIndex get_sea_from_array(SeaArray* sea_array, SeaConnIndex conn_idx);
