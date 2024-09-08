@@ -11,6 +11,7 @@ file(GLOB SOURCES "src/*.c")
 set(EXECUTABLE_NAME caaa)
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c11)
 
 # Find and link the system-installed cJSON library
 find_package(cJSON REQUIRED)

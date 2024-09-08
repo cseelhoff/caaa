@@ -527,10 +527,8 @@ void refresh_cache_canals() {
 
 void refresh_cache_enemy_armies() {  
   // Replace memset with memset_s
-  if (memset_s(&enemy_units_count, sizeof(enemy_units_count), 0, sizeof(enemy_units_count)) != 0) {
-      // Handle error
-      fprintf(stderr, "memset_s failed\n");
-  }  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
+  memset(&enemy_units_count, 0, sizeof(enemy_units_count));
+  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
 #pragma unroll 3
     for (EnemyIndex enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
       acc_enemy_units_count(convert_land_to_air(src_land),
@@ -615,7 +613,7 @@ void generate_quick_state_land() {
   }
 }
 
-void set_seed(u_short new_seed) {
+void set_seed(uint16_t new_seed) {
   seed = new_seed;
   random_number_index = new_seed;
 }
@@ -1055,7 +1053,7 @@ void appendArmyStatus(LandIndex land_idx, char* buffer) {
                             NAMES_UNIT_LAND[unit_type2], unit_sum2);
         }
       }
-      offset += sprintf(buffer + offset, "\033[0m");
+      (void)sprintf(buffer + offset, "\033[0m");
       strcat(printableGameStatus, buffer);
     }
     strcat(printableGameStatus, "\n");
