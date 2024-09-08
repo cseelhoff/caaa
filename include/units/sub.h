@@ -1,6 +1,5 @@
 #pragma once
 #include <stdint.h>
-#include <sys/types.h>
 #define SUB_NAME "subs"
 #define SUB_ATTACK 2
 #define SUB_DEFENSE 1

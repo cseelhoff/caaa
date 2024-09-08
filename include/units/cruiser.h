@@ -1,6 +1,5 @@
 #pragma once
 #include <stdint.h>
-#include <sys/types.h>
 #define CRUISER_NAME "cruisers"
 #define CRUISER_ATTACK 3
 #define CRUISER_DEFENSE 3

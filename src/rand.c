@@ -13,4 +13,4 @@ void generate_random_numbers() {
   }
 }
 
-inline Action get_random_number(ushort idx) { return RANDOM_NUMBERS[idx]; }
+inline Action get_random_number(uint16_t idx) { return RANDOM_NUMBERS[idx]; }

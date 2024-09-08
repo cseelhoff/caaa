@@ -7,10 +7,14 @@
 #define ALIGNMENT_16 16
 #define MAX_UINT8_T 255
 
-typedef uint8_t LandIndex;
+typedef struct {
+  uint8_t value;
+} LandIndex;
 typedef uint8_t SeaIndex;
 typedef uint8_t AirIndex;
-typedef uint8_t Dollars;
+typedef struct {
+  uint8_t value;
+} Dollars;
 typedef uint8_t SeaConnIndex;
 typedef uint8_t LandConnIndex;
 typedef uint8_t AirConnIndex;

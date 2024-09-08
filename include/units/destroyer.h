@@ -1,6 +1,5 @@
 #pragma once
 #include <stdint.h>
-#include <sys/types.h>
 #define DESTROYER_NAME "destroyers"
 #define DESTROYER_ATTACK 2
 #define DESTROYER_DEFENSE 2

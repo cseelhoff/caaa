@@ -7,7 +7,7 @@
 
 int main() {
   printf("Starting CAAA \n");
-  initializeGameData();
+  initializeConstants();
   load_game_data("game_data.json");
   GameState* initial_state = get_game_state_copy();
   // Initialize the game state
@@ -23,7 +23,7 @@ int main() {
 }
 int main2() {
   printf("Starting CAAA \n");
-  initializeGameData();
+  initializeConstants();
   ushort start_seed = 201;
   for (ushort seed = start_seed; seed < start_seed + 100; seed++) {
     set_seed(seed);

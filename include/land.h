@@ -1,4 +1,5 @@
 #pragma once
+
 #include "canal.h"
 #include "sea.h"
 #include "typedefs.h"
@@ -23,7 +24,11 @@ typedef struct {
   LandConnections land_connections;
 } __attribute__((aligned(ALIGNMENT_32))) Land;
 
-void generate_land_value_array();
+void initialize_land_consts();
+void initialize_land_to_land_connections(LandIndex land_idx, LandConnIndex land_conn_count);
+void initialize_land_to_sea_connections(LandIndex land_idx, SeaConnIndex sea_conn_count);
+
+
 LandIndex get_land_to_land(LandIndex land_idx, LandConnIndex conn_idx);
 LandIndex* get_l2l_count_ref(LandIndex land_idx);
 LandConnIndex get_l2l_count(LandIndex land_idx);

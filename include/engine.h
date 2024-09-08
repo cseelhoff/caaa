@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void initializeConstants();
+
 typedef uint8_t PlayerIndexCount;
 typedef uint8_t AirMilitaryCount;
 typedef LandUnitStateSum* LandUnitStateSums[MAX_LAND_UNIT_STATES];
@@ -18,7 +20,9 @@ typedef SeaUnitStates* SeaUnitStatesPtr;
 typedef LandUnitStates* LandUnitStatesPtr;
 typedef LandUnitStateSums* LandUnitStateSumsPtr;
 
-void initializeGameData();
+typedef Action ActionArray[AIRS_COUNT];
+typedef bool CheckedTerritories[AIRS_COUNT];
+
 void load_game_data();
 void play_full_turn();
 double get_score();
@@ -88,8 +92,8 @@ SeaUnitStateSumsPtr get_sea_unit_state_sums(SeaUnitStatesPtr sea_unit_states, Se
 SeaUnitStateSum get_sea_unit_state_sum_at(SeaUnitStateSums* seaUnitStateSums,
                                           GenericSeaUnitState unit_state);
 Dollars get_money(PlayerIndex player_idx);
-AirIndexArray* get_source_territories(LandIndex land_idx);
-AirIndex get_source_territory(AirIndexArray* source_territories,
+AirIndices* get_source_territories(LandIndex land_idx);
+AirIndex get_source_territory(AirIndices* source_territories,
                               SourceTerritoryIndex source_terr_idx);
 void check_territory(bool* checked_territories, AirIndex src_air);
 bool was_terr_skipped(AirIndex src_air, AirIndex dst_air);

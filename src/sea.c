@@ -5,27 +5,44 @@
 #include "units/units.h"
 //  ATLANTIC         BALTIC         ATLANTIC
 //  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
-
-const Sea SEAS[SEAS_COUNT] = {"Pacific",  1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0, 0, 0, 0},
+typedef Sea Seas[SEAS_COUNT];
+const Seas SEAS = {"Pacific",  1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0, 0, 0, 0},
                               "Atlantic", 2, 2, {0, 2, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
                               "Baltic",   1, 2, {1, 0, 0, 0, 0, 0, 0}, {0, 4, 0, 0, 0, 0}};
 
-SeaConnIndex SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
-SeaConnections SEA_TO_SEA_CONN[SEAS_COUNT] = {0};
-LandConnections SEA_TO_LAND_CONN[SEAS_COUNT] = {0};
+typedef SeaConnIndex SeaConnIndices[SEAS_COUNT];
+SeaConnIndices SEA_TO_SEA_COUNT = {0};
 
-SeaDistancesSources SEA_DIST[CANAL_STATES] = {0};
-SeaMatrix SEAS_WITHIN_X_MOVES[2][CANAL_STATES] = {0};
-SeaCountsArray SEAS_WITHIN_X_MOVES_COUNT[2][CANAL_STATES] = {0};
+typedef SeaConnections S2SConnections[SEAS_COUNT];
+S2SConnections SEA_TO_SEA_CONN = {0};
+
+typedef LandConnections S2LConnections[SEAS_COUNT];
+S2LConnections SEA_TO_LAND_CONN = {0};
+
+typedef SeaDistancesSources SeaDistancesSourcesCanals[CANAL_STATES];
+SeaDistancesSourcesCanals SEA_DIST = {{MAX_UINT8_T}};
+
+typedef SeaMatrix SeaMatrixCanals[CANAL_STATES];
+#define MAX_SEA_MOVES 2
+typedef SeaMatrixCanals SeaMatrixCanalsMoves[MAX_SEA_MOVES];
+SeaMatrixCanalsMoves SEAS_WITHIN_X_MOVES = {0};
+
+typedef SeaCountsArray SeaCountsArrayCanals[CANAL_STATES];
+typedef SeaCountsArrayCanals SeaCountsArrayCanalsMoves[MAX_SEA_MOVES];
+SeaCountsArrayCanalsMoves SEAS_WITHIN_X_MOVES_COUNT = {0};
 // SeaMatrix SEAS_WITHIN_2_MOVES[CANAL_STATES] = {0};
 // SeaCountsArray SEAS_WITHIN_2_MOVES_COUNT[CANAL_STATES] = {0};
 #define MIN_SEA_HOPS 1
 #define MAX_SEA_HOPS 2
 //#define SEA_MOVE_SIZE (1 + MAX_SEA_HOPS - MIN_SEA_HOPS)
-LandIndex SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
-SeaMatrix SEA_PATH1[CANAL_STATES] = {MAX_UINT8_T};
-SeaMatrix SEA_PATH2[CANAL_STATES] = {MAX_UINT8_T};
-SeaMatrix SEA_PATH1_ALT[CANAL_STATES] = {MAX_UINT8_T};
+typedef LandIndex S2LCounts[SEAS_COUNT];
+S2LCounts SEA_TO_LAND_COUNT = {0};
+
+typedef SeaMatrix SeaMatrixCanals[CANAL_STATES];
+SeaMatrixCanals SEA_PATH1 = {MAX_UINT8_T};
+SeaMatrixCanals SEA_PATH2 = {MAX_UINT8_T};
+SeaMatrixCanals SEA_PATH1_ALT = {MAX_UINT8_T};
+
 inline LandConnections* get_s2l_conn(SeaIndex src_sea) { return &SEA_TO_LAND_CONN[src_sea]; }
 inline LandConnIndex get_s2l_count(SeaIndex src_sea) { return SEAS[src_sea].land_conn_count; }
 inline char* get_sea_name(SeaIndex sea_idx) { return SEAS[sea_idx].name; }
@@ -129,6 +146,7 @@ void floyd_warshall_sea(CanalState canal_idx) {
   }
 }
 
+// initializes directly connected SEA_DIST to 1 (starts at 255)
 void initialize_sea_connections() {
   for (SeaIndex src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
     SeaIndex sea_to_sea_count = get_s2s_count(src_sea);

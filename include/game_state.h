@@ -13,7 +13,7 @@ typedef struct {
   PlayerIndex owner_idx; // rotates
   HitPoints factory_hp;
   HitPoints factory_max;
-  uint8_t bombard_max; // bombarded, resets
+  NavySum bombard_max; // bombarded, resets
   FighterStateSums fighters;                        // rotates
   BomberLandStateSums bombers;                     // rotates
   InfantryStateSums infantry;                       // rotates
