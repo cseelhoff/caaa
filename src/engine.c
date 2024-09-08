@@ -525,9 +525,12 @@ void refresh_cache_canals() {
   }
 }
 
-void refresh_cache_enemy_armies() {
-  memset(&enemy_units_count, 0, sizeof(enemy_units_count));
-  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
+void refresh_cache_enemy_armies() {  
+  // Replace memset with memset_s
+  if (memset_s(&enemy_units_count, sizeof(enemy_units_count), 0, sizeof(enemy_units_count)) != 0) {
+      // Handle error
+      fprintf(stderr, "memset_s failed\n");
+  }  for (LandIndex src_land = 0; src_land < LANDS_COUNT; src_land++) {
 #pragma unroll 3
     for (EnemyIndex enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
       acc_enemy_units_count(convert_land_to_air(src_land),
