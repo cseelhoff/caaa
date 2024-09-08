@@ -41,7 +41,7 @@ SeaUnitSumArray* get_player_sea_unit_types_ref(PlayerIndex player_idx, SeaIndex 
 NavySum get_player_navies(PlayerIndex player_idx, SeaIndex sea_idx);
 void acc_enemy_destroyers(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
 void acc_enemy_blockade(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
-void acc_allied_carriers(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
+void acc_allied_carriers(SeaIndex sea_idx, SeaUnitSum carriers);
 void recalc_transports_cargo_space(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
 NavySum get_enemy_blockade(SeaIndex sea_idx);
 void set_is_sea_path_blocked(SeaIndex src_sea, SeaIndex dst_sea, SeaIndex nextSeaMovement,

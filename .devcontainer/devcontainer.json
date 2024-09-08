@@ -15,7 +15,11 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"llvm-vs-code-extensions.vscode-clangd"
+				"llvm-vs-code-extensions.vscode-clangd",
+				"jbenden.c-cpp-flylint",
+				"twxs.cmake",
+				"ms-vscode.cmake-tools",
+				"ms-vscode.cpptools"
 			]
 		}
 	},

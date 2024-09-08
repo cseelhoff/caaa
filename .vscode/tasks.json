@@ -10,7 +10,11 @@
                 "--config",
                 "Debug",
                 "--target",
-                "${workspaceFolderBasename}"
+                "${workspaceFolderBasename}",
+                "--",
+                "-Wall",
+                "-Wextra",
+                "-Wconversion"
             ],
             "group": {
                 "kind": "build",
@@ -33,7 +37,11 @@
                 "--config",
                 "Release",
                 "--target",
-                "${workspaceFolderBasename}"
+                "${workspaceFolderBasename}",
+                "--",
+                "-Wall",
+                "-Wextra",
+                "-Wconversion"
             ],
             "group": {
                 "kind": "build",

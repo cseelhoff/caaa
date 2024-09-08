@@ -12,8 +12,8 @@
                 "CMAKE_C_COMPILER": "/usr/bin/clang",
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_FLAGS_DEBUG": "-g -DDEBUG",
-                "CMAKE_CXX_FLAGS_DEBUG": "-g -DDEBUG"
+                "CMAKE_C_FLAGS_DEBUG": "-g -DDEBUG -Wall -Wextra -Wconversion",
+                "CMAKE_CXX_FLAGS_DEBUG": "-g -DDEBUG -Wall -Wextra -Wconversion"
             }
         },
         {
@@ -22,8 +22,8 @@
             "inherits": "x64-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_C_FLAGS_RELEASE": "-O3",
-                "CMAKE_CXX_FLAGS_RELEASE": "-O3"
+                "CMAKE_C_FLAGS_RELEASE": "-O3 -Wall -Wextra -Wconversion",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -Wall -Wextra -Wconversion"
             }
         }
     ]

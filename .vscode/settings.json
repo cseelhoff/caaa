@@ -1,3 +1,8 @@
 {
-    "C_Cpp.codeAnalysis.clangTidy.enabled": true
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "c-cpp-flylint.debug": true,
+    "c-cpp-flylint.clang.pedantic": true,
+    "c-cpp-flylint.clang.msExtensions": true,
+    "c-cpp-flylint.cppcheck.verbose": true,
+    "c-cpp-flylint.cppcheck.force": true
 }

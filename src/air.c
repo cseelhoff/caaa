@@ -76,12 +76,9 @@ inline AirDistances* get_land_dist_land(LandIndex land_idx) { return &LAND_DIST[
 
 inline AirIndex convert_land_to_air(LandIndex land_idx) { return (AirIndex)land_idx; }
 
-
-
 inline void set_air_distance(AirDistances* air_dist, AirIndex dst_air, Distance dist) {
   (*air_dist)[dst_air] = dist;
 }
-
 
 inline void set_land_dist(LandIndex src_land, AirIndex dst_air, Distance dist) {
   LAND_DIST[src_land][dst_air] = dist;
@@ -90,7 +87,6 @@ inline void set_land_dist(LandIndex src_land, AirIndex dst_air, Distance dist) {
 inline SeaIndex get_sea_from_conn(SeaConnections* land_to_sea_conn, SeaConnIndex conn_idx) {
   return (*land_to_sea_conn)[conn_idx];
 }
-
 
 inline Distance get_air_distance(AirDistances* air_dist, AirIndex air_idx) {
   return (*air_dist)[air_idx];
@@ -115,7 +111,10 @@ void populate_initial_distances() {
       LandConnections* land_to_land_conn = get_l2l_conn(land_idx);
       LandIndex land_conn_count = get_l2l_count(land_idx);
 #pragma unroll 4 // Adjust the number based on your optimization needs
-      for (LandConnIndex land_conn_idx = 0; land_conn_idx < land_conn_count; land_conn_idx++) {
+      for (LandConnIndex land_conn_idx = 0; land_conn_idx < MAX_LAND_TO_LAND_CONNECTIONS; land_conn_idx++) {
+        if(land_conn_idx >= land_conn_count) {
+          break;
+        }
         AirIndex dst_air =
             convert_land_to_air(get_land_from_conn(land_to_land_conn, land_conn_idx));
         set_land_dist(src_land, dst_air, 1);
@@ -233,8 +232,9 @@ void generate_LandMoveDst(Distance hop, LandIndex src_land, AirIndex dst_air, La
     return;
   }
 
-  if (min_dist <= hop)
+  if (min_dist <= hop) {
     LAND_PATH[hop - MIN_LAND_HOPS][src_land][dst_air] = cur_land;
+  }
   LandConnections* land_to_land_conn = get_l2l_conn(cur_land);
   LandIndex land_conn_count = get_l2l_count(cur_land);
   for (LandConnIndex conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
@@ -286,7 +286,7 @@ void generate_within_x_moves() {
       }
     }
     LandIndex* load_within_2_moves_count = get_load_within_2_moves_count_ref(src_land);
-    SeaConnections* load_within_2_moves = get_load_within_2_moves(src_land);
+    SeaArray* load_within_2_moves = get_load_within_2_moves(src_land);
     for (SeaIndex dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
       if (LAND_DIST[src_land][dst_sea] <= 2) {
         (*load_within_2_moves)[*load_within_2_moves_count++] = dst_sea;

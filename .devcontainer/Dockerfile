@@ -10,8 +10,8 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
     fi \
     && rm -f /tmp/reinstall-cmake.sh
 
-# Install clangd
-RUN apt-get update && apt-get install -y clangd
+RUN apt-get update && apt-get install -y clangd cppcheck clang-tidy python3-pip
+RUN pip3 install flawfinder lizard
 
 # Cleanup
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
