@@ -92,7 +92,9 @@ typedef AirUnitStateSum FightersAirStateSum[FIGHTER_STATES];
 typedef AirUnitStateSum BombersAirStateSum[BOMBER_LAND_STATES];
 
 typedef LandUnitSum LandUnitSumArray[LAND_UNIT_TYPES_COUNT];
+typedef LandUnitSumArray* LandUnitSumArrayPtr;
 typedef SeaUnitSum SeaUnitSumArray[SEA_UNIT_TYPES_COUNT];
+typedef SeaUnitSumArray* SeaUnitSumArrayPtr;
 
 typedef LandUnitSumArray LandUnitTypesSumArrayLands[LANDS_COUNT];
 typedef SeaUnitSumArray SeaUnitTypesSumArraySeas[SEAS_COUNT];

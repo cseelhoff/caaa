@@ -43,3 +43,4 @@ typedef uint8_t CarrierSpace;
 
 typedef uint8_t Action;
 typedef uint8_t ActionCount;
+typedef uint8_t BuildsLeft;

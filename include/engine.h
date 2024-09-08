@@ -13,6 +13,11 @@ typedef SeaUnitStateSums SeaUnitStates[SEA_UNIT_TYPES_COUNT];
 typedef AirUnitStateSum* AirUnitStateSums[MAX_AIR_UNIT_STATES];
 typedef AirUnitStateSums AirUnitStates[AIR_UNIT_TYPES_COUNT];
 
+typedef SeaUnitStateSums* SeaUnitStateSumsPtr; 
+typedef SeaUnitStates* SeaUnitStatesPtr;
+typedef LandUnitStates* LandUnitStatesPtr;
+typedef LandUnitStateSums* LandUnitStateSumsPtr;
+
 void initializeGameData();
 void load_game_data();
 void play_full_turn();
@@ -37,7 +42,7 @@ void acc_enemy_units_count(AirIndex air_idx, AirMilitaryCount sum);
 void set_is_land_path_blocked(LandIndex src_land, LandIndex dst_land);
 SeaUnitSumArray* get_my_sea_unit_types(SeaIndex sea_idx);
 void set_allied_carriers(SeaIndex sea_idx, NavySum carriers);
-SeaUnitSumArray* get_player_sea_unit_types_ref(PlayerIndex player_idx, SeaIndex sea_idx);
+SeaUnitSumArrayPtr get_player_sea_unit_types_ref(PlayerIndex player_idx, SeaIndex sea_idx);
 NavySum get_player_navies(PlayerIndex player_idx, SeaIndex sea_idx);
 void acc_enemy_destroyers(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
 void acc_enemy_blockade(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
@@ -75,11 +80,11 @@ void set_factory_count(PlayerIndex player_idx, LandIndex count);
 Player get_player_state_offset(PlayerIndex player_idx);
 HitPoints get_factory_hp(LandIndex land_idx);
 bool is_flagged_for_combat(AirIndex air_idx);
-LandUnitStateSums* get_land_unit_state_sums(LandUnitStates* land_unit_states,
+LandUnitStateSumsPtr get_land_unit_state_sums(LandUnitStatesPtr land_unit_states,
                                             LandUnitType unit_type);
 LandUnitStateSum get_land_unit_state_sum_at(LandUnitStateSums* landUnitStateSums,
                                             GenericLandUnitState unit_state);
-SeaUnitStateSums* get_sea_unit_state_sums(SeaUnitStates* sea_unit_states, SeaUnitType unit_type);
+SeaUnitStateSumsPtr get_sea_unit_state_sums(SeaUnitStatesPtr sea_unit_states, SeaUnitType unit_type);
 SeaUnitStateSum get_sea_unit_state_sum_at(SeaUnitStateSums* seaUnitStateSums,
                                           GenericSeaUnitState unit_state);
 Dollars get_money(PlayerIndex player_idx);
@@ -88,7 +93,7 @@ AirIndex get_source_territory(AirIndexArray* source_territories,
                               SourceTerritoryIndex source_terr_idx);
 void check_territory(bool* checked_territories, AirIndex src_air);
 bool was_terr_skipped(AirIndex src_air, AirIndex dst_air);
-bool has_checked_territory(bool* checked_territories, AirIndex src_air);
+bool has_checked_territory(const CheckedTerritories checked_territories, AirIndex src_air);
 AirIndex get_source_terr_count(LandIndex land_idx);
 LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_conn_idx);
 char* get_air_name(AirIndex air_idx);
@@ -118,5 +123,5 @@ AirUnitStateSum* get_air_unit_state_sum_at(AirUnitStateSums* air_unit_state_sums
                                            FighterState cur_state);
 AirUnitStateSum* get_bomber_state_sum_at(AirUnitStateSums* air_unit_state_sums,
                                          BomberLandState cur_state);
-void set_builds_left(LandIndex land_idx, HitPoints value);
+void set_builds_left(LandIndex land_idx, BuildsLeft value);
 PlayerIndex convert_state_player_offset(PlayerIndex player_idx);
