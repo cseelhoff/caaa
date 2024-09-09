@@ -14,9 +14,9 @@ typedef struct MCTSNode {
     int visits;
     double value;
 } MCTSNode;
-
+extern int MCTS_ITERATIONS;// = 0;
 MCTSNode* mcts_search(GameState* initial_state, int iterations);
 uint8_t select_best_action(MCTSNode* root);
-static void print_mcts_tree(MCTSNode* node, int depth);
+void print_mcts_tree(MCTSNode* node, int depth);
 void print_mcts(MCTSNode* root);
 #endif // MCTS_H

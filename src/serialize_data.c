@@ -1,7 +1,23 @@
 #include "serialize_data.h"
+#include "game_state.h"
 #include <cjson/cJSON.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#define PATH_MAX 4096
+void load_game_data_from_json(char* filename, GameState* data) {
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: ");
+    printf("%s", cwd);
+  } else {
+    perror("getcwd() error");
+  }
+  cJSON* json = read_json_from_file(filename);
+  deserialize_game_data_from_json(json, data);
+  cJSON_Delete(json);
+}
 
 void write_json_to_file(const char* filename, cJSON* json) {
   char* string = cJSON_Print(json);
@@ -48,7 +64,7 @@ cJSON* read_json_from_file(const char* filename) {
   return json;
 }
 
-void deserialize_game_data_from_json(GameState* data, cJSON* json) {
+void deserialize_game_data_from_json(cJSON* json, GameState* data) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;

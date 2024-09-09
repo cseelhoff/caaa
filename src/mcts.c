@@ -1,12 +1,18 @@
 #include "mcts.h"
+#include "game_state.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+typedef uint8_t Actions[AIRS_COUNT];
+typedef Actions* ActionsPtr;
+int MCTS_ITERATIONS = 0;
+
 // Function prototypes for game-specific logic
 extern GameState* clone_state(GameState* state);
 extern void free_state(GameState* state);
-extern uint8_t* get_possible_actions(GameState* state, int* num_actions);
+extern void get_possible_actions(GameState* state, int* num_actions, ActionsPtr actions);
 extern void apply_action(GameState* state, uint8_t action);
 extern bool is_terminal_state(GameState* state);
 extern double evaluate_state(GameState* state);
@@ -52,34 +58,22 @@ static MCTSNode* select_node(MCTSNode* node) {
 
 static void expand_node(MCTSNode* node) {
     int num_actions;
-    uint8_t* actions = get_possible_actions(&node->state, &num_actions);
-    node->children = (MCTSNode**)malloc(num_actions * sizeof(MCTSNode*));
+    Actions actions = {0};
+    ActionsPtr actionsPtr = &actions;
+    get_possible_actions(&node->state, &num_actions, actionsPtr);
+    node->children = (MCTSNode**)malloc((unsigned long)num_actions * sizeof(MCTSNode*));
     for (int i = 0; i < num_actions; i++) {
         GameState* new_state = clone_state(&node->state);
-        apply_action(new_state, actions[i]);
-        node->children[i] = create_node(new_state, actions[i], node);
+        uint8_t next_action = actions[i];
+        apply_action(new_state, next_action);
+        node->children[i] = create_node(new_state, next_action, node);
         free_state(new_state);
     }
     node->num_children = num_actions;
-    //free(actions);
 }
 
 static double simulate(GameState* state) {
-    //GameState* sim_state = clone_state(state);
-    /*
-    while (!is_terminal_state(sim_state)) {
-        int num_actions;
-        uint8_t* actions = get_possible_actions(sim_state, &num_actions);
-        if (num_actions == 0) break;
-        int action_index = rand() % num_actions;
-        apply_action(sim_state, &actions[action_index]);
-        free(actions);
-    }
-    */
-
-    //double result = evaluate_state(sim_state);
     double result = random_play_until_terminal(state);
-    //free_state(sim_state);
     return result;
 }
 
@@ -93,8 +87,8 @@ static void backpropagate(MCTSNode* node, double result) {
 
 MCTSNode* mcts_search(GameState* initial_state, int iterations) {
     MCTSNode* root = create_node(initial_state, 0, NULL);
-    for (int i = 0; i < iterations; i++) {
-        printf("Iteration %d\n", i);
+    for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
+        printf("Iteration %d\n", MCTS_ITERATIONS);
         MCTSNode* node = select_node(root);
         if (!is_terminal_state(&node->state)) {
             expand_node(node);
@@ -119,8 +113,11 @@ uint8_t select_best_action(MCTSNode* root) {
     return best_child->action;
 }
 // Function to print the MCTS tree
-static void print_mcts_tree(MCTSNode* node, int depth) {
+void print_mcts_tree(MCTSNode* node, int depth) {
     if (node == NULL) return;
+    if (depth > 3) {
+        return;
+    }
 
     // Print the current node
     for (int i = 0; i < depth; i++) {

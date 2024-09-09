@@ -56,9 +56,17 @@ void set_land_path_for_l2l(uint8_t src_land, uint8_t intermediate_land, LandPath
 void set_land_path_for_l2s(uint8_t src_land, uint8_t intermediate_land, LandPath* land_path);
 
 void initialize_sea_path();
-void generate_within_x_moves();
-void generate_random_numbers();
-void generate_unit_pointers();
+
+void initialize_within_x_moves();
+void initialize_land_within_2_moves(uint8_t src_land);
+void initialize_load_within_2_moves(uint8_t src_land);
+void initialize_sea_within_x_moves();
+void initialize_air_within_x_moves();
+void initialize_air_to_land_within_x_moves();
+
+void initialize_random_numbers();
+void initialize_land_pointers();
+void initialize_sea_pointers();
 
 void load_game_data();
 
@@ -104,6 +112,7 @@ bool move_bomber_units();
 void conquer_land(uint8_t dst_land);
 bool move_land_unit_type(uint8_t unit_type);
 bool move_transport_units();
+void skip_empty_transports();
 bool move_subs();
 bool move_destroyers_battleships();
 void carry_allied_fighters(uint8_t src_sea, uint8_t dst_sea);
@@ -135,7 +144,10 @@ void set_seed(uint16_t seed);
 
 GameState* clone_state(GameState* game_state);
 void free_state(GameState* game_state);
-uint8_t* get_possible_actions(GameState* game_state, int* num_actions);
+
+typedef uint8_t Actions[AIRS_COUNT];
+typedef Actions* ActionsPtr;
+void get_possible_actions(GameState* game_state, int* num_actions, ActionsPtr actions);
 void apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
