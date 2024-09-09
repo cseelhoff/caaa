@@ -86,9 +86,10 @@ uint8_t ORDER_OF_SEA_ATTACKERS_1[ATTACKER_SEA_UNIT_TYPES_COUNT_1] = {SUBMARINES,
 uint8_t ORDER_OF_SEA_ATTACKERS_2[ATTACKER_SEA_UNIT_TYPES_COUNT_2] = {FIGHTERS, BOMBERS_SEA};
 uint8_t ORDER_OF_SEA_ATTACKERS_3[ATTACKER_SEA_UNIT_TYPES_COUNT_3] = {
     BS_DAMAGED, TRANS_EMPTY, TRANS_1I, TRANS_1A, TRANS_1T, TRANS_2I, TRANS_1I_1A, TRANS_1I_1T};
-uint8_t RANDOM_NUMBERS[65536] = {0};
-u_short random_number_index = 0;
-u_short seed = 0;
+#define RANDOM_NUMBERS_SIZE 65536
+uint8_t RANDOM_NUMBERS[RANDOM_NUMBERS_SIZE] = {0};
+uint16_t random_number_index = 0;
+uint16_t seed = 0;
 char printableGameStatus[PRINTABLE_GAME_STATUS_SIZE] = "";
 GameState state = {0};
 cJSON* json;
@@ -143,7 +144,7 @@ bool canBomberLandIn1Move[AIRS_COUNT] = {0};
 bool canBomberLandIn2Moves[AIRS_COUNT] = {0};
 int step_id = 0;
 int answers_remaining = 0;
-uint8_t valid_moves[256] = {0};
+uint8_t valid_moves[AIRS_COUNT] = {0};
 uint8_t valid_moves_count = 0;
 void initializeGameData() {
   generate_total_land_distance();

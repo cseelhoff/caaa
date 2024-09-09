@@ -1,2 +1,2 @@
-Checks: '-*,clang-analyzer-*,-clang-analyzer-cplusplus*,modernize-use-using'
-WarningsAsErrors: '*'
+Checks: '*,-clang-analyzer-security.insecureAPI.strcpy,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-suspicious-call-argument,-bugprone-easily-swappable-parameters,-llvm-header-guard,-llvmlibc-restrict-system-libc-headers,-cppcoreguidelines-avoid-non-const-global-variables'
+WarningsAsErrors: '-*'

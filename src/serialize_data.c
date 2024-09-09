@@ -1,5 +1,5 @@
 #include "serialize_data.h"
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -2,7 +2,6 @@
 #include "mcts.h"
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/types.h>
 
 int main() {
   printf("Starting CAAA \n");
@@ -23,8 +22,8 @@ int main() {
 int main2() {
   printf("Starting CAAA \n");
   initializeGameData();
-  ushort start_seed = 201;
-  for (ushort seed = start_seed; seed < start_seed + 100; seed++) {
+  uint16_t start_seed = 201;
+  for (uint16_t seed = start_seed; seed < start_seed + 100; seed++) {
     set_seed(seed);
     load_game_data("game_data.json");
     int turns = 100;
