@@ -24,14 +24,17 @@
 #define BLOCKADE_UNIT_TYPES_COUNT 5
 #define PRINTABLE_GAME_STATUS_SIZE 4096
 
+typedef uint8_t LandPath[LANDS_COUNT][AIRS_COUNT];
+
 void initialize_constants();
+
 void initialize_land_dist();
 void initialize_l2l_connections(uint8_t src_land);
 void initialize_l2s_connections(uint8_t src_land);
 void initialize_land_dist_zero(uint8_t src_land);
 void set_l2l_land_dist_to_one(uint8_t src_land);
 void set_l2s_land_dist_to_one(uint8_t src_land);
-void land_dist_floyd_warshall();
+void floyd_warshall(uint8_t *dist, uint8_t terr_count, uint8_t dist_count);
 
 void initialize_sea_dist();
 void initialize_s2s_connections(uint8_t src_sea);
@@ -39,7 +42,6 @@ void initialize_s2l_connections(uint8_t src_sea);
 void initialize_sea_dist_zero(uint8_t canal_idx);
 void set_s2s_sea_dist_to_one(uint8_t canal_idx);
 void initialize_canals(uint8_t canal_idx);
-void sea_dist_floyd_warshall(uint8_t canal_idx);
 
 void initialize_air_dist();
 void initialize_air_dist_zero();
@@ -49,9 +51,11 @@ void set_s2l_air_dist_to_one(uint8_t src_sea);
 void set_s2s_air_dist_to_one(uint8_t src_sea);
 void air_dist_floyd_warshall();
 
-void generate_landMoveAllDestination();
-void generate_airMoveAllDestination();
-void generate_seaMoveAllDestination();
+void initialize_land_path();
+void set_land_path_for_l2l(uint8_t src_land, uint8_t intermediate_land, LandPath* land_path);
+void set_land_path_for_l2s(uint8_t src_land, uint8_t intermediate_land, LandPath* land_path);
+
+void initialize_sea_path();
 void generate_within_x_moves();
 void generate_random_numbers();
 void generate_unit_pointers();
