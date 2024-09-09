@@ -451,9 +451,9 @@ void generate_LandMoveDst(int hop, int src_land, int dst_air, int cur_land, int 
   }
 }
 void generate_landMoveAllDestination() {
-  for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    for (int dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
-      int min_dist = LAND_DIST[src_land][dst_air];
+  for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+      uint8_t min_dist = LAND_DIST[src_land][dst_air];
       generate_LandMoveDst(1, src_land, dst_air, src_land, min_dist);
       if (min_dist <= 1)
         LAND_PATH_ALT[src_land][dst_air] = src_land;
