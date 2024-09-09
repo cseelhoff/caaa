@@ -24,10 +24,31 @@
 #define BLOCKADE_UNIT_TYPES_COUNT 5
 #define PRINTABLE_GAME_STATUS_SIZE 4096
 
-void initializeGameData();
-void generate_total_air_distance();
-void generate_total_land_distance();
-void generate_total_sea_distance();
+void initialize_constants();
+void initialize_land_dist();
+void initialize_l2l_connections(uint8_t src_land);
+void initialize_l2s_connections(uint8_t src_land);
+void initialize_land_dist_zero(uint8_t src_land);
+void set_l2l_land_dist_to_one(uint8_t src_land);
+void set_l2s_land_dist_to_one(uint8_t src_land);
+void land_dist_floyd_warshall();
+
+void initialize_sea_dist();
+void initialize_s2s_connections(uint8_t src_sea);
+void initialize_s2l_connections(uint8_t src_sea);
+void initialize_sea_dist_zero(uint8_t canal_idx);
+void set_s2s_sea_dist_to_one(uint8_t canal_idx);
+void initialize_canals(uint8_t canal_idx);
+void sea_dist_floyd_warshall(uint8_t canal_idx);
+
+void initialize_air_dist();
+void initialize_air_dist_zero();
+void set_l2l_air_dist_to_one(uint8_t src_land);
+void set_l2s_air_dist_to_one(uint8_t src_land);
+void set_s2l_air_dist_to_one(uint8_t src_sea);
+void set_s2s_air_dist_to_one(uint8_t src_sea);
+void air_dist_floyd_warshall();
+
 void generate_landMoveAllDestination();
 void generate_airMoveAllDestination();
 void generate_seaMoveAllDestination();

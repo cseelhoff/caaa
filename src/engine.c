@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "canal.h"
 #include "game_state.h"
 #include "land.h"
 #include "mcts.h"
@@ -146,10 +147,11 @@ int step_id = 0;
 int answers_remaining = 0;
 uint8_t valid_moves[AIRS_COUNT] = {0};
 uint8_t valid_moves_count = 0;
-void initializeGameData() {
-  generate_total_land_distance();
-  generate_total_sea_distance();
-  generate_total_air_distance();
+
+void initialize_constants() {
+  initialize_land_dist();
+  initialize_sea_dist();
+  initialize_air_dist();
   generate_landMoveAllDestination();
   generate_seaMoveAllDestination();
   generate_airMoveAllDestination();
@@ -166,6 +168,205 @@ void initializeGameData() {
   printf("Exiting initializeGameData");
 }
 
+void initialize_land_dist() {
+  memset(LAND_DIST, MAX_UINT8_T, sizeof(LAND_DIST));
+  for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    LAND_VALUE[src_land] = LANDS[src_land].land_value;
+    initialize_l2l_connections(src_land);
+    initialize_l2s_connections(src_land);
+    initialize_land_dist_zero(src_land);
+  }
+  for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    set_l2l_land_dist_to_one(src_land);
+    set_l2s_land_dist_to_one(src_land);
+  }
+  land_dist_floyd_warshall();
+}
+void initialize_l2l_connections(uint8_t src_land) {
+  LAND_TO_LAND_COUNT[src_land] = LANDS[src_land].land_conn_count;
+  for (uint8_t conn_idx = 0; conn_idx < LAND_TO_LAND_COUNT[src_land]; conn_idx++) {
+    LAND_TO_LAND_CONN[src_land][conn_idx] = LANDS[src_land].connected_land_index[conn_idx];
+  }
+}
+void initialize_l2s_connections(uint8_t src_land) {
+  LAND_TO_SEA_COUNT[src_land] = LANDS[src_land].sea_conn_count;
+  for (uint8_t conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[src_land]; conn_idx++) {
+    LAND_TO_SEA_CONN[src_land][conn_idx] = LANDS[src_land].connected_sea_index[conn_idx];
+  }
+}
+void initialize_land_dist_zero(uint8_t src_land) {
+  for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+    if (src_land == dst_air) {
+      LAND_DIST[src_land][dst_air] = 0;
+    }
+  }
+}
+void set_l2l_land_dist_to_one(uint8_t src_land) {
+  for (uint8_t conn_idx = 0; conn_idx < LANDS[src_land].land_conn_count; conn_idx++) {
+    uint8_t dst_land = LANDS[src_land].connected_land_index[conn_idx];
+    LAND_DIST[src_land][dst_land] = 1;
+    LAND_DIST[dst_land][src_land] = 1;
+  }
+}
+void set_l2s_land_dist_to_one(uint8_t src_land) {
+  for (uint8_t conn_idx = 0; conn_idx < LANDS[src_land].sea_conn_count; conn_idx++) {
+    uint8_t dst_air = LANDS[src_land].connected_sea_index[conn_idx] + LANDS_COUNT;
+    LAND_DIST[src_land][dst_air] = 1;
+  }
+}
+void land_dist_floyd_warshall() {
+  for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+      for (uint8_t air_dst = 0; air_dst < AIRS_COUNT; air_dst++) {
+        uint8_t new_dist = LAND_DIST[src_land][land_idx] + LAND_DIST[land_idx][air_dst];
+        if (new_dist < LAND_DIST[src_land][air_dst]) {
+          LAND_DIST[src_land][air_dst] = new_dist;
+        }
+      }
+    }
+  }
+}
+void initialize_sea_dist() {
+  memset(SEA_DIST, MAX_UINT8_T, sizeof(SEA_DIST));
+  for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+    initialize_s2s_connections(src_sea);
+    initialize_s2l_connections(src_sea);
+  }
+  for (uint8_t canal_idx = 0; canal_idx < CANAL_STATES; canal_idx++) {
+    initialize_sea_dist_zero(canal_idx);
+    set_s2s_sea_dist_to_one(canal_idx);
+    initialize_canals(canal_idx);
+    sea_dist_floyd_warshall(canal_idx);
+  }
+}
+void initialize_s2s_connections(uint8_t src_sea) {
+  SEA_TO_SEA_COUNT[src_sea] = SEAS[src_sea].sea_conn_count;
+  for (uint8_t conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[src_sea]; conn_idx++) {
+    SEA_TO_SEA_CONN[src_sea][conn_idx] = SEAS[src_sea].connected_sea_index[conn_idx];
+  }
+}
+void initialize_s2l_connections(uint8_t src_sea) {
+  SEA_TO_LAND_COUNT[src_sea] = SEAS[src_sea].land_conn_count;
+  for (uint8_t conn_idx = 0; conn_idx < SEA_TO_LAND_COUNT[src_sea]; conn_idx++) {
+    SEA_TO_LAND_CONN[src_sea][conn_idx] = SEAS[src_sea].connected_land_index[conn_idx];
+  }
+}
+void initialize_sea_dist_zero(uint8_t canal_idx) {
+  for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+    for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+      if (src_sea == dst_air) {
+        SEA_DIST[canal_idx][src_sea][dst_air] = 0;
+      }
+    }
+  }
+}
+void set_s2s_sea_dist_to_one(uint8_t canal_idx) {
+  for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+    for (uint8_t conn_idx = 0; conn_idx < SEAS[src_sea].sea_conn_count; conn_idx++) {
+      uint8_t dst_sea = SEAS[src_sea].connected_sea_index[conn_idx];
+      SEA_DIST[canal_idx][src_sea][dst_sea] = 1;
+      SEA_DIST[canal_idx][dst_sea][src_sea] = 1;
+    }
+  }
+}
+void initialize_canals(uint8_t canal_idx) {
+  // convert canal_state to a bitmask and loop through CANALS for those
+  // enabled for example if canal_state is 0, do not process any items in
+  // CANALS, if canal_state is 1, process the first item in CANALS, if
+  // canal_state is 2, process the second item in CANALS, if canal_state is
+  // 3, process the first and second items in CANALS, etc.
+  for (uint8_t conn_idx = 0; conn_idx < CANALS_COUNT; conn_idx++) {
+    if ((canal_idx & (1U << conn_idx)) == 0) {
+      continue;
+    }
+    const uint8_t* seas = CANALS[conn_idx].seas;
+    SEA_DIST[canal_idx][seas[0]][seas[1]] = 1;
+    SEA_DIST[canal_idx][seas[1]][seas[0]] = 1;
+  }
+}
+void sea_dist_floyd_warshall(uint8_t canal_idx) {
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+      for (int dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
+        uint8_t new_dist =
+            SEA_DIST[canal_idx][src_sea][sea_idx] + SEA_DIST[canal_idx][sea_idx][dst_sea];
+        if (new_dist < SEA_DIST[canal_idx][src_sea][dst_sea]) {
+          SEA_DIST[canal_idx][src_sea][dst_sea] = new_dist;
+        }
+      }
+    }
+  }
+}
+void initialize_air_dist() {
+  memset(AIR_DIST, MAX_UINT8_T, sizeof(AIR_DIST));
+  initialize_air_dist_zero();
+  for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    set_l2l_air_dist_to_one(src_land);
+    set_l2s_air_dist_to_one(src_land);
+  }
+  for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+    set_s2l_air_dist_to_one(src_sea);
+    set_s2s_air_dist_to_one(src_sea);
+  }
+  air_dist_floyd_warshall();
+}
+void initialize_air_dist_zero() {
+  for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
+    for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+      AIR_DIST[src_air][dst_air] = MAX_UINT8_T;
+    }
+  }
+}
+void set_l2l_air_dist_to_one(uint8_t src_land) {
+  for (uint8_t conn_idx = 0; conn_idx < LAND_TO_LAND_COUNT[src_land]; conn_idx++) {
+    uint8_t dst_air = LAND_TO_LAND_CONN[src_land][conn_idx];
+    AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
+    AIR_CONN_COUNT[src_land]++;
+    AIR_DIST[src_land][dst_air] = 1;
+    AIR_DIST[dst_air][src_land] = 1;
+  }
+}
+void set_l2s_air_dist_to_one(uint8_t src_land) {
+  for (uint8_t conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[src_land]; conn_idx++) {
+    uint8_t dst_air = LAND_TO_SEA_CONN[src_land][conn_idx] + LANDS_COUNT;
+    AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
+    AIR_CONN_COUNT[src_land]++;
+    AIR_DIST[src_land][dst_air] = 1;
+    AIR_DIST[dst_air][src_land] = 1;
+  }
+}
+void set_s2l_air_dist_to_one(uint8_t src_sea) {
+  uint8_t src_air = src_sea + LANDS_COUNT;
+  for (uint8_t conn_idx = 0; conn_idx < SEA_TO_LAND_COUNT[src_sea]; conn_idx++) {
+    uint8_t dst_air = SEA_TO_LAND_CONN[src_sea][conn_idx];
+    AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
+    AIR_CONN_COUNT[src_air]++;
+    AIR_DIST[src_air][dst_air] = 1;
+    AIR_DIST[dst_air][src_air] = 1;
+  }
+}
+void set_s2s_air_dist_to_one(uint8_t src_sea) {
+  uint8_t src_air = src_sea + LANDS_COUNT;
+  for (uint8_t conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[src_sea]; conn_idx++) {
+    uint8_t dst_air = SEA_TO_SEA_CONN[src_sea][conn_idx] + LANDS_COUNT;
+    AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
+    AIR_CONN_COUNT[src_air]++;
+    AIR_DIST[src_air][dst_air] = 1;
+    AIR_DIST[dst_air][src_air] = 1;
+  }
+}
+void air_dist_floyd_warshall() {
+  for (uint8_t air_index = 0; air_index < AIRS_COUNT; air_index++) {
+    for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
+      for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+        uint8_t new_dist = AIR_DIST[src_air][air_index] + AIR_DIST[air_index][dst_air];
+        if (new_dist < AIR_DIST[src_air][dst_air]) {
+          AIR_DIST[src_air][dst_air] = new_dist;
+        }
+      }
+    }
+  }
+}
 #define PATH_MAX 4096
 void load_game_data(char* filename) {
   char cwd[PATH_MAX];
@@ -234,179 +435,6 @@ void play_full_turn() {
   rotate_turns();
 }
 
-void generate_total_land_distance() {
-  // Initialize the total_land_distance array
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    // LAND_NAMES[land_idx] = LANDS[land_idx].name;
-    LAND_VALUE[land_idx] = LANDS[land_idx].land_value;
-    LAND_TO_LAND_COUNT[land_idx] = LANDS[land_idx].land_conn_count;
-    for (int conn_idx = 0; conn_idx < LAND_TO_LAND_COUNT[land_idx]; conn_idx++) {
-      LAND_TO_LAND_CONN[land_idx][conn_idx] = LANDS[land_idx].connected_land_index[conn_idx];
-    }
-    LAND_TO_SEA_COUNT[land_idx] = LANDS[land_idx].sea_conn_count;
-    for (int conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[land_idx]; conn_idx++) {
-      LAND_TO_SEA_CONN[land_idx][conn_idx] = LANDS[land_idx].connected_sea_index[conn_idx];
-    }
-    for (int dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
-      if (land_idx != dst_air) {
-        LAND_DIST[land_idx][dst_air] = MAX_UINT8_T;
-      }
-    }
-  }
-
-  // Populate initial distances based on connected_sea_index
-  for (int i = 0; i < LANDS_COUNT; i++) {
-    for (int j = 0; j < LANDS[i].land_conn_count; j++) {
-      int land_index = LANDS[i].connected_land_index[j];
-      LAND_DIST[i][land_index] = 1;
-      LAND_DIST[land_index][i] = 1;
-    }
-    for (int j = 0; j < LANDS[i].sea_conn_count; j++) {
-      int air_index = LANDS[i].connected_sea_index[j] + LANDS_COUNT;
-      LAND_DIST[i][air_index] = 1;
-    }
-  }
-
-  // Floyd-Warshall algorithm to compute shortest paths
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    for (int land_idx2 = 0; land_idx2 < LANDS_COUNT; land_idx2++) {
-      for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
-        if (LAND_DIST[land_idx2][land_idx] + LAND_DIST[land_idx][air_idx] <
-            LAND_DIST[land_idx2][air_idx]) {
-          LAND_DIST[land_idx2][air_idx] =
-              LAND_DIST[land_idx2][land_idx] + LAND_DIST[land_idx][air_idx];
-        }
-      }
-    }
-  }
-}
-void generate_total_sea_distance() {
-  // Initialize the total_land_distance array
-  for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    // SEA_NAMES[src_sea] = SEAS[src_sea].name;
-    uint8_t sea_to_sea_count = SEAS[src_sea].sea_conn_count;
-    SEA_TO_SEA_COUNT[src_sea] = sea_to_sea_count;
-    uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
-    const Sea* sea = &SEAS[src_sea];
-    for (int conn_idx = 0; conn_idx < sea_to_sea_count; conn_idx++) {
-      sea_to_sea_conn[conn_idx] = sea->connected_sea_index[conn_idx];
-    }
-    uint8_t sea_to_land_count = SEAS[src_sea].land_conn_count;
-    SEA_TO_LAND_COUNT[src_sea] = sea_to_land_count;
-    uint8_t* sea_to_land_conn = SEA_TO_LAND_CONN[src_sea];
-    sea = &SEAS[src_sea];
-    for (int conn_idx = 0; conn_idx < sea_to_land_count; conn_idx++) {
-      sea_to_land_conn[conn_idx] = sea->connected_land_index[conn_idx];
-    }
-  }
-  for (int canal_idx = 0; canal_idx < CANAL_STATES; canal_idx++) {
-    // Initialize the total_sea_distance array
-    for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      for (int dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
-        if (src_sea != dst_sea) {
-          SEA_DIST[canal_idx][src_sea][dst_sea] = MAX_UINT8_T;
-        }
-      }
-    }
-    int air_index;
-    // Populate initial distances based on connected_sea_index
-    for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      for (int conn_idx = 0; conn_idx < SEAS[src_sea].sea_conn_count; conn_idx++) {
-        int sea_index = SEAS[src_sea].connected_sea_index[conn_idx];
-        SEA_DIST[canal_idx][src_sea][sea_index] = 1;
-        SEA_DIST[canal_idx][sea_index][src_sea] = 1;
-      }
-    }
-
-    // convert canal_state to a bitmask and loop through CANALS for those
-    // enabled for example if canal_state is 0, do not process any items in
-    // CANALS, if canal_state is 1, process the first item in CANALS, if
-    // canal_state is 2, process the second item in CANALS, if canal_state is
-    // 3, process the first and second items in CANALS, etc.
-    for (int j = 0; j < CANALS_COUNT; j++) {
-      if ((canal_idx & (1 << j)) == 0) {
-        continue;
-      }
-      SEA_DIST[canal_idx][CANALS[j].seas[0]][CANALS[j].seas[1]] = 1;
-      SEA_DIST[canal_idx][CANALS[j].seas[1]][CANALS[j].seas[0]] = 1;
-    }
-    // Floyd-Warshall algorithm to compute shortest paths
-    for (int j = 0; j < SEAS_COUNT; j++) {
-      for (int k = 0; k < SEAS_COUNT; k++) {
-        for (int l = 0; l < SEAS_COUNT; l++) {
-          if (SEA_DIST[canal_idx][k][j] + SEA_DIST[canal_idx][j][l] < SEA_DIST[canal_idx][k][l]) {
-            SEA_DIST[canal_idx][k][l] = SEA_DIST[canal_idx][k][j] + SEA_DIST[canal_idx][j][l];
-          }
-        }
-      }
-    }
-  }
-}
-void generate_total_air_distance() {
-  // Initialize the total_air_distance array
-  int src_air;
-  int dst_air;
-  for (src_air = 0; src_air < AIRS_COUNT; src_air++) {
-    for (dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
-      if (src_air != dst_air) {
-        AIR_DIST[src_air][dst_air] = MAX_UINT8_T;
-      } // else {
-        // total_air_distance[i][j] = 0;
-      //}
-    }
-  }
-  int conn_idx;
-  // Populate initial distances based on connected_sea_index and
-  // connected_land_index
-  for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    // AIR_NAMES[src_land] = LAND_NAMES[src_land];
-    for (conn_idx = 0; conn_idx < LAND_TO_LAND_COUNT[src_land]; conn_idx++) {
-      dst_air = LAND_TO_LAND_CONN[src_land][conn_idx];
-      AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
-      AIR_CONN_COUNT[src_land]++;
-      AIR_DIST[src_land][dst_air] = 1;
-      AIR_DIST[dst_air][src_land] = 1;
-    }
-    for (conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[src_land]; conn_idx++) {
-      dst_air = LAND_TO_SEA_CONN[src_land][conn_idx] + LANDS_COUNT;
-      AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
-      AIR_CONN_COUNT[src_land]++;
-      AIR_DIST[src_land][dst_air] = 1;
-      AIR_DIST[dst_air][src_land] = 1;
-    }
-  }
-
-  for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    int src_air = src_sea + LANDS_COUNT;
-    // AIR_NAMES[src_air] = SEA_NAMES[src_sea];
-    for (conn_idx = 0; conn_idx < SEA_TO_LAND_COUNT[src_sea]; conn_idx++) {
-      dst_air = SEA_TO_LAND_CONN[src_sea][conn_idx];
-      AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
-      AIR_CONN_COUNT[src_air]++;
-      AIR_DIST[src_air][dst_air] = 1;
-      AIR_DIST[dst_air][src_air] = 1;
-    }
-    for (conn_idx = 0; conn_idx < SEA_TO_SEA_COUNT[src_sea]; conn_idx++) {
-      dst_air = SEA_TO_SEA_CONN[src_sea][conn_idx] + LANDS_COUNT;
-      AIR_CONNECTIONS[src_air][AIR_CONN_COUNT[src_air]] = dst_air;
-      AIR_CONN_COUNT[src_air]++;
-      AIR_DIST[src_air][dst_air] = 1;
-      AIR_DIST[dst_air][src_air] = 1;
-    }
-  }
-
-  // Floyd-Warshall algorithm to compute shortest paths
-  for (int air_index = 0; air_index < AIRS_COUNT; air_index++) {
-    for (src_air = 0; src_air < AIRS_COUNT; src_air++) {
-      for (dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
-        if (AIR_DIST[src_air][air_index] + AIR_DIST[air_index][dst_air] <
-            AIR_DIST[src_air][dst_air]) {
-          AIR_DIST[src_air][dst_air] = AIR_DIST[src_air][air_index] + AIR_DIST[air_index][dst_air];
-        }
-      }
-    }
-  }
-}
 void generate_LandMoveDst(int hop, int src_land, int dst_air, int cur_land, int min_dist) {
   if (hop > MAX_LAND_HOPS)
     return;
@@ -2386,7 +2414,7 @@ void remove_land_attackers(uint8_t src_land, uint8_t hits) {
   uint8_t* total_units;
   for (uint8_t unit_idx = 0; unit_idx < ATTACKER_LAND_UNIT_TYPES_COUNT_1; unit_idx++) {
     uint8_t unit_type = ORDER_OF_LAND_ATTACKERS_1[unit_idx];
-    //TODO fix - why are AA guns with 1 move remaining here?
+    // TODO fix - why are AA guns with 1 move remaining here?
     total_units = &land_units_state[src_land][unit_type][0];
     if (*total_units > 0) {
 #ifdef DEBUG
