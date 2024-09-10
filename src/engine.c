@@ -723,7 +723,7 @@ void cause_breakpoint() {
 
 void debug_checks() {
   step_id++;
-  if(step_id == 99999999) {
+  if (step_id == 99999999) {
     actually_print = true;
   }
   printf("iter: %d  loops: %d  step_id: %d  seed: %d\n", MCTS_ITERATIONS, max_loops, step_id, seed);
@@ -908,7 +908,7 @@ void setPrintableStatusLands() {
     sprintf(threeCharStr, "%d", LAND_VALUE[land_idx]);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, " Combat:");
-    if (state.flagged_for_combat[land_idx]) {
+    if (state.flagged_for_combat[land_idx] > 0) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
@@ -988,7 +988,7 @@ void setPrintableStatusSeas() {
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, SEAS[sea_index].name);
     strcat(printableGameStatus, " Combat:");
-    if (state.flagged_for_combat[sea_index + LANDS_COUNT]) {
+    if (state.flagged_for_combat[sea_index + LANDS_COUNT] > 0) {
       strcat(printableGameStatus, "true\n");
     } else {
       strcat(printableGameStatus, "false\n");
@@ -1562,7 +1562,7 @@ bool stage_transport_units() {
         uint8_t dst_sea = dst_air - LANDS_COUNT;
         uint8_t sea_distance = sea_dist[src_sea][dst_air];
         if (enemy_blockade_total[dst_sea] > 0) {
-          state.flagged_for_combat[dst_air] = true;
+          state.flagged_for_combat[dst_air] = 2;
           sea_distance = MAX_MOVE_SEA[unit_type];
           continue;
         }
@@ -1599,7 +1599,8 @@ void pre_move_fighter_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     int land_owner = *owner_idx[land_idx];
     // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] = (is_allied_0[land_owner] && !state.flagged_for_combat[land_idx]);
+    canFighterLandHere[land_idx] =
+        (is_allied_0[land_owner] && state.flagged_for_combat[land_idx] == 0);
     // check for possiblity to build carrier under fighter
     if (land_owner == state.player_index && *factory_max[land_idx] > 0) {
       int land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
@@ -1681,8 +1682,8 @@ bool move_fighter_units() {
             printf("Fighter moving to enemy territory. Automatically flagging for combat\n");
           }
 #endif
-          state.flagged_for_combat[dst_air] =
-              true; // assuming enemy units are present based on valid moves
+          state.flagged_for_combat[dst_air] = 2;
+          // assuming enemy units are present based on valid moves
         } else {
           airDistance = 4; // use up all moves if this is a friendly rebase
         }
@@ -1724,7 +1725,7 @@ bool move_bomber_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     // is allied owned and not recently conquered?
     canBomberLandHere[land_idx] =
-        (is_allied_0[*owner_idx[land_idx]] && !state.flagged_for_combat[land_idx]);
+        (is_allied_0[*owner_idx[land_idx]] && state.flagged_for_combat[land_idx] == 0);
   }
   //  refresh_canBomberLandIn1Move
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
@@ -1797,8 +1798,8 @@ bool move_bomber_units() {
             printf("Bomber moving to enemy territory. Automatically flagging for combat\n");
           }
 #endif
-          state.flagged_for_combat[dst_air] =
-              true; // assuming enemy units are present based on valid moves
+          state.flagged_for_combat[dst_air] = 2;
+          // assuming enemy units are present based on valid moves
         }
       } else {
 #ifdef DEBUG
@@ -1886,7 +1887,8 @@ void conquer_land(uint8_t dst_land) {
            factory_index++) {
         uint8_t factory_location = factory_locations[player_idx][factory_index];
         if (*owner_idx[factory_location] != player_idx) {
-          printf("DEBUG: Player %s has a unowned factory at %s\n", PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].name,
+          printf("DEBUG: Player %s has a unowned factory at %s\n",
+                 PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].name,
                  LANDS[factory_location].name);
         }
       }
@@ -1957,7 +1959,7 @@ bool move_land_unit_type(uint8_t unit_type) {
           }
 #endif
           conquer_land(dst_air);
-          state.flagged_for_combat[dst_air] = true;
+          state.flagged_for_combat[dst_air] = 2;
         }
 #ifdef DEBUG
         debug_checks();
@@ -1987,24 +1989,24 @@ typedef unit_states* unit_states_ptr;
 
 bool move_transport_units() {
   skip_empty_transports();
-  if(actually_print) {
+  if (actually_print) {
     printf("DEBUG: move_transport_units\n");
   }
   for (uint8_t unit_type = TRANS_1I; unit_type <= TRANS_1I_1T;
        unit_type++) { // there should be no TRANS_EMPTY
     uint8_t max_state = STATES_MOVE_SEA[unit_type] - STATES_STAGING[unit_type];
-    //uint8_t done_moving = 1;//STATES_UNLOADING[unit_type];
-    //uint8_t min_state = 2;//STATES_UNLOADING[unit_type] + 1;
+    // uint8_t done_moving = 1;//STATES_UNLOADING[unit_type];
+    // uint8_t min_state = 2;//STATES_UNLOADING[unit_type] + 1;
     clear_move_history();
     for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      //for (int cur_state = max_state; cur_state >= min_state; cur_state--) {
-      for(uint8_t i = 1; i < 3; i++) {
+      // for (int cur_state = max_state; cur_state >= min_state; cur_state--) {
+      for (uint8_t i = 1; i < 3; i++) {
         uint8_t cur_state = max_state - i;
         uint8_t* total_ships = &sea_units_state[src_sea][unit_type][cur_state];
         unit_states_ptr unit_states = total_ships;
         if (*total_ships == 0)
           continue;
-        uint8_t moves_remaining = cur_state - 1;//STATES_UNLOADING[unit_type];
+        uint8_t moves_remaining = cur_state - 1; // STATES_UNLOADING[unit_type];
         uint8_t src_air = src_sea + LANDS_COUNT;
         valid_moves[0] = src_air;
         valid_moves_count = 1;
@@ -2032,7 +2034,7 @@ bool move_transport_units() {
               printf("Enemy units detected, flagging for combat\n");
             }
 #endif
-            state.flagged_for_combat[dst_air] = true;
+            state.flagged_for_combat[dst_air] = 2;
           }
           if (src_air == dst_air) {
             sea_units_state[src_sea][unit_type][1] += *total_ships;
@@ -2094,7 +2096,7 @@ bool move_subs() {
           printf("Submarine moving to where enemy units are present, flagging for combat\n");
         }
 #endif
-        state.flagged_for_combat[dst_sea] = true;
+        state.flagged_for_combat[dst_sea] = 2;
         // break;
       }
       if (src_air == dst_air) {
@@ -2152,7 +2154,7 @@ bool move_destroyers_battleships() {
             printf("Moving large ships. Enemy units detected, flagging for combat\n");
           }
 #endif
-          state.flagged_for_combat[dst_air] = true;
+          state.flagged_for_combat[dst_air] = 2;
           // break;
         }
         if (src_air == dst_air) {
@@ -2214,7 +2216,7 @@ bool resolve_sea_battles() {
     // 4. defender has any ships, attacker has any non-transports
     uint8_t src_air = src_sea + LANDS_COUNT;
     // if not flagged for combat, continue
-    if (!state.flagged_for_combat[src_air]) {
+    if (state.flagged_for_combat[src_air] == 0) {
       continue;
     }
     if (total_player_sea_units[0][src_sea] == 0) {
@@ -2227,23 +2229,25 @@ bool resolve_sea_battles() {
       printf("DEBUG: resolve_sea_battles: src_sea: %d\n", src_sea);
     }
 #endif
-    // does enemy only have submerged subs?
     bool defender_submerged = current_player_sea_unit_types[src_sea][DESTROYERS] == 0;
-    if (defender_submerged) {
-      uint8_t total_enemy_subs = 0;
-      for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-        total_enemy_subs += total_player_sea_unit_types[enemies_0[enemy_idx]][src_sea][SUBMARINES];
+    if (total_player_sea_units[0][src_sea] == 2) {
+      // does enemy only have submerged subs?
+      if (defender_submerged) {
+        uint8_t total_enemy_subs = 0;
+        for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
+          total_enemy_subs +=
+              total_player_sea_unit_types[enemies_0[enemy_idx]][src_sea][SUBMARINES];
+        }
+        if (total_enemy_subs == enemy_units_count[src_sea]) {
+          continue;
+        }
       }
-      if (total_enemy_subs == enemy_units_count[src_sea]) {
-        continue;
+      // combat is proceeding, so disable bombardment capabilities of ships
+      for (uint8_t unit_type = CRUISERS; unit_type <= BS_DAMAGED; unit_type++) {
+        sea_units_state[src_sea][unit_type][0] += sea_units_state[src_sea][unit_type][1];
+        sea_units_state[src_sea][unit_type][1] = 0;
       }
     }
-    // combat is proceeding, so disable bombardment capabilities of ships
-    for (uint8_t unit_type = CRUISERS; unit_type <= BS_DAMAGED; unit_type++) {
-      sea_units_state[src_sea][unit_type][0] += sea_units_state[src_sea][unit_type][1];
-      sea_units_state[src_sea][unit_type][1] = 0;
-    }
-
     while (true) {
 #ifdef DEBUG
       if (actually_print) {
@@ -2257,7 +2261,48 @@ bool resolve_sea_battles() {
         }
       }
 #endif
-      //uint8_t* units11 = &sea_units_state[src_sea][DESTROYERS][0];
+      // check for retreat option
+      if (state.flagged_for_combat[src_air] == 1) {
+        if (current_player_sea_unit_types[src_sea][FIGHTERS] +
+                    current_player_sea_unit_types[src_sea][BOMBERS_SEA] +
+                    current_player_sea_unit_types[src_sea][SUBMARINES] +
+                    current_player_sea_unit_types[src_sea][DESTROYERS] +
+                    current_player_sea_unit_types[src_sea][CARRIERS] +
+                    current_player_sea_unit_types[src_sea][CRUISERS] +
+                    current_player_sea_unit_types[src_sea][BATTLESHIPS] +
+                    current_player_sea_unit_types[src_sea][BS_DAMAGED] >
+                0 ||
+            enemy_blockade_total[src_sea] == 0) {
+          valid_moves[0] = src_air;
+          valid_moves_count = 1;
+        } else {
+          valid_moves_count = 0;
+        }
+        uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
+        for (int sea_conn_idx = 0; sea_conn_idx < SEA_TO_SEA_COUNT[src_sea]; sea_conn_idx++) {
+          uint8_t sea_dst = sea_to_sea_conn[sea_conn_idx];
+          if (enemy_blockade_total[sea_dst] == 0)
+            valid_moves[valid_moves_count++] = sea_dst + LANDS_COUNT;
+        }
+        if (valid_moves_count > 0) {
+          uint8_t dst_air;
+          if (valid_moves_count == 1) {
+            dst_air = valid_moves[0];
+          } else {
+            if (answers_remaining == 0)
+              return true;
+            dst_air = ask_to_retreat();
+          }
+          // if retreat, move units to retreat zone immediately and end battle
+          uint8_t dst_sea = dst_air - LANDS_COUNT;
+          if (sea_dist[src_sea][dst_sea] == 1 && state.flagged_for_combat[dst_air] == 0) {
+            sea_retreat(src_sea, dst_sea);
+            break;
+          }
+        }
+      }
+      state.flagged_for_combat[src_air] = 1;
+      // uint8_t* units11 = &sea_units_state[src_sea][DESTROYERS][0];
       bool targets_exist = false;
       if (current_player_sea_unit_types[src_sea][DESTROYERS]) {
         if (enemy_units_count[src_air] > 0) {
@@ -2307,12 +2352,15 @@ bool resolve_sea_battles() {
       // TODO only allow hits to hit valid targets
       // untargetable battle
       if (!targets_exist) {
-        if(enemy_units_count[src_air] > 0) {
-          total_player_sea_units[0][src_sea] -= total_player_sea_unit_types[0][src_sea][TRANS_EMPTY];
+        if (enemy_units_count[src_air] > 0) {
+          total_player_sea_units[0][src_sea] -=
+              total_player_sea_unit_types[0][src_sea][TRANS_EMPTY];
           total_player_sea_unit_types[0][src_sea][TRANS_EMPTY] = 0;
           sea_units_state[src_sea][TRANS_EMPTY][0] = 0;
-          for(uint8_t trans_unit_type = TRANS_1I; trans_unit_type <= TRANS_1I_1T; trans_unit_type++) {
-            total_player_sea_units[0][src_sea] -= total_player_sea_unit_types[0][src_sea][trans_unit_type];
+          for (uint8_t trans_unit_type = TRANS_1I; trans_unit_type <= TRANS_1I_1T;
+               trans_unit_type++) {
+            total_player_sea_units[0][src_sea] -=
+                total_player_sea_unit_types[0][src_sea][trans_unit_type];
             total_player_sea_unit_types[0][src_sea][trans_unit_type] = 0;
             sea_units_state[src_sea][trans_unit_type][1] = 0;
           }
@@ -2323,7 +2371,7 @@ bool resolve_sea_battles() {
         //   allied_carriers[src_sea] +=
         //       other_sea_units_ptr[player_idx][src_sea][CARRIERS] * is_allied_0[player_idx];
         // }
-        state.flagged_for_combat[src_air] = false;
+        state.flagged_for_combat[src_air] = 0;
         break;
       }
       // fire subs (defender always submerges if possible)
@@ -2380,49 +2428,9 @@ bool resolve_sea_battles() {
         remove_sea_defenders(src_sea, attacker_hits, defender_submerged);
 
       if (enemy_units_count[src_air] == 0 || total_player_sea_units[0][src_sea] == 0) {
-        state.flagged_for_combat[src_air] = false;
+        state.flagged_for_combat[src_air] = 0;
         break;
       }
-
-      // ask to retreat (0-255, any non valid retreat zone is considered a no)
-      if (current_player_sea_unit_types[src_sea][FIGHTERS] +
-                  current_player_sea_unit_types[src_sea][BOMBERS_SEA] +
-                  current_player_sea_unit_types[src_sea][SUBMARINES] +
-                  current_player_sea_unit_types[src_sea][DESTROYERS] +
-                  current_player_sea_unit_types[src_sea][CARRIERS] +
-                  current_player_sea_unit_types[src_sea][CRUISERS] +
-                  current_player_sea_unit_types[src_sea][BATTLESHIPS] +
-                  current_player_sea_unit_types[src_sea][BS_DAMAGED] >
-              0 ||
-          enemy_blockade_total[src_sea] == 0) {
-        valid_moves[0] = src_air;
-        valid_moves_count = 1;
-      } else {
-        valid_moves_count = 0;
-      }
-      uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
-      for (int sea_conn_idx = 0; sea_conn_idx < SEA_TO_SEA_COUNT[src_sea]; sea_conn_idx++) {
-        uint8_t sea_dst = sea_to_sea_conn[sea_conn_idx];
-        if (enemy_blockade_total[sea_dst] == 0)
-          valid_moves[valid_moves_count++] = sea_dst + LANDS_COUNT;
-      }
-      if (valid_moves_count == 0)
-        continue;
-      uint8_t dst_air;
-      if (valid_moves_count == 1) {
-        dst_air = valid_moves[0];
-      } else {
-        if (answers_remaining == 0)
-          return true;
-        dst_air = ask_to_retreat();
-      }
-      // if retreat, move units to retreat zone immediately and end battle
-      uint8_t dst_sea = dst_air - LANDS_COUNT;
-      if (sea_dist[src_sea][dst_sea] == 1 && !state.flagged_for_combat[dst_air]) {
-        sea_retreat(src_sea, dst_sea);
-        break;
-      }
-      // loop
     }
   }
   return false;
@@ -2436,15 +2444,16 @@ void sea_retreat(uint8_t src_sea, uint8_t dst_sea) {
   }
 #endif
   for (uint8_t unit_type = TRANS_EMPTY; unit_type <= BS_DAMAGED; unit_type++) {
-    sea_units_state[dst_sea][unit_type][0] += current_player_sea_unit_types[src_sea][unit_type];
-    current_player_sea_unit_types[dst_sea][unit_type] +=
-        current_player_sea_unit_types[src_sea][unit_type];
-    total_player_sea_units[0][dst_sea] += current_player_sea_unit_types[src_sea][unit_type];
-    total_player_sea_units[0][src_sea] -= current_player_sea_unit_types[src_sea][unit_type];
-    sea_units_state[src_sea][unit_type][STATES_UNLOADING[unit_type]] = 0;
+    uint8_t unit_state_count = current_player_sea_unit_types[src_sea][unit_type];
+    sea_units_state[dst_sea][unit_type][0] += unit_state_count;
+    current_player_sea_unit_types[dst_sea][unit_type] += unit_state_count;
+    total_player_sea_units[0][dst_sea] += unit_state_count;
+    total_player_sea_units[0][src_sea] -= unit_state_count;
+    sea_units_state[src_sea][unit_type][0] = 0;
+    sea_units_state[src_sea][unit_type][1] = 0;
     current_player_sea_unit_types[src_sea][unit_type] = 0;
   }
-  state.flagged_for_combat[src_sea + LANDS_COUNT] = false;
+  state.flagged_for_combat[src_sea + LANDS_COUNT] = 0;
 #ifdef DEBUG
   debug_checks();
 #endif
@@ -2883,7 +2892,7 @@ bool unload_transports() {
           total_player_land_units[0][dst_air]++;
         }
         if (!is_allied_0[*owner_idx[dst_air]]) {
-          state.flagged_for_combat[dst_air] = true;
+          state.flagged_for_combat[dst_air] = 2;
           if (enemy_units_count[dst_air] == 0) {
             conquer_land(dst_air);
           }
@@ -2899,7 +2908,7 @@ bool unload_transports() {
 bool resolve_land_battles() {
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     // check if battle is over
-    if (!state.flagged_for_combat[src_land]) {
+    if (state.flagged_for_combat[src_land] == 0) {
       continue;
     }
 #ifdef DEBUG
@@ -2910,7 +2919,10 @@ bool resolve_land_battles() {
       printf("%s\n", printableGameStatus);
     }
 #endif
+    uint8_t* other_land_units_0_src_land = current_player_land_unit_types[src_land];
     int* units_land_player_total_0_src_land = &total_player_land_units[0][src_land];
+    int attacker_damage;
+    uint8_t attacker_hits;
     // check if no friendlies remain
     if (*units_land_player_total_0_src_land == 0) {
 #ifdef DEBUG
@@ -2920,157 +2932,158 @@ bool resolve_land_battles() {
 #endif
       continue;
     }
-    uint8_t attacker_damage;
-    uint8_t attacker_hits;
-    // only bombers exist
-    uint8_t* other_land_units_ptr_0_src_land = total_player_land_unit_types[0][src_land];
-    uint8_t* bombers_count = &other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
-    if (*bombers_count > 0 && total_player_land_units[0][src_land] == *bombers_count) {
-      if (*factory_hp[src_land] > -*factory_max[src_land]) {
+    if (state.flagged_for_combat[src_land] == 2) {
+
+      // only bombers exist
+      uint8_t* other_land_units_ptr_0_src_land = total_player_land_unit_types[0][src_land];
+      uint8_t* bombers_count = &other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
+      if (*bombers_count > 0 && total_player_land_units[0][src_land] == *bombers_count) {
+        if (*factory_hp[src_land] > -*factory_max[src_land]) {
+#ifdef DEBUG
+          if (actually_print) {
+            printf("Strategic Bombing");
+          }
+#endif
+          // fire_strat_aa_guns();
+          uint8_t defender_damage = *bombers_count;
+          uint8_t defender_hits =
+              (defender_damage / 6) +
+              (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
+          if (defender_hits > 0) {
+            uint8_t* units_land_ptr_src_land_bombers = land_units_state[src_land][BOMBERS_LAND_AIR];
+            for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
+              uint8_t* total_units = &units_land_ptr_src_land_bombers[cur_state];
+              if (*total_units < defender_hits) {
+                defender_hits -= *total_units;
+                *bombers_count -= *total_units;
+                *units_land_player_total_0_src_land -= *total_units;
+                *total_units = 0;
+              } else {
+                *total_units -= defender_hits;
+                *bombers_count -= defender_hits;
+                *units_land_player_total_0_src_land -= defender_hits;
+                defender_hits = 0;
+                continue;
+              }
+            }
+          }
+          attacker_damage = *bombers_count * 21;
+          attacker_hits = (attacker_damage / 6) +
+                          (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
+          *factory_hp[src_land] =
+              fmax(*factory_hp[src_land] - attacker_hits, -*factory_max[src_land]);
+          continue;
+        }
+      }
+#ifdef DEBUG
+      if (actually_print) {
+        printf("Normal Land Combat\n");
+      }
+#endif
+
+      // bombard_shores
+      if (bombard_max[src_land] > 0) {
+        attacker_damage = 0;
 #ifdef DEBUG
         if (actually_print) {
-          printf("Strategic Bombing");
+          printf("Sea Bombardment\n");
         }
 #endif
-        // fire_strat_aa_guns();
-        uint8_t defender_damage = *bombers_count;
-        uint8_t defender_hits =
-            (defender_damage / 6) +
-            (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
-        if (defender_hits > 0) {
-          uint8_t* units_land_ptr_src_land_bombers = land_units_state[src_land][BOMBERS_LAND_AIR];
-          for (uint8_t cur_state = 1; cur_state < BOMBER_LAND_STATES - 1; cur_state++) {
-            uint8_t* total_units = &units_land_ptr_src_land_bombers[cur_state];
-            if (*total_units < defender_hits) {
-              defender_hits -= *total_units;
-              *bombers_count -= *total_units;
-              *units_land_player_total_0_src_land -= *total_units;
-              *total_units = 0;
-            } else {
-              *total_units -= defender_hits;
-              *bombers_count -= defender_hits;
-              *units_land_player_total_0_src_land -= defender_hits;
-              defender_hits = 0;
-              continue;
+        for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
+          for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
+            uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
+            uint8_t* total_bombard_ships = sea_units_state[src_sea][unit_type];
+            while (total_bombard_ships[1] > 0 && bombard_max[src_land] > 0) {
+              attacker_damage += ATTACK_UNIT_SEA[unit_type];
+              total_bombard_ships[0]++;
+              total_bombard_ships[1]--;
+              bombard_max[src_land]--;
             }
           }
         }
-        attacker_damage = *bombers_count * 21;
+        bombard_max[src_land] = 0;
         attacker_hits = (attacker_damage / 6) +
                         (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
-        *factory_hp[src_land] =
-            fmax(*factory_hp[src_land] - attacker_hits, -*factory_max[src_land]);
-        continue;
-      }
-    }
-#ifdef DEBUG
-    if (actually_print) {
-      printf("Normal Land Combat\n");
-    }
-#endif
-    uint8_t* other_land_units_0_src_land = current_player_land_unit_types[src_land];
-    // bombard_shores
-    if (bombard_max[src_land] > 0) {
-      attacker_damage = 0;
-#ifdef DEBUG
-      if (actually_print) {
-        printf("Sea Bombardment\n");
-      }
-#endif
-      for (uint8_t unit_type = BS_DAMAGED; unit_type >= CRUISERS; unit_type--) {
-        for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
-          uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
-          uint8_t* total_bombard_ships = sea_units_state[src_sea][unit_type];
-          while (total_bombard_ships[1] > 0 && bombard_max[src_land] > 0) {
-            attacker_damage += ATTACK_UNIT_SEA[unit_type];
-            total_bombard_ships[0]++;
-            total_bombard_ships[1]--;
-            bombard_max[src_land]--;
-          }
+        if (attacker_hits > 0) {
+          remove_land_defenders(src_land, attacker_hits);
         }
       }
-      bombard_max[src_land] = 0;
-      attacker_hits = (attacker_damage / 6) +
-                      (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
-      if (attacker_hits > 0) {
-        remove_land_defenders(src_land, attacker_hits);
+      // check if can fire tactical aa_guns
+      uint8_t total_air_units = other_land_units_ptr_0_src_land[FIGHTERS] +
+                                other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
+      uint8_t defender_damage;
+      uint8_t defender_hits;
+      if (total_air_units > 0) {
+        int total_aa_guns = 0;
+        for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
+          total_aa_guns += total_player_land_unit_types[enemies_0[enemy_idx]][src_land][AA_GUNS];
+        }
+        if (total_aa_guns > 0) {
+#ifdef DEBUG
+          if (actually_print) {
+            printf("Firing AA");
+          }
+#endif
+          // fire_tact_aa_guns();
+          defender_damage = total_air_units * 3;
+          defender_hits = (defender_damage / 6) +
+                          (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
+          if (defender_hits > 0) {
+            for (uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
+              uint8_t* total_units = &land_units_state[src_land][FIGHTERS][cur_state];
+              if (*total_units < defender_hits) {
+                defender_hits -= *total_units;
+                other_land_units_ptr_0_src_land[FIGHTERS] -= *total_units;
+                *units_land_player_total_0_src_land -= *total_units;
+                *total_units = 0;
+              } else {
+                *total_units -= defender_hits;
+                other_land_units_ptr_0_src_land[FIGHTERS] -= defender_hits;
+                *units_land_player_total_0_src_land -= defender_hits;
+                defender_hits = 0;
+                break;
+              }
+            }
+          }
+          if (defender_hits > 0) {
+            for (uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
+              uint8_t* total_units = &land_units_state[src_land][BOMBERS_LAND_AIR][cur_state];
+              if (*total_units < defender_hits) {
+                defender_hits -= *total_units;
+                other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= *total_units;
+                *units_land_player_total_0_src_land -= *total_units;
+                *total_units = 0;
+              } else {
+                *total_units -= defender_hits;
+                other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= defender_hits;
+                *units_land_player_total_0_src_land -= defender_hits;
+                defender_hits = 0;
+                break;
+              }
+            }
+          }
+#ifdef DEBUG
+          debug_checks();
+#endif
+        }
       }
-    }
-    // check if can fire tactical aa_guns
-    uint8_t total_air_units = other_land_units_ptr_0_src_land[FIGHTERS] +
-                              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
-    uint8_t defender_damage;
-    uint8_t defender_hits;
-    if (total_air_units > 0) {
-      int total_aa_guns = 0;
-      for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-        total_aa_guns += total_player_land_unit_types[enemies_0[enemy_idx]][src_land][AA_GUNS];
-      }
-      if (total_aa_guns > 0) {
+      if (*units_land_player_total_0_src_land == 0) {
 #ifdef DEBUG
         if (actually_print) {
-          printf("Firing AA");
+          printf("No friendlies remain");
         }
 #endif
-        // fire_tact_aa_guns();
-        defender_damage = total_air_units * 3;
-        defender_hits = (defender_damage / 6) +
-                        (RANDOM_NUMBERS[random_number_index++] % 6 < defender_damage % 6 ? 1 : 0);
-        if (defender_hits > 0) {
-          for (uint8_t cur_state = 0; cur_state < FIGHTER_STATES; cur_state++) {
-            uint8_t* total_units = &land_units_state[src_land][FIGHTERS][cur_state];
-            if (*total_units < defender_hits) {
-              defender_hits -= *total_units;
-              other_land_units_ptr_0_src_land[FIGHTERS] -= *total_units;
-              *units_land_player_total_0_src_land -= *total_units;
-              *total_units = 0;
-            } else {
-              *total_units -= defender_hits;
-              other_land_units_ptr_0_src_land[FIGHTERS] -= defender_hits;
-              *units_land_player_total_0_src_land -= defender_hits;
-              defender_hits = 0;
-              break;
-            }
-          }
+        continue;
+      }
+      if (enemy_units_count[src_land] == 0) {
+        // if infantry, artillery, tanks exist then capture
+        if (other_land_units_0_src_land[INFANTRY] + other_land_units_0_src_land[ARTILLERY] +
+                other_land_units_0_src_land[TANKS] >
+            0) {
+          conquer_land(src_land);
         }
-        if (defender_hits > 0) {
-          for (uint8_t cur_state = 0; cur_state < BOMBER_LAND_STATES; cur_state++) {
-            uint8_t* total_units = &land_units_state[src_land][BOMBERS_LAND_AIR][cur_state];
-            if (*total_units < defender_hits) {
-              defender_hits -= *total_units;
-              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= *total_units;
-              *units_land_player_total_0_src_land -= *total_units;
-              *total_units = 0;
-            } else {
-              *total_units -= defender_hits;
-              other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR] -= defender_hits;
-              *units_land_player_total_0_src_land -= defender_hits;
-              defender_hits = 0;
-              break;
-            }
-          }
-        }
-#ifdef DEBUG
-        debug_checks();
-#endif
+        continue;
       }
-    }
-    if (*units_land_player_total_0_src_land == 0) {
-#ifdef DEBUG
-      if (actually_print) {
-        printf("No friendlies remain");
-      }
-#endif
-      continue;
-    }
-    if (enemy_units_count[src_land] == 0) {
-      // if infantry, artillery, tanks exist then capture
-      if (other_land_units_0_src_land[INFANTRY] + other_land_units_0_src_land[ARTILLERY] +
-              other_land_units_0_src_land[TANKS] >
-          0) {
-        conquer_land(src_land);
-      }
-      continue;
     }
     while (true) {
       // print land location name
@@ -3089,6 +3102,51 @@ bool resolve_land_battles() {
 #endif
         break;
       }
+
+      if (state.flagged_for_combat[src_land] == 1) {
+        // ask to retreat (0-255, any non valid retreat zone is considered a no)
+        valid_moves[0] = src_land;
+        valid_moves_count = 1;
+        uint8_t* land_to_land_conn = LAND_TO_LAND_CONN[src_land];
+        uint8_t land_to_land_count = LAND_TO_LAND_COUNT[src_land];
+        for (int land_conn_idx = 0; land_conn_idx < land_to_land_count; land_conn_idx++) {
+          uint8_t land_dst = land_to_land_conn[land_conn_idx];
+          if (enemy_units_count[land_dst] == 0 && state.flagged_for_combat[land_dst] == 0 &&
+              is_allied_0[*owner_idx[land_dst]])
+            valid_moves[valid_moves_count++] = land_dst;
+        }
+        uint8_t dst_air;
+        if (valid_moves_count == 1) {
+          dst_air = valid_moves[0];
+        } else {
+          if (answers_remaining == 0)
+            return true;
+          dst_air = ask_to_retreat();
+        }
+        // if retreat, move units to retreat zone immediately and end battle
+        if (src_land != dst_air) {
+#ifdef DEBUG
+          if (actually_print) {
+            printf("Retreating land_battle from: %d to: %d\n", src_land, dst_air);
+          }
+#endif
+          for (uint8_t unit_type = INFANTRY; unit_type <= TANKS; unit_type++) {
+            int total_units = land_units_state[src_land][unit_type][0];
+            land_units_state[dst_air][unit_type][0] += total_units;
+            current_player_land_unit_types[dst_air][unit_type] += total_units;
+            total_player_land_units[0][dst_air] += total_units;
+            current_player_land_unit_types[src_land][unit_type] -= total_units;
+            *units_land_player_total_0_src_land -= total_units;
+            land_units_state[src_land][unit_type][0] = 0;
+          }
+          state.flagged_for_combat[src_land] = 0;
+#ifdef DEBUG
+          debug_checks();
+#endif
+          break;
+        }
+      }
+      state.flagged_for_combat[src_land] = 1;
       // land_battle
       int infantry_count = current_player_land_unit_types[src_land][INFANTRY];
       int artillery_count = current_player_land_unit_types[src_land][ARTILLERY];
@@ -3101,7 +3159,8 @@ bool resolve_land_battles() {
       attacker_damage += infantry_count < artillery_count ? infantry_count : artillery_count;
       attacker_hits = (attacker_damage / 6) +
                       (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
-      defender_damage = 0;
+      int defender_damage = 0;
+      uint8_t defender_hits = 0;
 #ifdef DEBUG
       if (actually_print) {
         printf("Enemy Count: %d\n", enemy_units_count[src_land]);
@@ -3155,48 +3214,6 @@ bool resolve_land_battles() {
             0) {
           conquer_land(src_land);
         }
-        break;
-      }
-
-      // ask to retreat (0-255, any non valid retreat zone is considered a no)
-      valid_moves[0] = src_land;
-      valid_moves_count = 1;
-      uint8_t* land_to_land_conn = LAND_TO_LAND_CONN[src_land];
-      uint8_t land_to_land_count = LAND_TO_LAND_COUNT[src_land];
-      for (int land_conn_idx = 0; land_conn_idx < land_to_land_count; land_conn_idx++) {
-        uint8_t land_dst = land_to_land_conn[land_conn_idx];
-        if (enemy_units_count[land_dst] == 0 && !state.flagged_for_combat[land_dst] &&
-            is_allied_0[*owner_idx[land_dst]])
-          valid_moves[valid_moves_count++] = land_dst;
-      }
-      uint8_t dst_air;
-      if (valid_moves_count == 1) {
-        dst_air = valid_moves[0];
-      } else {
-        if (answers_remaining == 0)
-          return true;
-        dst_air = ask_to_retreat();
-      }
-      // if retreat, move units to retreat zone immediately and end battle
-      if (src_land != dst_air) {
-#ifdef DEBUG
-        if (actually_print) {
-          printf("Retreating land_battle from: %d to: %d\n", src_land, dst_air);
-        }
-#endif
-        for (uint8_t unit_type = INFANTRY; unit_type <= TANKS; unit_type++) {
-          int total_units = land_units_state[src_land][unit_type][0];
-          land_units_state[dst_air][unit_type][0] += total_units;
-          current_player_land_unit_types[dst_air][unit_type] += total_units;
-          total_player_land_units[0][dst_air] += total_units;
-          current_player_land_unit_types[src_land][unit_type] -= total_units;
-          *units_land_player_total_0_src_land -= total_units;
-          land_units_state[src_land][unit_type][0] = 0;
-        }
-        state.flagged_for_combat[src_land] = false;
-#ifdef DEBUG
-        debug_checks();
-#endif
         break;
       }
     }
@@ -3268,7 +3285,8 @@ bool land_fighter_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     int land_owner = *owner_idx[land_idx];
     // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] = is_allied_0[land_owner] && !state.flagged_for_combat[land_idx];
+    canFighterLandHere[land_idx] =
+        is_allied_0[land_owner] && state.flagged_for_combat[land_idx] == 0;
     // check for possiblity to build carrier under fighter
     if (*factory_max[land_idx] > 0 && land_owner == state.player_index) {
       int land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
@@ -3371,7 +3389,7 @@ bool land_bomber_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     // is allied owned and not recently conquered?
     canBomberLandHere[land_idx] =
-        is_allied_0[*owner_idx[land_idx]] && !state.flagged_for_combat[land_idx];
+        is_allied_0[*owner_idx[land_idx]] && state.flagged_for_combat[land_idx] == 0;
   }
 
   // check if any bombers have moves remaining
@@ -3663,7 +3681,7 @@ void rotate_turns() {
     if (total_player_land_units[0][land_idx] > 0 && enemy_units_count[land_idx] > 0) {
       printf("DEBUG: Player %s has %d units at %s\n", PLAYERS[state.player_index].name,
              total_player_land_units[0][land_idx], LANDS[land_idx].name);
-             cause_breakpoint();
+      cause_breakpoint();
     }
   }
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
@@ -3776,7 +3794,7 @@ void rotate_turns() {
       if (*owner_idx[factory_location] != player_idx) {
         printf("DEBUG: Player %s has a unowned factory at %s\n", PLAYERS[state.player_index].name,
                LANDS[factory_location].name);
-               cause_breakpoint();
+        cause_breakpoint();
       }
     }
   }

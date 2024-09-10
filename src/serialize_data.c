@@ -1,6 +1,7 @@
 #include "serialize_data.h"
 #include "game_state.h"
 #include <cjson/cJSON.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -141,8 +142,8 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     int array_size = cJSON_GetArraySize(flagged_for_combat);
     for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
       cJSON* flagged_for_combat_item = cJSON_GetArrayItem(flagged_for_combat, i);
-      if (cJSON_IsBool(flagged_for_combat_item)) {
-        data->flagged_for_combat[i] = flagged_for_combat_item->valueint;
+      if (cJSON_IsNumber(flagged_for_combat_item)) {
+        data->flagged_for_combat[i] = (uint8_t)flagged_for_combat_item->valueint;
       } else {
         fprintf(stderr, "Invalid flagged_for_combat item\n");
       }
@@ -279,7 +280,7 @@ cJSON* serialize_game_data_to_json(GameState* data) {
 
   cJSON* flagged_for_combat = cJSON_CreateArray();
   for (int i = 0; i < AIRS_COUNT; i++) {
-    cJSON_AddItemToArray(flagged_for_combat, cJSON_CreateBool(data->flagged_for_combat[i]));
+    cJSON_AddItemToArray(flagged_for_combat, cJSON_CreateNumber(data->flagged_for_combat[i]));
   }
   cJSON_AddItemToObject(json, "flagged_for_combat", flagged_for_combat);
 

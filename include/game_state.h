@@ -55,7 +55,7 @@ typedef struct {
   UnitsSea units_sea[SEAS_COUNT];
   uint8_t other_land_units[PLAYERS_COUNT - 1][LANDS_COUNT][LAND_UNIT_TYPES_COUNT]; // rotates
   uint8_t other_sea_units[PLAYERS_COUNT - 1][SEAS_COUNT][SEA_UNIT_TYPES_COUNT - 1]; // no parking bombers at sea
-  bool flagged_for_combat[AIRS_COUNT]; // track retreats
+  uint8_t flagged_for_combat[AIRS_COUNT]; // track retreats
 } GameState;
 
 #endif
