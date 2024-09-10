@@ -68,6 +68,10 @@ void initialize_random_numbers();
 void initialize_land_pointers();
 void initialize_sea_pointers();
 
+void intialize_airs_x_to_4_moves_away();
+void initialize_skip_4air_precals();
+void apply_skip(uint8_t src_air, uint8_t dst_air);
+
 void load_game_data();
 
 void play_full_turn();

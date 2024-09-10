@@ -88,7 +88,9 @@ static void backpropagate(MCTSNode* node, double result) {
 MCTSNode* mcts_search(GameState* initial_state, int iterations) {
     MCTSNode* root = create_node(initial_state, 0, NULL);
     for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-        printf("Iteration %d\n", MCTS_ITERATIONS);
+        if(MCTS_ITERATIONS % 1000 == 0) {
+            printf("Iteration %d\n", MCTS_ITERATIONS);
+        }
         MCTSNode* node = select_node(root);
         if (!is_terminal_state(&node->state)) {
             expand_node(node);

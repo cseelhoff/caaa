@@ -13,7 +13,7 @@ int main() {
   GameState* initial_state = get_game_state_copy();
   // Initialize the game state
 
-  MCTSNode* root = mcts_search(initial_state, 100000);
+  MCTSNode* root = mcts_search(initial_state, 1000000);
   uint8_t best_action = select_best_action(root);
   //print_mcts(root);
   print_mcts_tree(root, 0);
