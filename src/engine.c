@@ -715,12 +715,12 @@ void refresh_cache() {
   }
 }
 int max_loops;
-#ifdef DEBUG
 void cause_breakpoint() {
   // add breakpoint here
   printf("breakpoint");
 }
 
+#ifdef DEBUG
 void debug_checks() {
   step_id++;
   if (step_id == 99999999) {
@@ -1077,6 +1077,20 @@ uint8_t getAIInput() {
 #endif
   return valid_moves[RANDOM_NUMBERS[random_number_index++] % valid_moves_count];
 }
+
+// Notes on how allowed moves from history are calculated:
+// When final unit for a unit_type is moved, set bool SkippedMoves[SourceTerr][DestTerr] = {0}
+// Loop through territories with units to move
+// 	I. Set LowestActionYet to be 256, or the lowest number set to True in bool
+// SkippedMoves[SourceTerr][DestTerr] 	II. After a move is taken, loop as follows:
+// 		1. if new action is < lowestaction yet
+// 			a. loop each action that was now marked as skipped
+// 				i. SkippedMove[source_terr][skipped_terr] = true
+// 		2. get the distance to the destination
+// 		3. loop through every territory with range of 4 of destination
+// 			a. continue loop if iterated_territory's distance to destination is less than source territory's distance
+// 			b. loop each action that was now marked as skipped
+//  				i. Set SkippedMove[iterated_terr][skipped_terr] = true
 
 void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land) {
   // get a list of all of the source territories that moved a unit into a territory that I can also
@@ -3963,7 +3977,7 @@ double random_play_until_terminal(GameState* game_state) {
   answers_remaining = 10000;
   use_selected_action = false;
   double score = get_score();
-  max_loops = 500;
+  max_loops = 1000;
   while (score > 0.01 && score < 0.99 && max_loops-- > 0) {
     // printf("max_loops: %d\n", max_loops);
     //  if(max_loops == 2) {
@@ -3971,9 +3985,9 @@ double random_play_until_terminal(GameState* game_state) {
     //    printf("%s\n", printableGameStatus);
     //    printf("DEBUG: max_loops reached\n");
     //  }
-    if (max_loops % 100 == 0) {
-      printf("max_loops: %d\n", max_loops);
-    }
+    // if (max_loops % 100 == 0) {
+    //   printf("max_loops: %d\n", max_loops);
+    // }
     move_fighter_units();
     move_bomber_units();
     stage_transport_units();

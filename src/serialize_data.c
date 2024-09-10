@@ -34,6 +34,13 @@ void write_json_to_file(const char* filename, cJSON* json) {
 }
 
 cJSON* read_json_from_file(const char* filename) {
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: ");
+    printf("%s", cwd);
+  } else {
+    perror("getcwd() error");
+  }
   FILE* file = fopen(filename, "r");
   if (file == NULL) {
     perror("Failed to open file");

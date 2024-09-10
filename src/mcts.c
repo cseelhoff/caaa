@@ -123,7 +123,7 @@ void print_mcts_tree(MCTSNode* node, int depth) {
     for (int i = 0; i < depth; i++) {
         printf("  ");
     }
-    printf("Action: %d, Visits: %d, Value: %.2f\n", node->action, node->visits, node->value);
+    printf("Action: %d, Visits: %d, Value: %.2f, Avg:%.4f\n", node->action, node->visits, node->value, node->value / node->visits);
 
     // Recursively print the children
     for (int i = 0; i < node->num_children; i++) {
