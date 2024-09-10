@@ -34,7 +34,7 @@ void initialize_l2s_connections(uint8_t src_land);
 void initialize_land_dist_zero(uint8_t src_land);
 void set_l2l_land_dist_to_one(uint8_t src_land);
 void set_l2s_land_dist_to_one(uint8_t src_land);
-void floyd_warshall(uint8_t *dist, uint8_t terr_count, uint8_t dist_count);
+void floyd_warshall(uint8_t* dist, uint8_t terr_count, uint8_t dist_count);
 
 void initialize_sea_dist();
 void initialize_s2s_connections(uint8_t src_sea);
@@ -71,8 +71,17 @@ void initialize_sea_pointers();
 void load_game_data();
 
 void play_full_turn();
-void refresh_quick_totals();
-void refresh_cache();
+void refresh_full_cache();
+void refresh_eot_cache();
+void refresh_economy();
+void refresh_land_armies();
+void refresh_sea_navies();
+void refresh_allies();
+void refresh_canals();
+void refresh_enemy_armies();
+void refresh_fleets();
+void refresh_land_path_blocked();
+void refresh_sea_path_blocked();
 
 void setPrintableStatus();
 void setPrintableStatusLands();
@@ -80,14 +89,6 @@ void setPrintableStatusSeas();
 
 uint8_t getUserInput();
 uint8_t getAIInput();
-
-void add_valid_land_move_if_history_allows_1(uint8_t dst_air, uint8_t src_land);
-void add_valid_land_move_if_history_allows_2(uint8_t dst_air, uint8_t src_land);
-void add_valid_sea_move_if_history_allows_1(uint8_t dst_sea, uint8_t src_sea);
-void add_valid_sea_move_if_history_allows_2(uint8_t dst_sea, uint8_t src_sea);
-void add_valid_sub_move_if_history_allows_2(uint8_t dst_sea, uint8_t src_sea);
-void add_valid_air_move_if_history_allows_X(uint8_t dst_air, uint8_t src_air, uint8_t moves);
-void clear_move_history();
 
 void build_landMove2Destination();
 void build_landMove1Destination();
@@ -153,4 +154,6 @@ bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
+
+void load_single_game();
 #endif

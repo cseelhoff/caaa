@@ -26,16 +26,7 @@ int main() {
 int main2() {
   printf("Starting CAAA \n");
   initialize_constants();
-  uint16_t start_seed = 201;
-  for (uint16_t seed = start_seed; seed < start_seed + 100; seed++) {
-    set_seed(seed);
-    load_game_data("game_data.json");
-    int turns = 100;
-    while (turns--) {
-      play_full_turn();
-      double score = get_score();
-      printf("Score: %f\n", score);
-    }
-  }
-  return 0;
+  load_game_data("rel5410.json");
+  refresh_full_cache();
+  load_single_game();  
 }
