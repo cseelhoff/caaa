@@ -1,22 +1,47 @@
-#ifndef LAND_H
-#define LAND_H
+#pragma once
 
+#include "canal.h"
+#include "sea.h"
+#include "typedefs.h"
 #include <stdint.h>
 
 #define LANDS_COUNT 5
-#define MAX_LAND_TO_SEA_CONNECTIONS 4
+#define MAX_LAND_TO_SEA_CONNECTIONS 4 // land to sea within 2 moves
 #define MAX_LAND_TO_LAND_CONNECTIONS 6
+#define MIN_LAND_HOPS 1
+#define MAX_LAND_HOPS 2
+#define LAND_MOVE_SIZE (1 + MAX_LAND_HOPS - MIN_LAND_HOPS)
+
+typedef LandIndex LandArray[LANDS_COUNT];
 
 typedef struct {
   char* name;
-  uint8_t original_owner_index;
-  uint8_t land_value;
-  uint8_t sea_conn_count;
-  uint8_t land_conn_count;
-  uint8_t connected_sea_index[MAX_LAND_TO_SEA_CONNECTIONS];
-  uint8_t connected_land_index[MAX_LAND_TO_LAND_CONNECTIONS];
-} Land;
+  PlayerIndex original_owner_index;
+  Dollars land_value;
+  SeaConnIndex sea_conn_count;
+  LandConnIndex land_conn_count;
+  SeaConnections sea_connections;
+  LandConnections land_connections;
+} __attribute__((aligned(ALIGNMENT_32))) Land;
 
-extern const Land LANDS[LANDS_COUNT];
+void initialize_land_consts();
+void initialize_land_to_land_connections(LandIndex land_idx, LandConnIndex land_conn_count);
+void initialize_land_to_sea_connections(LandIndex land_idx, SeaConnIndex sea_conn_count);
 
-#endif
+
+LandIndex get_land_to_land(LandIndex land_idx, LandConnIndex conn_idx);
+LandIndex* get_l2l_count_ref(LandIndex land_idx);
+LandConnIndex get_l2l_count(LandIndex land_idx);
+char* get_land_name(LandIndex land_idx);
+LandConnections* get_l2l_conn(LandIndex land_idx);
+SeaConnIndex get_l2s_count(LandIndex land_idx);
+SeaConnections* get_l2s_conn(LandIndex land_idx);
+AirIndex get_land_to_sea(LandIndex land_idx, SeaConnIndex sea_conn_idx);
+LandIndex* get_lands_within_2_moves_count_ref(LandIndex land_idx);
+LandArray* get_lands_within_2_moves(LandIndex land_idx);
+SeaConnIndex* get_load_within_2_moves_count_ref(LandIndex land_idx);
+SeaIndex get_load_within_2_moves_count(LandIndex land_idx);
+SeaArray* get_load_within_2_moves(LandIndex land_idx);
+Dollars get_land_value(LandIndex land_idx);
+LandIndex get_lands_within_2_moves_count(LandIndex land_idx);
+PlayerIndex get_original_owner_index(LandIndex land_idx);

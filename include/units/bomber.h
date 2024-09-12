@@ -1,13 +1,28 @@
-#ifndef BOMBER_H
-#define BOMBER_H
-
+#pragma once
+#include <stdint.h>
 #define BOMBER_NAME "bombers"
 #define BOMBER_ATTACK 4
 #define BOMBER_DEFENSE 1
 #define BOMBER_MOVES_MAX 6
 #define BOMBER_COST 14
 #define BOMBER_RAID_STRENGTH 1
-#define BOMBER_LAND_STATES BOMBER_MOVES_MAX + 1
-#define BOMBER_SEA_STATES BOMBER_MOVES_MAX - 1
 
-#endif
+typedef enum : uint8_t {
+    BOMBER_LAND_DONE_MOVING,
+    BOMBER_LAND_1_MOVE_LEFT,
+    BOMBER_LAND_2_MOVES_LEFT,
+    BOMBER_LAND_3_MOVES_LEFT,
+    BOMBER_LAND_4_MOVES_LEFT,
+    BOMBER_LAND_5_MOVES_LEFT,
+    BOMBER_LAND_UNMOVED,
+    BOMBER_LAND_STATES
+} BomberLandState;
+
+typedef enum : uint8_t  {    
+    BOMBER_SEA_1_MOVE_LEFT,
+    BOMBER_SEA_2_MOVES_LEFT,
+    BOMBER_SEA_3_MOVES_LEFT,
+    BOMBER_SEA_4_MOVES_LEFT,
+    BOMBER_SEA_5_MOVES_LEFT,
+    BOMBER_SEA_STATES
+} BomberSeaState;
