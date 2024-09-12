@@ -1,0 +1,3 @@
+/home/localadmin/caaa/CMakeFiles/caaa.dir
+/home/localadmin/caaa/CMakeFiles/edit_cache.dir
+/home/localadmin/caaa/CMakeFiles/rebuild_cache.dir

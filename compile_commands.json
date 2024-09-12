@@ -1,0 +1,68 @@
+[
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/canal.c.o -c /home/localadmin/caaa/src/canal.c",
+  "file": "/home/localadmin/caaa/src/canal.c",
+  "output": "CMakeFiles/caaa.dir/src/canal.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/engine.c.o -c /home/localadmin/caaa/src/engine.c",
+  "file": "/home/localadmin/caaa/src/engine.c",
+  "output": "CMakeFiles/caaa.dir/src/engine.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/game_state.c.o -c /home/localadmin/caaa/src/game_state.c",
+  "file": "/home/localadmin/caaa/src/game_state.c",
+  "output": "CMakeFiles/caaa.dir/src/game_state.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/land.c.o -c /home/localadmin/caaa/src/land.c",
+  "file": "/home/localadmin/caaa/src/land.c",
+  "output": "CMakeFiles/caaa.dir/src/land.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/main.c.o -c /home/localadmin/caaa/src/main.c",
+  "file": "/home/localadmin/caaa/src/main.c",
+  "output": "CMakeFiles/caaa.dir/src/main.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/mcts.c.o -c /home/localadmin/caaa/src/mcts.c",
+  "file": "/home/localadmin/caaa/src/mcts.c",
+  "output": "CMakeFiles/caaa.dir/src/mcts.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/player.c.o -c /home/localadmin/caaa/src/player.c",
+  "file": "/home/localadmin/caaa/src/player.c",
+  "output": "CMakeFiles/caaa.dir/src/player.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/sea.c.o -c /home/localadmin/caaa/src/sea.c",
+  "file": "/home/localadmin/caaa/src/sea.c",
+  "output": "CMakeFiles/caaa.dir/src/sea.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/serialize_data.c.o -c /home/localadmin/caaa/src/serialize_data.c",
+  "file": "/home/localadmin/caaa/src/serialize_data.c",
+  "output": "CMakeFiles/caaa.dir/src/serialize_data.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/team.c.o -c /home/localadmin/caaa/src/team.c",
+  "file": "/home/localadmin/caaa/src/team.c",
+  "output": "CMakeFiles/caaa.dir/src/team.c.o"
+},
+{
+  "directory": "/home/localadmin/caaa",
+  "command": "/usr/bin/cc  -I/home/localadmin/caaa/include -std=c11 -std=c11 -o CMakeFiles/caaa.dir/src/units.c.o -c /home/localadmin/caaa/src/units.c",
+  "file": "/home/localadmin/caaa/src/units.c",
+  "output": "CMakeFiles/caaa.dir/src/units.c.o"
+}
+]
