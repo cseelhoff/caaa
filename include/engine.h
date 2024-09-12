@@ -152,7 +152,7 @@ void free_state(GameState* game_state);
 
 typedef uint8_t Actions[AIRS_COUNT];
 typedef Actions* ActionsPtr;
-void get_possible_actions(GameState* game_state, int* num_actions, ActionsPtr actions);
+void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions);
 void apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);

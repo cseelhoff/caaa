@@ -13,7 +13,7 @@ int main() {
   GameState* initial_state = get_game_state_copy();
   // Initialize the game state
 
-  MCTSNode* root = mcts_search(initial_state, 1000000);
+  MCTSNode* root = mcts_search(initial_state, 10000000);
   uint8_t best_action = select_best_action(root);
   //print_mcts(root);
   print_mcts_tree(root, 0);
@@ -22,6 +22,7 @@ int main() {
   //apply_action(initial_state, best_action);
 
   // Continue with the game loop
+  return 0;
 }
 int main2() {
   printf("Starting CAAA \n");
@@ -29,4 +30,5 @@ int main2() {
   load_game_data("rel5410.json");
   refresh_full_cache();
   load_single_game();  
+  return 0;
 }

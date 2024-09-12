@@ -3859,7 +3859,7 @@ void free_state(GameState* game_state) {
   // Free the memory allocated for the game state
   free(game_state);
 }
-void get_possible_actions(GameState* game_state, int* num_actions, ActionsPtr actions) {
+void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions) {
   // Return the list of possible actions from the given state
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();

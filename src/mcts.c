@@ -12,7 +12,7 @@ int MCTS_ITERATIONS = 0;
 // Function prototypes for game-specific logic
 extern GameState* clone_state(GameState* state);
 extern void free_state(GameState* state);
-extern void get_possible_actions(GameState* state, int* num_actions, ActionsPtr actions);
+extern void get_possible_actions(GameState* state, uint8_t* num_actions, ActionsPtr actions);
 extern void apply_action(GameState* state, uint8_t action);
 extern bool is_terminal_state(GameState* state);
 extern double evaluate_state(GameState* state);
@@ -57,7 +57,7 @@ static MCTSNode* select_node(MCTSNode* node) {
 }
 
 static void expand_node(MCTSNode* node) {
-    int num_actions;
+    uint8_t num_actions;
     Actions actions = {0};
     ActionsPtr actionsPtr = &actions;
     get_possible_actions(&node->state, &num_actions, actionsPtr);
@@ -115,9 +115,11 @@ uint8_t select_best_action(MCTSNode* root) {
     return best_child->action;
 }
 // Function to print the MCTS tree
-void print_mcts_tree(MCTSNode* node, int depth) {
-    if (node == NULL) return;
-    if (depth > 3) {
+void print_mcts_tree(MCTSNode* node, uint8_t depth) {
+    if (node == NULL) {
+        return;
+    }
+    if (depth > 5) {
         return;
     }
 
