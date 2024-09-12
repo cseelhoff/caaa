@@ -2,8 +2,16 @@
 #include "mcts.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-int main() {
+#define BASE_10 10
+#define DEFAULT_ITERATIONS 100000
+
+int main(int argc, char *argv[]) {
+  long iterations = DEFAULT_ITERATIONS;
+  if (argc >= 2) {
+    iterations = strtol(argv[1], NULL, BASE_10);
+  }
   printf("Starting CAAA \n");
   initialize_constants();
   //json = serialize_game_data_to_json(&state);
@@ -13,10 +21,10 @@ int main() {
   GameState* initial_state = get_game_state_copy();
   // Initialize the game state
 
-  MCTSNode* root = mcts_search(initial_state, 10000000);
+  MCTSNode* root = mcts_search(initial_state, iterations);
   uint8_t best_action = select_best_action(root);
   //print_mcts(root);
-  print_mcts_tree(root, 0);
+  print_mcts(root);
   printf("Best action: %d\n", best_action);
   // Apply the best action to the game state
   //apply_action(initial_state, best_action);
