@@ -153,11 +153,12 @@ void free_state(GameState* game_state);
 typedef uint8_t Actions[AIRS_COUNT];
 typedef Actions* ActionsPtr;
 void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions);
-void apply_action(GameState* game_state, uint8_t action);
+bool apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
 
 void load_single_game();
+bool end_turn();
 #endif

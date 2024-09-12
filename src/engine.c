@@ -788,6 +788,8 @@ void play_full_turn() {
   debug_checks();
   buy_units();
   debug_checks();
+  end_turn();
+  debug_checks();
   crash_air_units();
   debug_checks();
   reset_units_fully();
@@ -3478,11 +3480,19 @@ bool land_bomber_units() {
   }
   if (units_to_process) {
     clear_move_history();
-  }  
+  }
+  return false;
+}
+bool end_turn() {
+  valid_moves_count = 1;
+  valid_moves[0] = MAX_UINT8_T;
+  if (answers_remaining == 0)
+    return true;
+  (void)getAIInput();
   return false;
 }
 bool buy_units() {
-  bool units_to_process = false; //todo implement last_purchased
+  bool units_to_process = false; // todo implement last_purchased
 #ifdef DEBUG
   if (actually_print) {
     setPrintableStatus();
@@ -3897,6 +3907,8 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
       break;
     if (buy_units())
       break;
+    if (end_turn())
+      break;
     crash_air_units();
     reset_units_fully();
     buy_factory();
@@ -3906,11 +3918,12 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   *num_actions = valid_moves_count;
   memcpy(actions, valid_moves, valid_moves_count * sizeof(uint8_t));
 }
-void apply_action(GameState* game_state, uint8_t action) {
+bool apply_action(GameState* game_state, uint8_t action) {
   // Apply the action to the game state
 #ifdef DEBUG
   printf("DEBUG: copying state and Applying action %d\n", action);
 #endif
+  uint8_t starting_player = state.player_index;
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
   answers_remaining = 1;
@@ -3950,6 +3963,8 @@ void apply_action(GameState* game_state, uint8_t action) {
       break;
     if (buy_units())
       break;
+    if (end_turn())
+      break;
     crash_air_units();
     reset_units_fully();
     buy_factory();
@@ -3957,16 +3972,22 @@ void apply_action(GameState* game_state, uint8_t action) {
     rotate_turns();
   }
   memcpy(game_state, &state, sizeof(GameState));
+
+  if (PLAYERS[game_state->player_index]
+          .is_allied[(game_state->player_index + starting_player) % PLAYERS_COUNT]) {
+    return true;
+  }
+  return false;
 }
 double random_play_until_terminal(GameState* game_state) {
   memcpy(&state, game_state, sizeof(GameState));
-  if (MCTS_ITERATIONS == 99995410) {
-    printf("%d, %d\n", seed, random_number_index);
-    json = serialize_game_data_to_json(game_state);
-    write_json_to_file("rel5410.json", json);
-    cJSON_Delete(json);
-    actually_print = true;
-  }
+  // if (MCTS_ITERATIONS == 99995410) {
+  //   printf("%d, %d\n", seed, random_number_index);
+  //   json = serialize_game_data_to_json(game_state);
+  //   write_json_to_file("rel5410.json", json);
+  //   cJSON_Delete(json);
+  //   actually_print = true;
+  // }
   uint8_t starting_player = state.player_index;
   refresh_full_cache();
   answers_remaining = 100000;
@@ -3999,6 +4020,7 @@ double random_play_until_terminal(GameState* game_state) {
     land_fighter_units();
     land_bomber_units();
     buy_units();
+    end_turn();
     crash_air_units();
     reset_units_fully();
     buy_factory();
@@ -4182,6 +4204,7 @@ void load_single_game() {
     land_fighter_units();
     land_bomber_units();
     buy_units();
+    end_turn();
     crash_air_units();
     reset_units_fully();
     buy_factory();
