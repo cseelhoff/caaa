@@ -1,6 +1,7 @@
 #include "mcts.h"
 #include "game_state.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,9 +92,7 @@ MCTSNode* mcts_search(GameState* initial_state, int iterations) {
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
     if (MCTS_ITERATIONS % 50000 == 0) {
       printf("Iteration %d\n", MCTS_ITERATIONS);
-      Action_Sequence current_sequence = {0};
-      print_mcts_tree(root, 0, current_sequence, 0);
-      print_top_action_sequences();
+      print_mcts(root);
     }
     MCTSNode* node = select_node(root);
     if (!is_terminal_state(&node->state)) {
@@ -128,7 +127,7 @@ double action_sequence_values[MAX_ACTION_SEQUENCES] = {0};
 // Helper function to update the top 20 action sequences
 void update_top_action_sequences(Action_Sequence current_sequence, int length, double value, int visits) {
   for (int i = 0; i < MAX_ACTION_SEQUENCES; i++) {
-    if (value > action_sequence_values[i]) {
+    if (visits > action_sequence_visits[i]) {
       // Shift lower value sequences down
       for (int j = MAX_ACTION_SEQUENCES - 1; j > i; j--) {
         action_sequence_values[j] = action_sequence_values[j - 1];
@@ -146,32 +145,27 @@ void update_top_action_sequences(Action_Sequence current_sequence, int length, d
   }
 }
 #define MAX_DEPTH 20
-#define MIN_VISITS 100
+#define MIN_VISITS 1000
 // Function to print the MCTS tree and keep track of action sequences
 void print_mcts_tree(MCTSNode* node, uint8_t depth, Action_Sequence current_sequence, int length) {
   if (node == NULL) {
     return;
   }
-
-  // Add the current node's action to the sequence
   current_sequence[length++] = node->action;
-
-  // Print the current node
-  //for (int i = 0; i < depth; i++) {
-  //  printf("  ");
-  //}
-  //printf("Action: %d, Visits: %d, Avg:%.4f\n", node->action, node->visits,
-  //       node->value / node->visits);
-
-  // If the node is a leaf, update the top action sequences
-  if (node->num_children == 0 || depth == MAX_DEPTH || node->visits < MIN_VISITS) {
+  if ((node->num_children == 0 || depth == MAX_DEPTH)) {
     update_top_action_sequences(current_sequence, length, node->value / node->visits, node->visits);
     return;
   }
-
-  // Recursively print the children
+  bool has_mature_child = false;
+  
   for (int i = 0; i < node->num_children; i++) {
-    print_mcts_tree(node->children[i], depth + 1, current_sequence, length);
+    if(node->children[i]->visits > MIN_VISITS) {
+      has_mature_child = true;
+      print_mcts_tree(node->children[i], depth + 1, current_sequence, length);
+    }
+  }
+  if (!has_mature_child) {
+    update_top_action_sequences(current_sequence, length, node->value / node->visits, node->visits);
   }
 }
 
@@ -191,6 +185,10 @@ void print_top_action_sequences() {
 // Public function to print the MCTS tree starting from the root
 void print_mcts(MCTSNode* root) {
   Action_Sequence current_sequence = {0};
+  for(uint8_t i = 0; i < MAX_ACTION_SEQUENCES; i++) {
+    action_sequence_values[i] = 0;
+    action_sequence_visits[i] = 0;
+  }
   print_mcts_tree(root, 0, current_sequence, 0);
   print_top_action_sequences();
 }
