@@ -1,15 +1,15 @@
-#pragma once
-#include <stdint.h>
+#ifndef BATTLESHIP_H
+#define BATTLESHIP_H
+
 #define BATTLESHIP_NAME "battleship"
 #define BATTLESHIP_ATTACK 4
 #define BATTLESHIP_DEFENSE 4
 #define BATTLESHIP_MOVES_MAX 2
 #define BATTLESHIP_COST 22
-
-typedef enum : uint8_t {
-    BATTLESHIP_DONE_MOVING,
-    BATTLESHIP_UNMOVED,
-    BATTLESHIP_STATES
-} BattleshipState;
+#define BATTLESHIP_DONE_MOVING 1
+#define BATTLESHIP_UNMOVED 2
+#define BATTLESHIP_STATES 3
 
 #define BS_DAMAGED_NAME "damaged_bs"
+
+#endif

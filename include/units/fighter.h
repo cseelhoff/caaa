@@ -1,16 +1,13 @@
-#pragma once
-#include <stdint.h>
+#ifndef FIGHTER_H
+#define FIGHTER_H
+
 #define FIGHTER_NAME "fighters"
 #define FIGHTER_ATTACK 3
 #define FIGHTER_DEFENSE 4
 #define FIGHTER_MOVES_MAX 4
 #define FIGHTER_COST 10
+#define FIGHTER_DONE_MOVING 0
+#define FIGHTER_UNMOVED FIGHTER_MOVES_MAX
+#define FIGHTER_STATES FIGHTER_MOVES_MAX + 1
 
-typedef enum : uint8_t {
-    FIGHTER_DONE_MOVING,
-    FIGHTER_1_MOVE_LEFT,
-    FIGHTER_2_MOVES_LEFT,
-    FIGHTER_3_MOVES_LEFT,
-    FIGHTER_UNMOVED,
-    FIGHTER_STATES
-} FighterState;
+#endif
