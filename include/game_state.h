@@ -1,55 +1,61 @@
-#pragma once
-#include "air.h"
+#ifndef GAME_STATE_H
+#define GAME_STATE_H
+
 #include "canal.h"
 #include "land.h"
 #include "player.h"
 #include "sea.h"
-#include "typedefs.h"
+#include "team.h"
 #include "units/units.h"
 #include <stdint.h>
 
+//#define STRING_BUFFER_SIZE 64
+#define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
+#define MAX_AIR_TO_AIR_CONNECTIONS 7
 
 typedef struct {
-  PlayerIndex owner_idx; // rotates
-  HitPoints factory_hp;
-  HitPoints factory_max;
-  NavySum bombard_max; // bombarded, resets
-  FighterStateSums fighters;                        // rotates
-  BomberLandStateSums bombers;                     // rotates
-  InfantryStateSums infantry;                       // rotates
-  ArtilleryStateSums artillery;                     // rotates
-  TanksStateSums tanks;                              // rotates
-  AAGunsStateSums aa_guns;                          // rotates
-} __attribute__((aligned(ALIGNMENT_32))) LandTerr;
+  uint8_t owner_idx; // rotates
+  int8_t factory_hp;
+  uint8_t factory_max;
+  uint8_t bombard_max; // bombarded, resets
+  uint8_t fighters[FIGHTER_STATES];                        // rotates
+  uint8_t bombers[BOMBER_LAND_STATES];                     // rotates
+  uint8_t infantry[INFANTRY_STATES];                       // rotates
+  uint8_t artillery[ARTILLERY_STATES];                     // rotates
+  uint8_t tanks[TANK_STATES];                              // rotates
+  uint8_t aa_guns[AA_GUN_STATES];                          // rotates
+} LandState;
 
 typedef struct {
-  FightersSeaStateSums fighters;
+  uint8_t fighters[FIGHTER_STATES];
   // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
-  TransEmptyStateSums trans_empty;
+  uint8_t trans_empty[TRANS_EMPTY_STATES];
   // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left, 4 = needs staging
-  Trans1IStateSums trans_1i;
-  Trans1AStateSums trans_1a;
-  Trans1TStateSums trans_1t;
+  uint8_t trans_1i[TRANS_1I_STATES];
+  uint8_t trans_1a[TRANS_1A_STATES];
+  uint8_t trans_1t[TRANS_1T_STATES];
   // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
-  Trans2IStateSums trans_2i;
-  Trans1I1AStateSums trans_1i_1a;
-  Trans1I1TStateSums trans_1i_1t;
-  SubmarinesStateSums submarines;
-  DestroyersStateSums destroyers;
-  CarriersStateSums carriers;
-  CruisersStateSums cruisers;       // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  BattleshipsStateSums battleships; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  BSDamagedStateSums bs_damaged;  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  BombersSeaStateSums bombers;     // move remain 1,2,3,4,5
-} __attribute__((aligned(ALIGNMENT_64))) SeaTerr;
+  uint8_t trans_2i[TRANS_2I_STATES];
+  uint8_t trans_1i_1a[TRANS_1I_1A_STATES];
+  uint8_t trans_1i_1t[TRANS_1I_1T_STATES];
+  uint8_t submarines[SUB_STATES];
+  uint8_t destroyers[DESTROYER_STATES];
+  uint8_t carriers[CARRIER_STATES];
+  uint8_t cruisers[CRUISER_STATES];       // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t battleships[BATTLESHIP_STATES]; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t bs_damaged[BATTLESHIP_STATES];  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  uint8_t bombers[BOMBER_SEA_STATES];     // move remain 1,2,3,4,5
+} UnitsSea;
 
 typedef struct {
-  PlayerIndex player_index; //rotates
-  Dollars money[PLAYERS_COUNT]; //rotates
+  uint8_t player_index; //rotates
+  uint8_t money[PLAYERS_COUNT]; //rotates
   uint8_t builds_left[AIRS_COUNT]; 
-  LandTerr land_terr[LANDS_COUNT];
-  SeaTerr sea_terr[SEAS_COUNT];
-  LandUnitTypesSumArrayLands other_land_units[PLAYERS_COUNT - 1];
-  SeaUnitTypesSumArraySeas other_sea_units[PLAYERS_COUNT - 1];
-  bool flagged_for_combat[AIRS_COUNT]; // track retreats
-} __attribute__((aligned(ALIGNMENT_128))) GameState;
+  LandState land_state[LANDS_COUNT];
+  UnitsSea units_sea[SEAS_COUNT];
+  uint8_t other_land_units[PLAYERS_COUNT - 1][LANDS_COUNT][LAND_UNIT_TYPES_COUNT]; // rotates
+  uint8_t other_sea_units[PLAYERS_COUNT - 1][SEAS_COUNT][SEA_UNIT_TYPES_COUNT - 1]; // no parking bombers at sea
+  uint8_t flagged_for_combat[AIRS_COUNT]; // track retreats
+} GameState;
+
+#endif

@@ -1,9 +1,24 @@
 #include "serialize_data.h"
+#include "game_state.h"
 #include <cjson/cJSON.h>
-#include "typedefs.h"
-#include "units/units.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#define PATH_MAX 4096
+void load_game_data_from_json(char* filename, GameState* data) {
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: ");
+    printf("%s", cwd);
+  } else {
+    perror("getcwd() error");
+  }
+  cJSON* json = read_json_from_file(filename);
+  deserialize_game_data_from_json(json, data);
+  cJSON_Delete(json);
+}
 
 void write_json_to_file(const char* filename, cJSON* json) {
   char* string = cJSON_Print(json);
@@ -19,6 +34,13 @@ void write_json_to_file(const char* filename, cJSON* json) {
 }
 
 cJSON* read_json_from_file(const char* filename) {
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: ");
+    printf("%s", cwd);
+  } else {
+    perror("getcwd() error");
+  }
   FILE* file = fopen(filename, "r");
   if (file == NULL) {
     perror("Failed to open file");
@@ -50,7 +72,7 @@ cJSON* read_json_from_file(const char* filename) {
   return json;
 }
 
-void deserialize_game_data_from_json(GameState* data, cJSON* json) {
+void deserialize_game_data_from_json(cJSON* json, GameState* data) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
@@ -73,10 +95,10 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* money_array = cJSON_GetObjectItem(json, "money");
   if (cJSON_IsArray(money_array)) {
     int array_size = cJSON_GetArraySize(money_array);
-    for (PlayerIndex player_idx = 0; player_idx < array_size && player_idx < PLAYERS_COUNT; player_idx++) {
-      cJSON* money_item = cJSON_GetArrayItem(money_array, player_idx);
+    for (int i = 0; i < array_size && i < PLAYERS_COUNT; i++) {
+      cJSON* money_item = cJSON_GetArrayItem(money_array, i);
       if (cJSON_IsNumber(money_item)) {
-        data->money[player_idx] = money_item->valueint;
+        data->money[i] = money_item->valueint;
       } else {
         fprintf(stderr, "Invalid money item\n");
       }
@@ -88,10 +110,10 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* builds_left_array = cJSON_GetObjectItem(json, "builds_left");
   if (cJSON_IsArray(builds_left_array)) {
     int array_size = cJSON_GetArraySize(builds_left_array);
-    for (AirIndex air_idx = 0; air_idx < array_size && air_idx < AIRS_COUNT; air_idx++) {
-      cJSON* builds_left_item = cJSON_GetArrayItem(builds_left_array, air_idx);
+    for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
+      cJSON* builds_left_item = cJSON_GetArrayItem(builds_left_array, i);
       if (cJSON_IsNumber(builds_left_item)) {
-        data->builds_left[air_idx] = builds_left_item->valueint;
+        data->builds_left[i] = builds_left_item->valueint;
       } else {
         fprintf(stderr, "Invalid builds_left item\n");
       }
@@ -103,9 +125,9 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* land_state_array = cJSON_GetObjectItem(json, "land_state");
   if (cJSON_IsArray(land_state_array)) {
     int array_size = cJSON_GetArraySize(land_state_array);
-    for (LandIndex land_idx = 0; land_idx < array_size && land_idx < LANDS_COUNT; land_idx++) {
-      cJSON* land_state_item = cJSON_GetArrayItem(land_state_array, land_idx);
-      deserialize_land_state_from_json(&data->land_terr[land_idx], land_state_item);
+    for (int i = 0; i < array_size && i < LANDS_COUNT; i++) {
+      cJSON* land_state_item = cJSON_GetArrayItem(land_state_array, i);
+      deserialize_land_state_from_json(&data->land_state[i], land_state_item);
     }
   } else {
     fprintf(stderr, "Invalid land_state array\n");
@@ -114,9 +136,9 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* units_sea_array = cJSON_GetObjectItem(json, "units_sea");
   if (cJSON_IsArray(units_sea_array)) {
     int array_size = cJSON_GetArraySize(units_sea_array);
-    for (SeaIndex sea_idx = 0; sea_idx < array_size && sea_idx < SEAS_COUNT; sea_idx++) {
-      cJSON* units_sea_item = cJSON_GetArrayItem(units_sea_array, sea_idx);
-      deserialize_units_sea_from_json(&data->sea_terr[sea_idx], units_sea_item);
+    for (int i = 0; i < array_size && i < SEAS_COUNT; i++) {
+      cJSON* units_sea_item = cJSON_GetArrayItem(units_sea_array, i);
+      deserialize_units_sea_from_json(&data->units_sea[i], units_sea_item);
     }
   } else {
     fprintf(stderr, "Invalid units_sea array\n");
@@ -125,10 +147,10 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* flagged_for_combat = cJSON_GetObjectItem(json, "flagged_for_combat");
   if (cJSON_IsArray(flagged_for_combat)) {
     int array_size = cJSON_GetArraySize(flagged_for_combat);
-    for (AirIndex air_idx = 0; air_idx < array_size && air_idx < AIRS_COUNT; air_idx++) {
-      cJSON* flagged_for_combat_item = cJSON_GetArrayItem(flagged_for_combat, air_idx);
-      if (cJSON_IsBool(flagged_for_combat_item)) {
-        data->flagged_for_combat[air_idx] = flagged_for_combat_item->valueint;
+    for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
+      cJSON* flagged_for_combat_item = cJSON_GetArrayItem(flagged_for_combat, i);
+      if (cJSON_IsNumber(flagged_for_combat_item)) {
+        data->flagged_for_combat[i] = (uint8_t)flagged_for_combat_item->valueint;
       } else {
         fprintf(stderr, "Invalid flagged_for_combat item\n");
       }
@@ -140,18 +162,18 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* other_land_units_array = cJSON_GetObjectItem(json, "other_land_units");
   if (cJSON_IsArray(other_land_units_array)) {
     int outer_size = cJSON_GetArraySize(other_land_units_array);
-    for (PlayerIndex player_idx = 0; player_idx < outer_size && player_idx < PLAYERS_COUNT - 1; player_idx++) {
-      cJSON* middle_array = cJSON_GetArrayItem(other_land_units_array, player_idx);
+    for (int i = 0; i < outer_size && i < PLAYERS_COUNT - 1; i++) {
+      cJSON* middle_array = cJSON_GetArrayItem(other_land_units_array, i);
       if (cJSON_IsArray(middle_array)) {
         int middle_size = cJSON_GetArraySize(middle_array);
-        for (LandIndex land_idx = 0; land_idx < middle_size && land_idx < LANDS_COUNT; land_idx++) {
-          cJSON* inner_array = cJSON_GetArrayItem(middle_array, land_idx);
+        for (int j = 0; j < middle_size && j < LANDS_COUNT; j++) {
+          cJSON* inner_array = cJSON_GetArrayItem(middle_array, j);
           if (cJSON_IsArray(inner_array)) {
             int inner_size = cJSON_GetArraySize(inner_array);
-            for (LandUnitType land_unit = 0; land_unit < inner_size && land_unit < LAND_UNIT_TYPES_COUNT; land_unit++) {
-              cJSON* item = cJSON_GetArrayItem(inner_array, land_unit);
+            for (int k = 0; k < inner_size && k < LAND_UNIT_TYPES_COUNT; k++) {
+              cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
-                data->other_land_units[player_idx][land_idx][land_unit] = (uint8_t)item->valueint;
+                data->other_land_units[i][j][k] = (uint8_t)item->valueint;
               }
             }
           }
@@ -165,18 +187,18 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
   cJSON* other_sea_units_array = cJSON_GetObjectItem(json, "other_sea_units");
   if (cJSON_IsArray(other_sea_units_array)) {
     int outer_size = cJSON_GetArraySize(other_sea_units_array);
-    for (PlayerIndex player_idx = 0; player_idx < outer_size && player_idx < PLAYERS_COUNT - 1; player_idx++) {
-      cJSON* middle_array = cJSON_GetArrayItem(other_sea_units_array, player_idx);
+    for (int i = 0; i < outer_size && i < PLAYERS_COUNT - 1; i++) {
+      cJSON* middle_array = cJSON_GetArrayItem(other_sea_units_array, i);
       if (cJSON_IsArray(middle_array)) {
         int middle_size = cJSON_GetArraySize(middle_array);
-        for (SeaIndex sea_idx = 0; sea_idx < middle_size && sea_idx < SEAS_COUNT; sea_idx++) {
-          cJSON* inner_array = cJSON_GetArrayItem(middle_array, sea_idx);
+        for (int j = 0; j < middle_size && j < SEAS_COUNT; j++) {
+          cJSON* inner_array = cJSON_GetArrayItem(middle_array, j);
           if (cJSON_IsArray(inner_array)) {
             int inner_size = cJSON_GetArraySize(inner_array);
-            for (SeaUnitType sea_unit = 0; sea_unit < inner_size && sea_unit < SEA_UNIT_TYPES_COUNT; sea_unit++) {
-              cJSON* item = cJSON_GetArrayItem(inner_array, sea_unit);
+            for (int k = 0; k < inner_size && k < SEA_UNIT_TYPES_COUNT; k++) {
+              cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
-                data->other_sea_units[player_idx][sea_idx][sea_unit] = (uint8_t)item->valueint;
+                data->other_sea_units[i][j][k] = (uint8_t)item->valueint;
               } else {
                 fprintf(stderr, "Invalid other_sea_units item\n");
               }
@@ -189,7 +211,7 @@ void deserialize_game_data_from_json(GameState* data, cJSON* json) {
     fprintf(stderr, "Invalid other_sea_units array\n");
   }
 }
-void deserialize_land_state_from_json(LandTerr* land_state, cJSON* json) {
+void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
@@ -197,7 +219,7 @@ void deserialize_land_state_from_json(LandTerr* land_state, cJSON* json) {
   set_land_state_field(json, "owner_index", &land_state->owner_idx);
   // set_land_state_field(json, "builds_left", &land_state->builds_left);
   set_land_state_signed_field(json, "factory_hp", &land_state->factory_hp);
-  set_land_state_signed_field(json, "factory_max", &land_state->factory_max);
+  set_land_state_field(json, "factory_max", &land_state->factory_max);
   extract_and_assign(json, FIGHTER_NAME, land_state->fighters);
   extract_and_assign(json, BOMBER_NAME, land_state->bombers);
   extract_and_assign(json, INFANTRY_NAME, land_state->infantry);
@@ -239,33 +261,33 @@ cJSON* serialize_game_data_to_json(GameState* data) {
   // cJSON_AddNumberToObject(json, "phase", data->phase);
 
   cJSON* money_array = cJSON_CreateArray();
-  for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    cJSON_AddItemToArray(money_array, cJSON_CreateNumber(data->money[player_idx]));
+  for (int i = 0; i < PLAYERS_COUNT; i++) {
+    cJSON_AddItemToArray(money_array, cJSON_CreateNumber(data->money[i]));
   }
   cJSON_AddItemToObject(json, "money", money_array);
 
   cJSON* builds_left_array = cJSON_CreateArray();
-  for (AirIndex air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
-    cJSON_AddItemToArray(builds_left_array, cJSON_CreateNumber(data->builds_left[air_idx]));
+  for (int i = 0; i < AIRS_COUNT; i++) {
+    cJSON_AddItemToArray(builds_left_array, cJSON_CreateNumber(data->builds_left[i]));
   }
   cJSON_AddItemToObject(json, "builds_left", builds_left_array);
 
   // Serialize land_state and units_sea if needed
   cJSON* land_state_array = cJSON_CreateArray();
-  for (LandIndex land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    cJSON_AddItemToArray(land_state_array, serialize_land_state_to_json(&data->land_terr[land_idx]));
+  for (int i = 0; i < LANDS_COUNT; i++) {
+    cJSON_AddItemToArray(land_state_array, serialize_land_state_to_json(&data->land_state[i]));
   }
   cJSON_AddItemToObject(json, "land_state", land_state_array);
 
   cJSON* units_sea_array = cJSON_CreateArray();
-  for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    cJSON_AddItemToArray(units_sea_array, serialize_units_sea_to_json(&data->sea_terr[sea_idx]));
+  for (int i = 0; i < SEAS_COUNT; i++) {
+    cJSON_AddItemToArray(units_sea_array, serialize_units_sea_to_json(&data->units_sea[i]));
   }
   cJSON_AddItemToObject(json, "units_sea", units_sea_array);
 
   cJSON* flagged_for_combat = cJSON_CreateArray();
-  for (AirIndex air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
-    cJSON_AddItemToArray(flagged_for_combat, cJSON_CreateBool(data->flagged_for_combat[air_idx]));
+  for (int i = 0; i < AIRS_COUNT; i++) {
+    cJSON_AddItemToArray(flagged_for_combat, cJSON_CreateNumber(data->flagged_for_combat[i]));
   }
   cJSON_AddItemToObject(json, "flagged_for_combat", flagged_for_combat);
 
@@ -284,12 +306,12 @@ cJSON* serialize_game_data_to_json(GameState* data) {
   cJSON_AddItemToObject(json, "other_land_units", other_land_units_array);
 
   cJSON* other_sea_units_array = cJSON_CreateArray();
-  for (PlayerIndex player_idx = 0; player_idx < PLAYERS_COUNT - 1; player_idx++) {
+  for (int i = 0; i < PLAYERS_COUNT - 1; i++) {
     cJSON* middle_array = cJSON_CreateArray();
-    for (SeaIndex sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    for (int j = 0; j < SEAS_COUNT; j++) {
       cJSON* inner_array = cJSON_CreateArray();
-      for (SeaUnitType sea_unit = 0; sea_unit < SEA_UNIT_TYPES_COUNT; sea_unit++) {
-        cJSON_AddItemToArray(inner_array, cJSON_CreateNumber(data->other_sea_units[player_idx][sea_idx][sea_unit]));
+      for (int k = 0; k < SEA_UNIT_TYPES_COUNT; k++) {
+        cJSON_AddItemToArray(inner_array, cJSON_CreateNumber(data->other_sea_units[i][j][k]));
       }
       cJSON_AddItemToArray(middle_array, inner_array);
     }
@@ -307,10 +329,10 @@ void add_array_to_json(cJSON* json, const char* key, uint8_t* array, int size) {
   cJSON_AddItemToObject(json, key, json_array);
 }
 
-cJSON* serialize_units_sea_to_json(SeaTerr* units_sea) {
+cJSON* serialize_units_sea_to_json(UnitsSea* units_sea) {
   cJSON* json = cJSON_CreateObject();
 
-  add_array_to_json(json, NAMES_UNIT_SEA[FIGHTERS_AIR], units_sea->fighters, STATES_MOVE_SEA[FIGHTERS_AIR]);
+  add_array_to_json(json, NAMES_UNIT_SEA[FIGHTERS], units_sea->fighters, STATES_MOVE_SEA[FIGHTERS]);
   add_array_to_json(json, NAMES_UNIT_SEA[TRANS_EMPTY], units_sea->trans_empty,
                     STATES_MOVE_SEA[TRANS_EMPTY]);
   add_array_to_json(json, NAMES_UNIT_SEA[TRANS_1I], units_sea->trans_1i, STATES_MOVE_SEA[TRANS_1I]);
@@ -337,13 +359,13 @@ cJSON* serialize_units_sea_to_json(SeaTerr* units_sea) {
   return json;
 }
 
-void deserialize_units_sea_from_json(SeaTerr* units_sea, cJSON* json) {
+void deserialize_units_sea_from_json(UnitsSea* units_sea, cJSON* json) {
   if (json == NULL) {
     fprintf(stderr, "Invalid JSON data\n");
     return;
   }
 
-  extract_and_assign(json, NAMES_UNIT_SEA[FIGHTERS_AIR], units_sea->fighters);
+  extract_and_assign(json, NAMES_UNIT_SEA[FIGHTERS], units_sea->fighters);
   extract_and_assign(json, NAMES_UNIT_SEA[TRANS_EMPTY], units_sea->trans_empty);
   extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1I], units_sea->trans_1i);
   extract_and_assign(json, NAMES_UNIT_SEA[TRANS_1A], units_sea->trans_1a);
@@ -360,17 +382,17 @@ void deserialize_units_sea_from_json(SeaTerr* units_sea, cJSON* json) {
   extract_and_assign(json, NAMES_UNIT_SEA[BOMBERS_SEA], units_sea->bombers);
 }
 
-cJSON* serialize_land_state_to_json(LandTerr* land_state) {
+cJSON* serialize_land_state_to_json(LandState* land_state) {
   cJSON* json = cJSON_CreateObject();
 
   cJSON_AddNumberToObject(json, "owner_index", land_state->owner_idx);
   cJSON_AddNumberToObject(json, "factory_hp", land_state->factory_hp);
   cJSON_AddNumberToObject(json, "factory_max", land_state->factory_max);
 
-  add_array_to_json(json, NAMES_UNIT_LAND[FIGHTERS_AIR], land_state->fighters,
-                    STATES_MOVE_LAND[FIGHTERS_AIR]);
-  add_array_to_json(json, NAMES_UNIT_LAND[BOMBERS_AIR], land_state->bombers,
-                    STATES_MOVE_LAND[BOMBERS_AIR]);
+  add_array_to_json(json, NAMES_UNIT_LAND[FIGHTERS], land_state->fighters,
+                    STATES_MOVE_LAND[FIGHTERS]);
+  add_array_to_json(json, NAMES_UNIT_LAND[BOMBERS_LAND_AIR], land_state->bombers,
+                    STATES_MOVE_LAND[BOMBERS_LAND_AIR]);
   add_array_to_json(json, NAMES_UNIT_LAND[INFANTRY], land_state->infantry,
                     STATES_MOVE_LAND[INFANTRY]);
   add_array_to_json(json, NAMES_UNIT_LAND[ARTILLERY], land_state->artillery,

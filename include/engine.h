@@ -1,131 +1,163 @@
-#pragma once
+#ifndef ENGINE_H
+#define ENGINE_H
 #include "game_state.h"
-#include "typedefs.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-void initializeConstants();
+#define STRING_BUFFER_SIZE 64
+#define MIN_AIR_HOPS 2
+#define MAX_AIR_HOPS 6
+#define MIN_SEA_HOPS 1
+#define MAX_SEA_HOPS 2
+#define MIN_LAND_HOPS 1
+#define MAX_LAND_HOPS 2
+#define AIR_MOVE_SIZE 1 + MAX_AIR_HOPS - MIN_AIR_HOPS
+#define SEA_MOVE_SIZE 1 + MAX_SEA_HOPS - MIN_SEA_HOPS
+#define LAND_MOVE_SIZE 1 + MAX_LAND_HOPS - MIN_LAND_HOPS
+#define DEFENDER_LAND_UNIT_TYPES_COUNT 6
+#define ATTACKER_LAND_UNIT_TYPES_COUNT_1 3
+#define ATTACKER_LAND_UNIT_TYPES_COUNT_2 2
+#define DEFENDER_SEA_UNIT_TYPES_COUNT 13
+#define ATTACKER_SEA_UNIT_TYPES_COUNT_1 2
+#define ATTACKER_SEA_UNIT_TYPES_COUNT_2 2
+#define ATTACKER_SEA_UNIT_TYPES_COUNT_3 8
+#define BLOCKADE_UNIT_TYPES_COUNT 5
+#define PRINTABLE_GAME_STATUS_SIZE 4096
 
-typedef uint8_t PlayerIndexCount;
-typedef uint8_t AirMilitaryCount;
-typedef LandUnitStateSum* LandUnitStateSums[MAX_LAND_UNIT_STATES];
-typedef LandUnitStateSums LandUnitStates[LAND_UNIT_TYPES_COUNT];
-typedef SeaUnitStateSum* SeaUnitStateSums[MAX_SEA_UNIT_STATES];
-typedef SeaUnitStateSums SeaUnitStates[SEA_UNIT_TYPES_COUNT];
-typedef AirUnitStateSum* AirUnitStateSums[MAX_AIR_UNIT_STATES];
-typedef AirUnitStateSums AirUnitStates[AIR_UNIT_TYPES_COUNT];
+typedef uint8_t LandPath[LANDS_COUNT][AIRS_COUNT];
 
-typedef SeaUnitStateSums* SeaUnitStateSumsPtr; 
-typedef SeaUnitStates* SeaUnitStatesPtr;
-typedef LandUnitStates* LandUnitStatesPtr;
-typedef LandUnitStateSums* LandUnitStateSumsPtr;
+void initialize_constants();
 
-typedef Action ActionArray[AIRS_COUNT];
-typedef bool CheckedTerritories[AIRS_COUNT];
+void initialize_land_dist();
+void initialize_l2l_connections(uint8_t src_land);
+void initialize_l2s_connections(uint8_t src_land);
+void initialize_land_dist_zero(uint8_t src_land);
+void set_l2l_land_dist_to_one(uint8_t src_land);
+void set_l2s_land_dist_to_one(uint8_t src_land);
+void floyd_warshall(uint8_t* dist, uint8_t terr_count, uint8_t dist_count);
+
+void initialize_sea_dist();
+void initialize_s2s_connections(uint8_t src_sea);
+void initialize_s2l_connections(uint8_t src_sea);
+void initialize_sea_dist_zero(uint8_t canal_idx);
+void set_s2s_sea_dist_to_one(uint8_t canal_idx);
+void initialize_canals(uint8_t canal_idx);
+
+void initialize_air_dist();
+void initialize_air_dist_zero();
+void set_l2l_air_dist_to_one(uint8_t src_land);
+void set_l2s_air_dist_to_one(uint8_t src_land);
+void set_s2l_air_dist_to_one(uint8_t src_sea);
+void set_s2s_air_dist_to_one(uint8_t src_sea);
+void air_dist_floyd_warshall();
+
+void initialize_land_path();
+void set_land_path_for_l2l(uint8_t src_land, uint8_t intermediate_land, LandPath* land_path);
+void set_land_path_for_l2s(uint8_t src_land, uint8_t intermediate_land, LandPath* land_path);
+
+void initialize_sea_path();
+
+void initialize_within_x_moves();
+void initialize_land_within_2_moves(uint8_t src_land);
+void initialize_load_within_2_moves(uint8_t src_land);
+void initialize_sea_within_x_moves();
+void initialize_air_within_x_moves();
+void initialize_air_to_land_within_x_moves();
+
+void initialize_random_numbers();
+void initialize_land_pointers();
+void initialize_sea_pointers();
+
+void intialize_airs_x_to_4_moves_away();
+void initialize_skip_4air_precals();
+void apply_skip(uint8_t src_air, uint8_t dst_air);
 
 void load_game_data();
+
 void play_full_turn();
+void refresh_full_cache();
+void refresh_eot_cache();
+void refresh_economy();
+void refresh_land_armies();
+void refresh_sea_navies();
+void refresh_allies();
+void refresh_canals();
+void refresh_enemy_armies();
+void refresh_fleets();
+void refresh_land_path_blocked();
+void refresh_sea_path_blocked();
+
+void setPrintableStatus();
+void setPrintableStatusLands();
+void setPrintableStatusSeas();
+
+uint8_t getUserInput();
+uint8_t getAIInput();
+
+void build_landMove2Destination();
+void build_landMove1Destination();
+void build_landMove1DestinationAlt();
+void build_airMove2Destination();
+void build_airMove3Destination();
+void build_airMove4Destination();
+void build_airMove5Destination();
+void build_airMove6Destination();
+
+uint8_t get_user_purchase_input(uint8_t src_air);
+uint8_t get_user_move_input(uint8_t unit_type, uint8_t src_air);
+void update_move_history(uint8_t user_input, uint8_t src_air);
+bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea, uint8_t land_unit_state);
+void add_valid_land_moves(uint8_t src_land, uint8_t moves_remaining, uint8_t unit_type);
+void add_valid_sea_moves(uint8_t src_sea, uint8_t moves_remaining);
+void add_valid_sub_moves(uint8_t src_sea, uint8_t moves_remaining);
+bool stage_transport_units();
+void pre_move_fighter_units();
+bool move_fighter_units();
+bool move_bomber_units();
+void conquer_land(uint8_t dst_land);
+bool move_land_unit_type(uint8_t unit_type);
+bool move_transport_units();
+void skip_empty_transports();
+bool move_subs();
+bool move_destroyers_battleships();
+void carry_allied_fighters(uint8_t src_sea, uint8_t dst_sea);
+bool resolve_sea_battles();
+uint8_t ask_to_retreat();
+void remove_land_defenders(uint8_t src_land, uint8_t hits);
+void remove_land_attackers(uint8_t src_land, uint8_t hits);
+void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged);
+void remove_sea_attackers(uint8_t src_sea, uint8_t hits);
+bool unload_transports();
+bool resolve_land_battles();
+void add_valid_unload_moves(uint8_t src_sea);
+void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves);
+void add_valid_fighter_landing(uint8_t src_air, uint8_t remaining_moves);
+void add_valid_bomber_moves(uint8_t src_air, uint8_t remaining_moves);
+bool land_fighter_units();
+void add_valid_bomber_landing(uint8_t src_air, uint8_t movement_remaining);
+bool land_bomber_units();
+bool buy_units();
+void crash_air_units();
+void reset_units_fully();
+void buy_factory();
+void collect_money();
+void rotate_turns();
 double get_score();
+void debug_checks();
+void sea_retreat(uint8_t src_sea, uint8_t retreat);
 void set_seed(uint16_t seed);
+
 GameState* clone_state(GameState* game_state);
 void free_state(GameState* game_state);
-ActionArray* get_possible_actions(GameState* game_state, int* num_actions);
-void apply_action(GameState* game_state, Action action);
+
+typedef uint8_t Actions[AIRS_COUNT];
+typedef Actions* ActionsPtr;
+void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions);
+void apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
-void set_ally(PlayerIndex ally_idx);
-bool is_allied(PlayerIndex player_idx);
-void add_enemy(PlayerIndex player_idx);
-PlayerIndex get_land_owner(LandIndex land_idx);
-bool is_canal_controlled(CanalState canal_idx);
-PlayerIndex get_enemy_player(EnemyIndex enemy_idx);
-ArmySum get_player_armies(PlayerIndex player_idx, LandIndex land_idx);
-void acc_enemy_units_count(AirIndex air_idx, AirMilitaryCount sum);
-void set_is_land_path_blocked(LandIndex src_land, LandIndex dst_land);
-SeaUnitSumArray* get_my_sea_unit_types(SeaIndex sea_idx);
-void set_allied_carriers(SeaIndex sea_idx, NavySum carriers);
-SeaUnitSumArrayPtr get_player_sea_unit_types_ref(PlayerIndex player_idx, SeaIndex sea_idx);
-NavySum get_player_navies(PlayerIndex player_idx, SeaIndex sea_idx);
-void acc_enemy_destroyers(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
-void acc_enemy_blockade(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
-void acc_allied_carriers(SeaIndex sea_idx, SeaUnitSum carriers);
-void recalc_transports_cargo_space(SeaIndex sea_idx, SeaUnitSumArray* sea_units);
-NavySum get_enemy_blockade(SeaIndex sea_idx);
-void set_is_sea_path_blocked(SeaIndex src_sea, SeaIndex dst_sea, SeaIndex nextSeaMovement,
-                             SeaIndex nextSeaMovementAlt);
-AirMilitaryCount get_enemy_units_count(AirIndex air_idx);
-HitPoints get_factory_max(LandIndex land_idx);
-void set_is_sub_path_blocked(SeaIndex src_sea, SeaIndex dst_sea, SeaIndex nextSeaMovement,
-                             SeaIndex nextSeaMovementAlt);
-NavySum get_enemy_destroyers(SeaIndex sea_idx);
-LandTerr* get_land_terr(LandIndex land_idx);
-LandUnitSumArray* get_my_land_unit_types(LandIndex land_idx);
-LandUnitStates* get_my_land_unit_states(LandIndex land_idx);
-AirUnitStates* get_my_air_unit_states(AirIndex air_idx);
-void add_factory_location(PlayerIndex player_idx, LandIndex land_idx);
-void acc_income_from_land(PlayerIndex player_idx, LandIndex land_idx);
-ArmySum* get_player_armies_ref(PlayerIndex player_idx, LandIndex land_idx);
-void acc_LandUnitSumArray(LandUnitSumArray* land_units, LandUnitType unit_type,
-                          LandUnitStates* land_unit_states, GenericLandUnitState land_unit_state);
-void acc_ArmySumArray(ArmySum* army_sum, LandUnitSumArray* land_units, LandUnitType unit_type);
-LandUnitSumArray* get_player_land_unit_types_ref(PlayerIndex player_idx, LandIndex land_idx);
-SeaTerr* get_sea_terr(SeaIndex sea_idx);
-SeaUnitStates* get_my_sea_unit_states(SeaIndex sea_idx);
-NavySum* get_player_navies_ref(PlayerIndex player_idx, SeaIndex sea_idx);
-LandUnitSum get_land_unit_sum(LandUnitSumArray* land_units, LandUnitType unit_type);
-void acc_SeaUnitSumArray(SeaUnitSumArray* sea_units, SeaUnitType unit_type,
-                         SeaUnitStates* sea_unit_states, GenericSeaUnitState sea_unit_state);
-void acc_NavySumArray(NavySum* navy_sum, SeaUnitSumArray* sea_units, SeaUnitType unit_type);
-SeaUnitSum get_sea_unit_sum(SeaUnitSumArray* sea_units, SeaUnitType unit_type);
-void set_income_per_turn(PlayerIndex player_idx, Dollars income);
-void set_factory_count(PlayerIndex player_idx, LandIndex count);
-Player get_player_state_offset(PlayerIndex player_idx);
-HitPoints get_factory_hp(LandIndex land_idx);
-bool is_flagged_for_combat(AirIndex air_idx);
-LandUnitStateSumsPtr get_land_unit_state_sums(LandUnitStatesPtr land_unit_states,
-                                            LandUnitType unit_type);
-LandUnitStateSum get_land_unit_state_sum_at(LandUnitStateSums* landUnitStateSums,
-                                            GenericLandUnitState unit_state);
-SeaUnitStateSumsPtr get_sea_unit_state_sums(SeaUnitStatesPtr sea_unit_states, SeaUnitType unit_type);
-SeaUnitStateSum get_sea_unit_state_sum_at(SeaUnitStateSums* seaUnitStateSums,
-                                          GenericSeaUnitState unit_state);
-Dollars get_money(PlayerIndex player_idx);
-AirIndices* get_source_territories(LandIndex land_idx);
-AirIndex get_source_territory(AirIndices* source_territories,
-                              SourceTerritoryIndex source_terr_idx);
-void check_territory(bool* checked_territories, AirIndex src_air);
-bool was_terr_skipped(AirIndex src_air, AirIndex dst_air);
-bool has_checked_territory(const CheckedTerritories checked_territories, AirIndex src_air);
-AirIndex get_source_terr_count(LandIndex land_idx);
-LandIndex get_land_from_array(LandArray* land_array, LandConnIndex land_conn_idx);
-char* get_air_name(AirIndex air_idx);
-void replace_transport(SeaUnitStates* sea_unit_states, SeaUnitSumArray* sea_units,
-                              SeaUnitType new_trans_type, GenericSeaUnitState new_trans_state,
-                              SeaUnitType old_trans_type, GenericSeaUnitState trans_state);
-void remove_my_land_unit_state(LandIndex land_idx, LandUnitType unit_type,
-                               GenericLandUnitState land_unit_state);
-bool is_non_combat_unit(LandUnitType unit_type);
-bool is_non_loadable_unit(LandUnitType unit_type);
-bool is_heavy_unit(LandUnitType unit_type);
-void acc_sea_state_sums(SeaUnitStateSums* sea_unit_states, GenericSeaUnitState sea_unit_state,
-                        SeaUnitStateSum sum);
-SeaIndex convert_air_to_sea(AirIndex air_idx);
-void flag_for_combat(AirIndex air_idx);
-void unflag_for_combat(AirIndex air_idx);
-LandUnitType get_order_of_land_defenders(uint8_t idx);
-LandUnitType get_order_of_land_attackers_1(uint8_t idx);
-LandUnitType get_order_of_land_attackers_2(uint8_t idx);
-SeaUnitType get_order_of_sea_defenders(uint8_t idx);
-SeaUnitType get_order_of_sea_attackers_1(uint8_t idx);
-SeaUnitType get_order_of_sea_attackers_2(uint8_t idx);
-SeaUnitType get_order_of_sea_attackers_3(uint8_t idx);
-LandIndex convert_air_to_land(AirIndex air_idx);
-AirUnitStateSums* get_air_unit_state_sums(AirIndex air_idx, AirUnitType unit_type);
-AirUnitStateSum* get_air_unit_state_sum_at(AirUnitStateSums* air_unit_state_sums,
-                                           FighterState cur_state);
-AirUnitStateSum* get_bomber_state_sum_at(AirUnitStateSums* air_unit_state_sums,
-                                         BomberLandState cur_state);
-void set_builds_left(LandIndex land_idx, BuildsLeft value);
-PlayerIndex convert_state_player_offset(PlayerIndex player_idx);
+
+void load_single_game();
+#endif
