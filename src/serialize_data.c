@@ -26,6 +26,7 @@ void write_json_to_file(const char* filename, cJSON* json) {
   if (file == NULL) {
     perror("Failed to open file");
     free(string);
+    exit(1);
     return;
   }
   fprintf(file, "%s", string);
