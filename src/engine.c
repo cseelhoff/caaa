@@ -831,8 +831,10 @@ void debug_checks() {
   if (step_id == 999998819) {
     actually_print = true;
   }
-  printf("iter: %d  loops: %d  step_id: %d  seed: %d  answers_remaining: %d  select_action: %d\n",
-         MCTS_ITERATIONS, max_loops, step_id, seed, answers_remaining, use_selected_action);
+  if (actually_print) {
+    printf("iter: %d  loops: %d  step_id: %d  seed: %d  answers_remaining: %d  select_action: %d\n",
+           MCTS_ITERATIONS, max_loops, step_id, seed, answers_remaining, use_selected_action);
+  }
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
       int temp_unit_type_total = 0;
@@ -2897,6 +2899,10 @@ bool resolve_land_battles() {
       continue;
     }
 #ifdef DEBUG
+    // if (MCTS_ITERATIONS == 5201) {
+    //   actually_print = true;
+    //   cause_breakpoint();
+    // }
     // debug print the current src_land and its name
     if (actually_print) {
       printf("Resolve land combat in: %d, Name: %s\n", src_land, LANDS[src_land].name);
@@ -3425,10 +3431,8 @@ bool land_bomber_units() {
         if (valid_moves_count == 0) {
           valid_moves[valid_moves_count++] = src_air;
         }
-        uint8_t dst_air;
-        if (valid_moves_count == 1) {
-          dst_air = valid_moves[0];
-        } else {
+        uint8_t dst_air= valid_moves[0];
+        if (valid_moves_count > 1) {
           if (answers_remaining == 0)
             return true;
           dst_air = get_user_move_input(BOMBERS_LAND_AIR, src_air);
@@ -3608,7 +3612,7 @@ bool buy_units() {
         repair_cost = 1 + units_built - *factory_hp[dst_land]; // subtracting a negative
       // add all units that can be bought
       valid_moves_count = 1;
-      for (uint8_t unit_type = LAND_UNIT_TYPES_COUNT - 1; unit_type >= 0; unit_type--) {
+      for (int unit_type = LAND_UNIT_TYPES_COUNT - 1; unit_type >= 0; unit_type--) {
         // if (unit_type < last_purchased)
         //   break;
         if (skipped_4air_moves[0][unit_type]) {
@@ -3739,8 +3743,10 @@ void rotate_turns() {
   }
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     if (total_player_sea_units[0][sea_idx] > 0 && enemy_units_count[sea_idx + LANDS_COUNT] > 0) {
-      printf("DEBUG: Player %s has %d units at %s\n", PLAYERS[state.player_index].name,
-             total_player_sea_units[0][sea_idx], SEAS[sea_idx].name);
+      if (actually_print) {
+        printf("DEBUG: Player %s has %d units at %s\n", PLAYERS[state.player_index].name,
+               total_player_sea_units[0][sea_idx], SEAS[sea_idx].name);
+      }
     }
   }
 #endif
@@ -3837,9 +3843,11 @@ void rotate_turns() {
 
   refresh_eot_cache();
 #ifdef DEBUG
-  printf("DEBUG: Cache refreshed. Player %s's turn\n", PLAYERS[state.player_index].name);
-  setPrintableStatus();
-  printf("%s\n", printableGameStatus);
+  if (actually_print) {
+    printf("DEBUG: Cache refreshed. Player %s's turn\n", PLAYERS[state.player_index].name);
+    setPrintableStatus();
+    printf("%s\n", printableGameStatus);
+  }
   for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     for (uint8_t factory_index = 0; factory_index < total_factory_count[player_idx];
          factory_index++) {
@@ -3855,9 +3863,107 @@ void rotate_turns() {
 }
 
 double get_score() {
+
+  // Evaluate the game state and return a score
   int allied_score = 1; // one helps prevent division by zero
   int enemy_score = 1;
-  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+  allied_score += state.money[0];
+  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    LandState* land_state = &state.land_state[land_idx];
+    int total_units = 0;
+    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
+      total_units += land_state->fighters[unit_state];
+    }
+    allied_score += total_units * FIGHTER_COST;
+    for (int unit_state = 0; unit_state < BOMBER_LAND_STATES; unit_state++) {
+      total_units += land_state->bombers[unit_state];
+    }
+    allied_score += total_units * BOMBER_COST;
+    for (int unit_state = 0; unit_state < INFANTRY_STATES; unit_state++) {
+      total_units += land_state->infantry[unit_state];
+    }
+    allied_score += total_units * INFANTRY_COST;
+    total_units = 0;
+    for (int unit_state = 0; unit_state < ARTILLERY_STATES; unit_state++) {
+      total_units += land_state->artillery[unit_state];
+    }
+    allied_score += total_units * ARTILLERY_COST;
+    total_units = 0;
+    for (int unit_state = 0; unit_state < TANK_STATES; unit_state++) {
+      total_units += land_state->tanks[unit_state];
+    }
+    allied_score += total_units * TANK_COST;
+    total_units = 0;
+    for (int unit_state = 0; unit_state < AA_GUN_STATES; unit_state++) {
+      total_units += land_state->aa_guns[unit_state];
+    }
+    allied_score += total_units * AA_GUN_COST;
+  }
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    UnitsSea* sea_state = &state.units_sea[sea_idx];
+    int total_units = 0;
+    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
+      total_units += sea_state->fighters[unit_state];
+    }
+    allied_score += total_units * FIGHTER_COST;
+    for (int unit_state = 0; unit_state < TRANS_EMPTY_STATES; unit_state++) {
+      total_units += sea_state->trans_empty[unit_state];
+    }
+    allied_score += total_units * TRANSPORT_COST;
+    for (int unit_state = 0; unit_state < TRANS_1I_STATES; unit_state++) {
+      total_units += sea_state->trans_1i[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST);
+    for (int unit_state = 0; unit_state < TRANS_1A_STATES; unit_state++) {
+      total_units += sea_state->trans_1a[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + ARTILLERY_COST);
+    for (int unit_state = 0; unit_state < TRANS_1T_STATES; unit_state++) {
+      total_units += sea_state->trans_1t[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + TANK_COST);
+    for (int unit_state = 0; unit_state < TRANS_2I_STATES; unit_state++) {
+      total_units += sea_state->trans_2i[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + INFANTRY_COST);
+    for (int unit_state = 0; unit_state < TRANS_1I_1A_STATES; unit_state++) {
+      total_units += sea_state->trans_1i_1a[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + ARTILLERY_COST);
+    for (int unit_state = 0; unit_state < TRANS_1I_1T_STATES; unit_state++) {
+      total_units += sea_state->trans_1i_1t[unit_state];
+    }
+    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + TANK_COST);
+    for (int unit_state = 0; unit_state < SUB_STATES; unit_state++) {
+      total_units += sea_state->submarines[unit_state];
+    }
+    allied_score += total_units * SUB_COST;
+    for (int unit_state = 0; unit_state < DESTROYER_STATES; unit_state++) {
+      total_units += sea_state->destroyers[unit_state];
+    }
+    allied_score += total_units * DESTROYER_COST;
+    for (int unit_state = 0; unit_state < CARRIER_STATES; unit_state++) {
+      total_units += sea_state->carriers[unit_state];
+    }
+    allied_score += total_units * CARRIER_COST;
+    for (int unit_state = 0; unit_state < CRUISER_STATES; unit_state++) {
+      total_units += sea_state->cruisers[unit_state];
+    }
+    allied_score += total_units * CRUISER_COST;
+    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
+      total_units += sea_state->battleships[unit_state];
+    }
+    allied_score += total_units * BATTLESHIP_COST;
+    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
+      total_units += sea_state->bs_damaged[unit_state];
+    }
+    allied_score += total_units * BATTLESHIP_COST;
+    for (int unit_state = 0; unit_state < BOMBER_SEA_STATES; unit_state++) {
+      total_units += sea_state->bombers[unit_state];
+    }
+    allied_score += total_units * BOMBER_COST;
+  }
+  for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
     int score = state.money[player_idx];
     for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
       for (int unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
@@ -3871,12 +3977,14 @@ double get_score() {
             total_player_sea_unit_types[player_idx][sea_idx][unit_type] * COST_UNIT_SEA[unit_type];
       }
     }
-    if (is_allied_0[player_idx]) {
+    if (PLAYERS[state.player_index].is_allied[(state.player_index + player_idx) % PLAYERS_COUNT]) {
       allied_score += score;
     } else {
       enemy_score += score;
     }
   }
+  double score = ((double)allied_score / (double)(enemy_score + allied_score));
+
   // return ((double)2 * (double)allied_score / (double)(enemy_score + allied_score)) - (double)1;
   return ((double)allied_score / (double)(enemy_score + allied_score));
 }
@@ -3912,6 +4020,7 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
   answers_remaining = 0;
+  random_number_index = 0;
   while (true) {
     if (move_fighter_units())
       break;
@@ -3960,7 +4069,9 @@ void apply_action(GameState* game_state, uint8_t action) {
   // Apply the action to the game state
 
 #ifdef DEBUG
-  printf("DEBUG: copying state and Applying action %d\n", action);
+  if (actually_print) {
+    printf("DEBUG: copying state and Applying action %d\n", action);
+  }
 #endif
   uint8_t starting_player = game_state->player_index;
   if (starting_player >= PLAYERS_COUNT) {
@@ -3972,6 +4083,7 @@ void apply_action(GameState* game_state, uint8_t action) {
   answers_remaining = 1;
   selected_action = action;
   use_selected_action = true;
+  random_number_index = 0;
   // RANDOM_NUMBERS[random_number_index] = action;
   while (true) {
     if (move_fighter_units())
@@ -4076,8 +4188,8 @@ double random_play_until_terminal(GameState* game_state) {
   }
   bool start_and_end_player_allied =
       PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index) % PLAYERS_COUNT];
-  if ((starting_player >= PLAYERS_COUNT && start_and_end_player_allied) ||
-      (starting_player < PLAYERS_COUNT && !start_and_end_player_allied)) {
+  if ((starting_player >= PLAYERS_COUNT && !start_and_end_player_allied) ||
+      (starting_player < PLAYERS_COUNT && start_and_end_player_allied)) {
     score = 1 - score;
   }
   return score;
