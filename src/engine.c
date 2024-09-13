@@ -3491,7 +3491,8 @@ bool end_turn() {
   return false;
 }
 bool buy_units() {
-  bool units_to_process = false; // todo implement last_purchased
+  // todo implement last_purchased skipped_4air_moves[AIR_COUNT][AIR_COUNT]
+  bool units_to_process = false;
 #ifdef DEBUG
   if (actually_print) {
     setPrintableStatus();
@@ -3515,6 +3516,7 @@ bool buy_units() {
     uint8_t repair_cost = 0;
     // buy sea units
     for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[dst_land]; sea_idx++) {
+      units_to_process = false;
       uint8_t dst_sea = LAND_TO_SEA_CONN[dst_land][sea_idx];
       uint8_t dst_air = dst_sea + LANDS_COUNT;
       valid_moves[0] = SEA_UNIT_TYPES_COUNT; // pass all units
@@ -3531,17 +3533,23 @@ bool buy_units() {
         valid_moves_count = 1;
         for (int unit_type_idx = COST_UNIT_SEA_COUNT - 1; unit_type_idx >= 0; unit_type_idx--) {
           uint8_t unit_type = BUY_UNIT_SEA[unit_type_idx];
-          if (unit_type < last_purchased)
+          // if (unit_type < last_purchased) //skipped_4air_moves
+          //   break;
+          if (skipped_4air_moves[0][unit_type]) {
+            last_purchased = unit_type;
             break;
-          if (state.money[0] < COST_UNIT_SEA[unit_type] + repair_cost)
+          }
+          if (state.money[0] < COST_UNIT_SEA[unit_type] + repair_cost) {
             continue;
+          }
           if (unit_type == FIGHTERS) {
             int total_fighters = 0;
             for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
               total_fighters += total_player_sea_unit_types[player_idx][dst_sea][FIGHTERS];
             }
-            if (allied_carriers[dst_sea] * 2 <= total_fighters)
+            if (allied_carriers[dst_sea] * 2 <= total_fighters) {
               continue;
+            }
           }
           valid_moves[valid_moves_count++] = unit_type;
         }
@@ -3549,8 +3557,9 @@ bool buy_units() {
           state.builds_left[dst_air] = 0;
           break;
         }
-        if (answers_remaining == 0)
+        if (answers_remaining == 0) {
           return true;
+        }
         units_to_process = true;
         uint8_t purchase = get_user_purchase_input(dst_air);
         if (purchase == SEA_UNIT_TYPES_COUNT) { // pass all units
@@ -3573,12 +3582,22 @@ bool buy_units() {
         sea_units_state[dst_sea][purchase][0]++;
         total_player_sea_units[0][dst_sea]++;
         current_player_sea_unit_types[dst_sea][purchase]++;
-        last_purchased = purchase;
+        if (purchase > last_purchased) {
+          for (uint8_t unit_type2 = last_purchased; unit_type2 < purchase; unit_type2++) {
+            skipped_4air_moves[0][unit_type2] = true;
+          }
+
+          last_purchased = purchase;
+        }
+      }
+      if (units_to_process) {
+        clear_move_history();
       }
     }
     // buy land units
     valid_moves[0] = LAND_UNIT_TYPES_COUNT; // pass all units
     uint8_t last_purchased = 0;
+    units_to_process = false;
     while (state.builds_left[dst_land] > 0) {
       if (state.money[0] < INFANTRY_COST) {
         state.builds_left[dst_land] = 0;
@@ -3589,9 +3608,13 @@ bool buy_units() {
         repair_cost = 1 + units_built - *factory_hp[dst_land]; // subtracting a negative
       // add all units that can be bought
       valid_moves_count = 1;
-      for (int unit_type = LAND_UNIT_TYPES_COUNT - 1; unit_type >= 0; unit_type--) {
-        if (unit_type < last_purchased)
+      for (uint8_t unit_type = LAND_UNIT_TYPES_COUNT - 1; unit_type >= 0; unit_type--) {
+        // if (unit_type < last_purchased)
+        //   break;
+        if (skipped_4air_moves[0][unit_type]) {
+          last_purchased = unit_type;
           break;
+        }
         if (state.money[0] < COST_UNIT_LAND[unit_type] + repair_cost)
           continue;
         valid_moves[valid_moves_count++] = unit_type;
@@ -3602,6 +3625,7 @@ bool buy_units() {
       }
       if (answers_remaining == 0)
         return true;
+      units_to_process = true;
       uint8_t purchase = get_user_purchase_input(dst_land);
       if (purchase == LAND_UNIT_TYPES_COUNT) { // pass all units
         state.builds_left[dst_land] = 0;
@@ -3620,7 +3644,15 @@ bool buy_units() {
       land_units_state[dst_land][purchase][0]++;
       total_player_land_units[0][dst_land]++;
       total_player_land_unit_types[0][dst_land][purchase]++;
+      if (purchase > last_purchased) {
+        for (uint8_t unit_type2 = last_purchased; unit_type2 < purchase; unit_type2++) {
+          skipped_4air_moves[0][unit_type2] = true;
+        }
+      }
       last_purchased = purchase;
+    }
+    if (units_to_process) {
+      clear_move_history();
     }
   }
 #ifdef DEBUG
