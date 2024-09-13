@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define BASE_10 10
-#define DEFAULT_ITERATIONS 7000000
+#define DEFAULT_ITERATIONS 10000000
 
 int main(int argc, char *argv[]) {
   long iterations = DEFAULT_ITERATIONS;

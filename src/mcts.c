@@ -24,7 +24,7 @@ extern double random_play_until_terminal(GameState* state);
 
 static MCTSNode* create_node(GameState* state, uint8_t action, MCTSNode* parent) {
   MCTSNode* node = (MCTSNode*)malloc(sizeof(MCTSNode));
-  node->state = *clone_state(state);
+  node->state = *state; //*clone_state(state);
   node->action = action;
   node->parent = parent;
   node->children = NULL;
@@ -34,13 +34,13 @@ static MCTSNode* create_node(GameState* state, uint8_t action, MCTSNode* parent)
   return node;
 }
 
-static void free_node(MCTSNode* node) {
-  free_state(&node->state);
-  free(node->children);
-  free(node);
-}
+// static void free_node(MCTSNode* node) {
+//   free_state(&node->state);
+//   free(node->children);
+//   free(node);
+// }
 
-static MCTSNode* select_node(MCTSNode* node) {
+static MCTSNode* select_best_leaf(MCTSNode* node) {
   while (node->num_children > 0) {
     double best_value = -INFINITY;
     MCTSNode* best_child = NULL;
@@ -62,45 +62,48 @@ static void expand_node(MCTSNode* node) {
   uint8_t num_actions;
   Actions actions = {0};
   ActionsPtr actionsPtr = &actions;
+  //  printf("Expanding node: %d\n", node->action);
   get_possible_actions(&node->state, &num_actions, actionsPtr);
   node->children = (MCTSNode**)malloc((unsigned long)num_actions * sizeof(MCTSNode*));
   for (int i = 0; i < num_actions; i++) {
     GameState* new_state = clone_state(&node->state);
     uint8_t next_action = actions[i];
+    //  printf("  Applying Action: %d\n", next_action);
     apply_action(new_state, next_action);
     node->children[i] = create_node(new_state, next_action, node);
-    free_state(new_state);
+    // free_state(new_state);
   }
   node->num_children = num_actions;
-}
-
-static double simulate(GameState* state) {
-  double result = random_play_until_terminal(state);
-  return result;
-}
-
-static void backpropagate(MCTSNode* node, double result) {
-  while (node != NULL) {
-    node->visits++;
-    node->value += result;
-    node = node->parent;
-  }
 }
 
 MCTSNode* mcts_search(GameState* initial_state, int iterations) {
   MCTSNode* root = create_node(initial_state, 0, NULL);
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 500 == 0) {
+    if (MCTS_ITERATIONS % 10000 == 0) {
       printf("Iteration %d\n", MCTS_ITERATIONS);
       print_mcts(root);
     }
-    MCTSNode* node = select_node(root);
+    // select best leaf from node root
+    MCTSNode* node = select_best_leaf(root);
+    // printf("Action Chain: <-%d", node->action);
+    // MCTSNode* parent = node->parent;
+    // while(parent != NULL) {
+    //   printf("<-%d", parent->action);
+    //   parent = parent->parent;
+    // }
+    // printf("\n");
     if (!is_terminal_state(&node->state)) {
       expand_node(node);
       node = node->children[rand() % node->num_children];
     }
-    double result = simulate(&node->state);
-    backpropagate(node, result);
+    // simulate
+    double result = random_play_until_terminal(&node->state);
+    // backpropagate
+    while (node != NULL) {
+      node->visits++;
+      node->value += result;
+      node = node->parent;
+    }
   }
   return root;
 }
@@ -128,7 +131,7 @@ double action_sequence_values[MAX_ACTION_SEQUENCES] = {0};
 void update_top_action_sequences(Action_Sequence current_sequence, int length, double value,
                                  int visits) {
   for (int i = 0; i < MAX_ACTION_SEQUENCES; i++) {
-    if (visits > action_sequence_visits[i]) {
+    if (value > action_sequence_values[i]) {
       // Shift lower value sequences down
       for (int j = MAX_ACTION_SEQUENCES - 1; j > i; j--) {
         action_sequence_values[j] = action_sequence_values[j - 1];

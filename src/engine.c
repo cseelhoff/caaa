@@ -152,7 +152,6 @@ void initialize_constants() {
   initialize_sea_pointers();
   intialize_airs_x_to_4_moves_away();
   initialize_skip_4air_precals();
-  printf("Exiting initializeGameData");
 }
 
 void initialize_land_dist() {
@@ -788,8 +787,8 @@ void play_full_turn() {
   debug_checks();
   buy_units();
   debug_checks();
-  end_turn();
-  debug_checks();
+  // end_turn();
+  // debug_checks();
   crash_air_units();
   debug_checks();
   reset_units_fully();
@@ -3914,8 +3913,8 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
       break;
     if (buy_units())
       break;
-    if (end_turn())
-      break;
+    // if (end_turn())
+    //   break;
     crash_air_units();
     reset_units_fully();
     buy_factory();
@@ -3975,15 +3974,18 @@ void apply_action(GameState* game_state, uint8_t action) {
       break;
     if (buy_units())
       break;
-    if (end_turn())
-      break;
+    // if (end_turn())
+    //   break;
     crash_air_units();
     reset_units_fully();
     buy_factory();
     collect_money();
     rotate_turns();
   }
-  if (PLAYERS[starting_player].is_allied[(state.player_index)]) {
+  if (PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index)]) {
+    // printf("(adding to player_index) Player %s is allied with player %s\n",
+    // PLAYERS[starting_player % PLAYERS_COUNT].name,
+    //       PLAYERS[state.player_index].name);
     state.player_index += PLAYERS_COUNT;
   }
   memcpy(game_state, &state, sizeof(GameState));
@@ -4032,7 +4034,7 @@ double random_play_until_terminal(GameState* game_state) {
     land_fighter_units();
     land_bomber_units();
     buy_units();
-    end_turn();
+    //    end_turn();
     crash_air_units();
     reset_units_fully();
     buy_factory();
@@ -4040,8 +4042,12 @@ double random_play_until_terminal(GameState* game_state) {
     rotate_turns();
     score = get_score();
   }
-  if (PLAYERS[starting_player].is_allied[(state.player_index) % PLAYERS_COUNT])
+  bool start_and_end_player_allied =
+      PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index) % PLAYERS_COUNT];
+  if ((starting_player >= PLAYERS_COUNT && start_and_end_player_allied) ||
+      (starting_player < PLAYERS_COUNT && !start_and_end_player_allied)) {
     score = 1 - score;
+  }
   return score;
 }
 
@@ -4179,7 +4185,7 @@ double evaluate_state(GameState* game_state) {
   }
   double score = ((double)allied_score / (double)(enemy_score + allied_score));
   game_state->player_index = starting_player;
-  if(starting_player >= PLAYERS_COUNT) {
+  if (starting_player >= PLAYERS_COUNT) {
     return 1 - score;
   }
   return score;
@@ -4225,7 +4231,7 @@ void load_single_game() {
     land_fighter_units();
     land_bomber_units();
     buy_units();
-    end_turn();
+    //    end_turn();
     crash_air_units();
     reset_units_fully();
     buy_factory();
