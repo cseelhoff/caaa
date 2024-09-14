@@ -19,6 +19,10 @@ typedef uint8_t Actions[ACTIONS_COUNT];
 typedef Actions* ActionsPtr;
 
 typedef struct {
+    bool bit : 1;
+} BitField;
+
+typedef struct {
   uint8_t owner_idx; // rotates
   int8_t factory_hp;
   uint8_t factory_max;
@@ -61,6 +65,7 @@ typedef struct {
   uint8_t other_land_units[PLAYERS_COUNT - 1][LANDS_COUNT][LAND_UNIT_TYPES_COUNT]; // rotates
   uint8_t other_sea_units[PLAYERS_COUNT - 1][SEAS_COUNT][SEA_UNIT_TYPES_COUNT - 1]; // no parking bombers at sea
   uint8_t flagged_for_combat[AIRS_COUNT]; // track retreats
+  BitField skipped_moves[AIRS_COUNT][AIRS_COUNT];
 } GameState;
 
 #endif
