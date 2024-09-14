@@ -3,6 +3,7 @@
 
 #include "canal.h"
 #include "land.h"
+//#include "mcts.h"
 #include "player.h"
 #include "sea.h"
 #include "team.h"
@@ -12,6 +13,10 @@
 //#define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
 #define MAX_AIR_TO_AIR_CONNECTIONS 7
+
+#define ACTIONS_COUNT 20
+typedef uint8_t Actions[ACTIONS_COUNT];
+typedef Actions* ActionsPtr;
 
 typedef struct {
   uint8_t owner_idx; // rotates

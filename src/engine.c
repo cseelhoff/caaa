@@ -141,6 +141,7 @@ int max_loops = 0;
 bool actually_print = false;
 
 void initialize_constants() {
+  actually_print = PLAYERS[0].is_human;
   initialize_land_dist();
   initialize_sea_dist();
   initialize_air_dist();
@@ -4156,11 +4157,11 @@ void apply_action(GameState* game_state, uint8_t action) {
   memcpy(game_state, &state, sizeof(GameState));
 }
 double random_play_until_terminal(GameState* game_state) {
-  uint8_t starting_player = game_state->player_index;
-  if (starting_player >= PLAYERS_COUNT) {
-    game_state->player_index -= PLAYERS_COUNT;
-  }
   memcpy(&state, game_state, sizeof(GameState));
+  uint8_t starting_player = state.player_index;
+  if (starting_player >= PLAYERS_COUNT) {
+    state.player_index -= PLAYERS_COUNT;
+  }
   // if (MCTS_ITERATIONS == 7549) {
   //   printf("%d, %d\n", seed, random_number_index);
   //   json = serialize_game_data_to_json(game_state);
@@ -4173,6 +4174,7 @@ double random_play_until_terminal(GameState* game_state) {
   use_selected_action = false;
   double score = get_score();
   max_loops = 1000;
+  random_number_index = (uint16_t)(rand() % RANDOM_NUMBERS_SIZE);
   clear_move_history();
   while (score > 0.01 && score < 0.99 && max_loops-- > 0) {
     // printf("max_loops: %d\n", max_loops);

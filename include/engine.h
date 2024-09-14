@@ -150,9 +150,7 @@ void set_seed(uint16_t seed);
 GameState* clone_state(GameState* game_state);
 void free_state(GameState* game_state);
 
-#define ACTIONS_COUNT 20
-typedef uint8_t Actions[ACTIONS_COUNT];
-typedef Actions* ActionsPtr;
+
 void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions);
 void apply_action(GameState* game_state, uint8_t action);
 bool is_terminal_state(GameState* game_state);
