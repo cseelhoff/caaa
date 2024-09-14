@@ -94,9 +94,13 @@ MCTSNode* mcts_search(GameState* initial_state, int iterations) {
     // backpropagate
     while (node != NULL) {
       node->visits++;
-      node->value += result;
+      if(node->parent != NULL && node->parent->state.player_index % 2 == 0) {
+        node->value += result;
+      } else {
+       node->value += 1 - result;
+      }
+      //node->value += result;
       node = node->parent;
-      result = 1 - result;
     }
   }
   return root;

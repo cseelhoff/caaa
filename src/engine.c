@@ -4031,12 +4031,12 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   // if (MCTS_ITERATIONS == 6767) {
   //   actually_print = true;
   // }
-  uint8_t starting_player = game_state->player_index;
-  if (starting_player >= PLAYERS_COUNT) {
-    *num_actions = 1;
-    (*actions)[0] = MAX_UINT8_T;
-    return;
-  }
+  // uint8_t starting_player = game_state->player_index;
+  // if (starting_player >= PLAYERS_COUNT) {
+  //   *num_actions = 1;
+  //   (*actions)[0] = MAX_UINT8_T;
+  //   return;
+  // }
 
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
@@ -4095,11 +4095,11 @@ void apply_action(GameState* game_state, uint8_t action) {
     printf("DEBUG: copying state and Applying action %d\n", action);
   }
 #endif
-  uint8_t starting_player = game_state->player_index;
-  if (starting_player >= PLAYERS_COUNT) {
-    game_state->player_index -= PLAYERS_COUNT;
-    return;
-  }
+  // uint8_t starting_player = game_state->player_index;
+  // if (starting_player >= PLAYERS_COUNT) {
+  //   game_state->player_index -= PLAYERS_COUNT;
+  //   return;
+  // }
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
   answers_remaining = 1;
@@ -4149,20 +4149,20 @@ void apply_action(GameState* game_state, uint8_t action) {
     collect_money();
     rotate_turns();
   }
-  if (PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index)]) {
-    // printf("(adding to player_index) Player %s is allied with player %s\n",
-    // PLAYERS[starting_player % PLAYERS_COUNT].name,
-    //       PLAYERS[state.player_index].name);
-    state.player_index += PLAYERS_COUNT;
-  }
+  // if (PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index)]) {
+  //   // printf("(adding to player_index) Player %s is allied with player %s\n",
+  //   // PLAYERS[starting_player % PLAYERS_COUNT].name,
+  //   //       PLAYERS[state.player_index].name);
+  //   state.player_index += PLAYERS_COUNT;
+  // }
   memcpy(game_state, &state, sizeof(GameState));
 }
 double random_play_until_terminal(GameState* game_state) {
   memcpy(&state, game_state, sizeof(GameState));
   uint8_t starting_player = state.player_index;
-  if (starting_player >= PLAYERS_COUNT) {
-    state.player_index -= PLAYERS_COUNT;
-  }
+  // if (starting_player >= PLAYERS_COUNT) {
+  //   state.player_index -= PLAYERS_COUNT;
+  // }
   // if (MCTS_ITERATIONS == 7549) {
   //   printf("%d, %d\n", seed, random_number_index);
   //   json = serialize_game_data_to_json(game_state);
@@ -4211,10 +4211,7 @@ double random_play_until_terminal(GameState* game_state) {
     rotate_turns();
     score = get_score();
   }
-  bool start_and_end_player_allied =
-      PLAYERS[starting_player % PLAYERS_COUNT].is_allied[(state.player_index) % PLAYERS_COUNT];
-  if ((starting_player >= PLAYERS_COUNT && !start_and_end_player_allied) ||
-      (starting_player < PLAYERS_COUNT && start_and_end_player_allied)) {
+  if (state.player_index % 2 == 1) {
     score = 1 - score;
   }
   return score;
