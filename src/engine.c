@@ -3687,6 +3687,7 @@ bool buy_units() {
 
 void crash_air_units() {
   // crash planes not on friendly land
+  pre_move_fighter_units();
   for (uint8_t air_idx = 0; air_idx < LANDS_COUNT; air_idx++) {
     if (canFighterLandHere[air_idx]) {
       continue;

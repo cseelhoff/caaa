@@ -21,7 +21,7 @@ extern double evaluate_state(GameState* state);
 extern double random_play_until_terminal(GameState* state);
 
 #define EXPLORATION_CONSTANT 1.414
-//#define EXPLORATION_CONSTANT 3
+//#define EXPLORATION_CONSTANT 10
 
 bool check5 = false;
 
@@ -89,7 +89,7 @@ MCTSNode* mcts_search(GameState* initial_state, int iterations) {
     // }
 
     // simulate
-    
+
     double result = random_play_until_terminal(&node->state);
     // backpropagate
     while (node != NULL) {
@@ -185,7 +185,29 @@ void print_top_action_sequences() {
     }
   }
 }
-
+void print_mcts_tree3(MCTSNode* node, int depth) {
+  if (node == NULL)
+    return;
+  if (depth > 40 | node->num_children == 0) {
+    return;
+  }
+  for (int i = 0; i < depth; i++) {
+    printf("  ");
+  }
+  printf("Action: %d, Visits: %d, Value: %.2f, Avg:%.4f\n", node->action, node->visits, node->value,
+         node->value / node->visits);
+  // Recursively print the children
+  uint8_t best_index = 0;
+  double best_value = 0;
+  for (int i = 0; i < node->num_children; i++) {
+    double new_value = node->children[i]->value / node->children[i]->visits;
+    if (new_value > best_value) {
+      best_value = new_value;
+      best_index = i;
+    }
+  }
+  print_mcts_tree3(node->children[best_index], depth + 1);
+}
 void print_mcts_tree2(MCTSNode* node, int depth) {
   if (node == NULL)
     return;
@@ -207,14 +229,14 @@ void print_mcts_tree2(MCTSNode* node, int depth) {
 }
 // Public function to print the MCTS tree starting from the root
 void print_mcts(MCTSNode* root) {
-  Action_Sequence current_sequence = {0};
-  for (uint8_t i = 0; i < MAX_ACTION_SEQUENCES; i++) {
-    action_sequence_values[i] = 0;
-    action_sequence_visits[i] = 0;
-  }
-  print_mcts_tree(root, 0, current_sequence, 0);
-  print_mcts_tree2(root, 0);
-  print_top_action_sequences();
+  // Action_Sequence current_sequence = {0};
+  // for (uint8_t i = 0; i < MAX_ACTION_SEQUENCES; i++) {
+  //   action_sequence_values[i] = 0;
+  //   action_sequence_visits[i] = 0;
+  // }
+  // print_mcts_tree(root, 0, current_sequence, 0);
+  print_mcts_tree3(root, 0);
+  // print_top_action_sequences();
 }
 
 uint8_t select_best_action(MCTSNode* root) {
