@@ -1,5 +1,6 @@
 #include "mcts.h"
 #include "game_state.h"
+#include "player.h"
 #include "serialize_data.h"
 #include <cjson/cJSON.h>
 #include <math.h>
@@ -94,12 +95,12 @@ MCTSNode* mcts_search(GameState* initial_state, int iterations) {
     // backpropagate
     while (node != NULL) {
       node->visits++;
-      if(node->parent != NULL && node->parent->state.player_index % 2 == 0) {
+      if (node->parent != NULL && node->parent->state.player_index % 2 == 0) {
         node->value += result;
       } else {
-       node->value += 1 - result;
+        node->value += 1 - result;
       }
-      //node->value += result;
+      // node->value += result;
       node = node->parent;
     }
   }
@@ -195,11 +196,11 @@ void print_mcts_tree3(MCTSNode* node, int depth) {
   if (depth > 40 | node->num_children == 0) {
     return;
   }
-  for (int i = 0; i < depth; i++) {
-    printf("  ");
+  if (node->parent != NULL) {
+    printf("%sAction: %d, Visits: %d, Value: %.2f, Avg:%.4f\033[0m\n",
+           PLAYERS[node->parent->state.player_index].color, node->action, node->visits, node->value,
+           node->value / node->visits);
   }
-  printf("Action: %d, Visits: %d, Value: %.2f, Avg:%.4f\n", node->action, node->visits, node->value,
-         node->value / node->visits);
   // Recursively print the children
   uint8_t best_index = 0;
   double best_value = 0;
