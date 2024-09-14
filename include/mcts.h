@@ -22,4 +22,5 @@ typedef uint8_t Action_Sequence[MAX_ACTIONS];
 void print_mcts_tree(MCTSNode* node, uint8_t depth, Action_Sequence current_sequence, int length);
 void print_mcts(MCTSNode* root);
 void print_top_action_sequences();
+static void expand_node(MCTSNode* node);
 #endif // MCTS_H

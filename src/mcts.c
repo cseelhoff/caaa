@@ -60,6 +60,47 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
   return node;
 }
 
+MCTSNode* mcts_search(GameState* initial_state, int iterations) {
+  MCTSNode* root = create_node(initial_state, 0, NULL);
+  for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
+    if (MCTS_ITERATIONS % 10000 == 0) {
+      printf("Iteration %d\n", MCTS_ITERATIONS);
+      print_mcts(root);
+    }
+    // select best leaf from node root
+    MCTSNode* node = select_best_leaf(root);
+    // if (MCTS_ITERATIONS == 6575) {
+    //   write_json_to_file("debug_save.json", serialize_game_data_to_json(&node->state));
+    // }
+    // printf("Action Chain: <-%d", node->action);
+    // MCTSNode* parent = node->parent;
+    // while(parent != NULL) {
+    //   printf("<-%d", parent->action);
+    //   parent = parent->parent;
+    // }
+    // printf("\n");
+    if (!is_terminal_state(&node->state)) {
+      expand_node(node);
+      node = node->children[rand() % node->num_children];
+    }
+    // if (MCTS_ITERATIONS == 7549) {
+    //   write_json_to_file("debug_save.json", serialize_game_data_to_json(&node->state));
+    // }
+
+    // simulate
+    double result = random_play_until_terminal(&node->state);
+    // backpropagate
+    int breakpoint = 0;
+    while (node != NULL) {
+      node->visits++;
+      node->value += result;
+      node = node->parent;
+    }
+    breakpoint = 0;
+  }
+  return root;
+}
+
 static void expand_node(MCTSNode* node) {
   uint8_t num_actions = 0;
   Actions actions = {0};
@@ -76,58 +117,6 @@ static void expand_node(MCTSNode* node) {
     // free_state(new_state);
   }
   node->num_children = num_actions;
-}
-
-MCTSNode* mcts_search(GameState* initial_state, int iterations) {
-  MCTSNode* root = create_node(initial_state, 0, NULL);
-  for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 100 == 0) {
-      printf("Iteration %d\n", MCTS_ITERATIONS);
-      print_mcts(root);
-    }
-    // select best leaf from node root
-    MCTSNode* node = select_best_leaf(root);
-    if (MCTS_ITERATIONS == 6575) {
-      int breakpoint = 0;
-      cJSON* json = serialize_game_data_to_json(&node->state);
-      write_json_to_file("rel6575.json", json);
-    }
-    // printf("Action Chain: <-%d", node->action);
-    // MCTSNode* parent = node->parent;
-    // while(parent != NULL) {
-    //   printf("<-%d", parent->action);
-    //   parent = parent->parent;
-    // }
-    // printf("\n");
-    if (!is_terminal_state(&node->state)) {
-      expand_node(node);
-      node = node->children[rand() % node->num_children];
-    }
-    // simulate
-    double result = random_play_until_terminal(&node->state);
-    // backpropagate
-    int breakpoint = 0;
-    while (node != NULL) {
-      node->visits++;
-      node->value += result;
-      node = node->parent;
-    }
-    breakpoint = 0;
-  }
-  return root;
-}
-
-uint8_t select_best_action(MCTSNode* root) {
-  MCTSNode* best_child = NULL;
-  double best_value = -INFINITY;
-  for (int i = 0; i < root->num_children; i++) {
-    MCTSNode* child = root->children[i];
-    if (child->value > best_value) {
-      best_value = child->value;
-      best_child = child;
-    }
-  }
-  return best_child->action;
 }
 
 #define MAX_ACTION_SEQUENCES 20
@@ -232,4 +221,17 @@ void print_mcts(MCTSNode* root) {
   // }
   print_mcts_tree2(root, 0);
   print_top_action_sequences();
+}
+
+uint8_t select_best_action(MCTSNode* root) {
+  MCTSNode* best_child = NULL;
+  double best_value = -INFINITY;
+  for (int i = 0; i < root->num_children; i++) {
+    MCTSNode* child = root->children[i];
+    if (child->value > best_value) {
+      best_value = child->value;
+      best_child = child;
+    }
+  }
+  return best_child->action;
 }

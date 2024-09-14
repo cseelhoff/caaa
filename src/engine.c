@@ -882,11 +882,11 @@ void debug_checks() {
       }
 
       if (total_player_land_units[player_idx][land_idx] < 0 ||
-          total_player_land_units[player_idx][land_idx] > 240) {
+          total_player_land_units[player_idx][land_idx] > 900) {
         printf("units_land_player_total[player_idx][land_idx] < 0");
         cause_breakpoint();
       }
-      if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > 240) {
+      if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > 500) {
         printf("enemy_units_count[land_idx] < 0");
         cause_breakpoint();
       }
@@ -1537,6 +1537,7 @@ bool stage_transport_units() {
 }
 
 void pre_move_fighter_units() {
+  memset(canFighterLandHere, 0, sizeof(canFighterLandHere));
 #ifdef DEBUG
   if (actually_print) {
     setPrintableStatus();
@@ -1564,7 +1565,7 @@ void pre_move_fighter_units() {
   }
   for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     if (allied_carriers[sea_idx] > 0) {
-      canFighterLandHere[sea_idx] = true;
+      canFighterLandHere[sea_idx + LANDS_COUNT] = true;
       // if player owns these carriers, then landing area is 2 spaces away
       if (sea_units_state[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
         uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[sea_idx];
@@ -1594,6 +1595,11 @@ void pre_move_fighter_units() {
   }
 }
 bool move_fighter_units() {
+#ifdef DEBUG
+  if (actually_print) {
+    printf("move_fighter_units\n");
+  }
+#endif
   bool units_to_process = false;
   for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
     uint8_t* total_fighters = &air_units_state[src_air][FIGHTERS][FIGHTER_MOVES_MAX];
@@ -2861,7 +2867,7 @@ bool unload_transports() {
           *total_units = 0;
           continue;
         }
-        bombard_max[dst_air]++;
+        (*bombard_max[dst_air])++;
         land_units_state[dst_air][unload_cargo1][0]++;
         current_player_land_unit_types[dst_air][unload_cargo1]++;
         total_player_land_units[0][dst_air]++;
@@ -2870,7 +2876,7 @@ bool unload_transports() {
         current_player_sea_unit_types[src_sea][unit_type]--;
         *total_units -= 1;
         if (unit_type > TRANS_1T) {
-          bombard_max[dst_air]++;
+          (*bombard_max[dst_air])++;
           land_units_state[dst_air][unload_cargo2][0]++;
           current_player_land_unit_types[dst_air][unload_cargo2]++;
           total_player_land_units[0][dst_air]++;
@@ -2973,7 +2979,7 @@ bool resolve_land_battles() {
 #endif
 
       // bombard_shores
-      if (bombard_max[src_land] > 0) {
+      if (*bombard_max[src_land] > 0) {
         attacker_damage = 0;
 #ifdef DEBUG
         if (actually_print) {
@@ -2984,15 +2990,15 @@ bool resolve_land_battles() {
           for (uint8_t sea_idx = 0; sea_idx < LAND_TO_SEA_COUNT[src_land]; sea_idx++) {
             uint8_t src_sea = LAND_TO_SEA_CONN[src_land][sea_idx];
             uint8_t* total_bombard_ships = sea_units_state[src_sea][unit_type];
-            while (total_bombard_ships[1] > 0 && bombard_max[src_land] > 0) {
+            while (total_bombard_ships[1] > 0 && *bombard_max[src_land] > 0) {
               attacker_damage += ATTACK_UNIT_SEA[unit_type];
               total_bombard_ships[0]++;
               total_bombard_ships[1]--;
-              bombard_max[src_land]--;
+              (*bombard_max[src_land])--;
             }
           }
         }
-        bombard_max[src_land] = 0;
+        *bombard_max[src_land] = 0;
         attacker_hits = (attacker_damage / 6) +
                         (RANDOM_NUMBERS[random_number_index++] % 6 < attacker_damage % 6 ? 1 : 0);
         if (attacker_hits > 0) {
@@ -3080,7 +3086,8 @@ bool resolve_land_battles() {
       // print land location name
 #ifdef DEBUG
       if (actually_print) {
-        printf("Current land battle start src_land: %d, Name: %s", src_land, LANDS[src_land].name);
+        printf("Current land battle start src_land: %d, Name: %s\n", src_land,
+               LANDS[src_land].name);
         setPrintableStatus();
         printf("%s\n", printableGameStatus);
       }
@@ -3225,6 +3232,12 @@ void add_valid_unload_moves(uint8_t src_sea) {
 }
 
 void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves) {
+#ifdef DEBUG
+  if (actually_print) {
+    printf("DEBUG: add_valid_fighter_moves: src_air: %d, remaining_moves: %d\n", src_air,
+           remaining_moves);
+  }
+#endif
   uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
   uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
   for (int i = 0; i < near_air_count; i++) {
@@ -3280,6 +3293,7 @@ void add_valid_bomber_moves(uint8_t src_air, uint8_t remaining_moves) {
 
 void refresh_can_fighter_land_here() {
   //  refresh_canFighterLandHere_final
+  memset(canFighterLandHere, 0, sizeof(canFighterLandHere));
   for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     // if (allied_carriers[sea_idx] > 0) {
     canFighterLandHere[sea_idx + LANDS_COUNT] = allied_carriers[sea_idx] > 0;
@@ -3431,7 +3445,7 @@ bool land_bomber_units() {
         if (valid_moves_count == 0) {
           valid_moves[valid_moves_count++] = src_air;
         }
-        uint8_t dst_air= valid_moves[0];
+        uint8_t dst_air = valid_moves[0];
         if (valid_moves_count > 1) {
           if (answers_remaining == 0)
             return true;
@@ -4010,6 +4024,9 @@ void free_state(GameState* game_state) {
 }
 void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions) {
   // Return the list of possible actions from the given state
+  // if (MCTS_ITERATIONS == 6767) {
+  //   actually_print = true;
+  // }
   uint8_t starting_player = game_state->player_index;
   if (starting_player >= PLAYERS_COUNT) {
     *num_actions = 1;
@@ -4021,6 +4038,7 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   refresh_full_cache();
   answers_remaining = 0;
   random_number_index = 0;
+  clear_move_history();
   while (true) {
     if (move_fighter_units())
       break;
@@ -4084,6 +4102,7 @@ void apply_action(GameState* game_state, uint8_t action) {
   selected_action = action;
   use_selected_action = true;
   random_number_index = 0;
+  clear_move_history();
   // RANDOM_NUMBERS[random_number_index] = action;
   while (true) {
     if (move_fighter_units())
@@ -4140,10 +4159,10 @@ double random_play_until_terminal(GameState* game_state) {
     game_state->player_index -= PLAYERS_COUNT;
   }
   memcpy(&state, game_state, sizeof(GameState));
-  // if (MCTS_ITERATIONS == 99995410) {
+  // if (MCTS_ITERATIONS == 7549) {
   //   printf("%d, %d\n", seed, random_number_index);
   //   json = serialize_game_data_to_json(game_state);
-  //   write_json_to_file("rel5410.json", json);
+  //   write_json_to_file("debug_data.json", json);
   //   cJSON_Delete(json);
   //   actually_print = true;
   // }
@@ -4152,6 +4171,7 @@ double random_play_until_terminal(GameState* game_state) {
   use_selected_action = false;
   double score = get_score();
   max_loops = 1000;
+  clear_move_history();
   while (score > 0.01 && score < 0.99 && max_loops-- > 0) {
     // printf("max_loops: %d\n", max_loops);
     //  if(max_loops == 2) {
