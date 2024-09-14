@@ -825,10 +825,10 @@ void play_full_turn() {
 }
 #endif
 void cause_breakpoint() { printf("\nbreakpoint\n"); }
-//#ifdef DEBUG
+#ifdef DEBUG
 void debug_checks() {
   step_id++;
-  if (step_id == 999998819) {
+  if (step_id == 1999998819) {
     actually_print = true;
   }
   if (actually_print) {
@@ -963,7 +963,9 @@ void debug_checks() {
     }
   }
 }
-//#endif
+#else
+void debug_checks() {}
+#endif
 void setPrintableStatus() {
 #ifdef DEBUG
   debug_checks();
@@ -3483,7 +3485,7 @@ bool land_bomber_units() {
         } else {
           uint8_t src_sea = src_air - LANDS_COUNT;
           total_player_sea_units[0][src_sea]--;
-          current_player_land_unit_types[src_sea][BOMBERS_LAND_AIR]--;
+          current_player_sea_unit_types[src_sea][BOMBERS_LAND_AIR]--;
         }
         *total_bomber_count -= 1;
 #ifdef DEBUG

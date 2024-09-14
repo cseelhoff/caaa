@@ -22,7 +22,8 @@ extern bool is_terminal_state(GameState* state);
 extern double evaluate_state(GameState* state);
 extern double random_play_until_terminal(GameState* state);
 
-#define EXPLORATION_CONSTANT 1.414
+//#define EXPLORATION_CONSTANT 1.414
+#define EXPLORATION_CONSTANT 0.6
 
 static MCTSNode* create_node(GameState* state, uint8_t action, MCTSNode* parent) {
   MCTSNode* node = (MCTSNode*)malloc(sizeof(MCTSNode));
@@ -63,7 +64,7 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
 MCTSNode* mcts_search(GameState* initial_state, int iterations) {
   MCTSNode* root = create_node(initial_state, 0, NULL);
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 10000 == 0) {
+    if (MCTS_ITERATIONS % 1000 == 0) {
       printf("Iteration %d\n", MCTS_ITERATIONS);
       print_mcts(root);
     }
