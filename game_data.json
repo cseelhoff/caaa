@@ -1,38 +1,38 @@
 {
 	"player_index": 0,
 	"money": [
-		20,
-		3,
-		0,
-		3,
-		0
+		10,
+		10,
+		10,
+		10,
+		10
 	],
-	"builds_left":	[0, 0, 0, 4, 0, 0, 0, 0],
+	"builds_left":	[0, 0, 0, 10, 0, 0, 0, 0],
 	"land_state": [
 		{
 			"owner_index": 4,
-			"factory_hp": 1,
-			"factory_max": 1
+			"factory_hp": 10,
+			"factory_max": 10
 		},
 		{
 			"owner_index": 2,
-			"factory_hp": 1,
-			"factory_max": 1
+			"factory_hp": 10,
+			"factory_max": 10
 		},
 		{
 			"owner_index": 1,
-			"factory_hp": 1,
-			"factory_max": 1
+			"factory_hp": 10,
+			"factory_max": 10
 		},
 		{
 			"owner_index": 0,
-			"factory_hp": 4,
-			"factory_max": 4
+			"factory_hp": 10,
+			"factory_max": 10
 		},
 		{
 			"owner_index": 3,
-			"factory_hp": 1,
-			"factory_max": 1
+			"factory_hp": 10,
+			"factory_max": 10
 		}
 	],
 	"units_sea":[],

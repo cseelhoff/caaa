@@ -20,8 +20,8 @@ extern bool is_terminal_state(GameState* state);
 extern double evaluate_state(GameState* state);
 extern double random_play_until_terminal(GameState* state);
 
-//#define EXPLORATION_CONSTANT 1.414
-#define EXPLORATION_CONSTANT 3
+#define EXPLORATION_CONSTANT 1.414
+//#define EXPLORATION_CONSTANT 3
 
 bool check5 = false;
 
@@ -64,7 +64,7 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
 MCTSNode* mcts_search(GameState* initial_state, int iterations) {
   MCTSNode* root = create_node(initial_state, 0, NULL);
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 1 == 0) {
+    if (MCTS_ITERATIONS % 5000 == 0) {
       printf("Iteration %d\n", MCTS_ITERATIONS);
       print_mcts(root);
     }
@@ -114,30 +114,7 @@ static void expand_node(MCTSNode* node) {
   for (int i = 0; i < num_actions; i++) {
     GameState* new_state = clone_state(&node->state);
     uint8_t next_action = actions[i];
-    //  printf("  Applying Action: %d\n", next_action);
-    // if (next_action == 3) {
-    //   if (node->action == 255) {
-    //     MCTSNode* parent = node->parent;
-    //     if (parent->action == 4) {
-    //       parent = parent->parent;
-    //       if (parent->action == 255) {
-    //         parent = parent->parent;
-    //         if (parent->action == 3) {
-    //           parent = parent->parent;
-    //           if (parent->action == 0) {
-    //             int break_here = 1;
-    //             check5 = true;
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
     apply_action(new_state, next_action);
-    if(node->state.player_index == new_state->player_index) {
-      printf("Error: Player index did not change after applying action %d\n", next_action);
-      exit(1);
-    }
     node->children[i] = create_node(new_state, next_action, node);
     // free_state(new_state);
   }
@@ -171,7 +148,7 @@ void update_top_action_sequences(Action_Sequence current_sequence, int length, d
   }
 }
 #define MAX_DEPTH 40
-#define MIN_VISITS 100000
+#define MIN_VISITS 10000
 // Function to print the MCTS tree and keep track of action sequences
 void print_mcts_tree(MCTSNode* node, uint8_t depth, Action_Sequence current_sequence, int length) {
   if (node == NULL) {
@@ -236,13 +213,6 @@ void print_mcts(MCTSNode* root) {
     action_sequence_visits[i] = 0;
   }
   print_mcts_tree(root, 0, current_sequence, 0);
-  // if (root->num_children > 4) {
-  //   MCTSNode* child1 = root->children[4];
-  //   if (child1->num_children > 3) {
-  //     MCTSNode* child2 = child1->children[3];
-  //     print_mcts_tree2(child2, 0);
-  //   }
-  // }
   print_mcts_tree2(root, 0);
   print_top_action_sequences();
 }
