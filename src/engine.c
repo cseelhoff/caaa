@@ -1475,13 +1475,14 @@ void add_valid_sub_moves(uint8_t src_sea, uint8_t moves_remaining) {
 }
 
 bool stage_transport_units() {
+  bool units_to_process = false;
   // loop through transports with "3" moves remaining (that aren't full),
   // start at sea 0 to n
   // TODO: optimize with cache - only loop through regions with transports
   for (uint8_t unit_type = TRANS_EMPTY; unit_type <= TRANS_1T; unit_type++) {
     uint8_t staging_state = STATES_MOVE_SEA[unit_type] - 1;
     uint8_t done_staging = staging_state - 1;
-    clear_move_history();
+    //clear_move_history();
     // TODO CHECKPOINT
     for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
       uint8_t* total_ships = &sea_units_state[src_sea][unit_type][staging_state];
@@ -1493,10 +1494,9 @@ bool stage_transport_units() {
       add_valid_sea_moves(src_sea, 2);
       uint8_t* units_sea_ptr_src_sea_unit_type = sea_units_state[src_sea][unit_type];
       while (*total_ships > 0) {
-        uint8_t dst_air;
-        if (valid_moves_count == 1) {
-          dst_air = valid_moves[0];
-        } else {
+        units_to_process = true;
+        uint8_t dst_air = valid_moves[0];
+        if (valid_moves_count > 1) {
           if (answers_remaining == 0)
             return true;
           dst_air = get_user_move_input(unit_type, src_air);
@@ -1537,6 +1537,9 @@ bool stage_transport_units() {
       }
     }
   }
+  if (units_to_process) {
+    clear_move_history();
+  }
   return false;
 }
 
@@ -1551,7 +1554,7 @@ void pre_move_fighter_units() {
     }
   }
 #endif
-  clear_move_history();
+  //  clear_move_history();
   // refresh_canFighterLandHere
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     int land_owner = *owner_idx[land_idx];
@@ -1618,6 +1621,7 @@ bool move_fighter_units() {
     valid_moves_count = 1;
     add_valid_fighter_moves(src_air, FIGHTER_MOVES_MAX);
     while (*total_fighters > 0) {
+      units_to_process = true;
       uint8_t dst_air = valid_moves[0];
       if (valid_moves_count > 1) {
         if (answers_remaining == 0)
@@ -1740,10 +1744,9 @@ bool move_bomber_units() {
     valid_moves_count = 1;
     add_valid_bomber_moves(src_land, BOMBER_MOVES_MAX);
     while (*total_bombers > 0) {
-      uint8_t dst_air;
-      if (valid_moves_count == 1) {
-        dst_air = valid_moves[0];
-      } else {
+      units_to_process = true;
+      uint8_t dst_air = valid_moves[0];
+      if (valid_moves_count == 1)  {
         if (answers_remaining == 0)
           return true;
         dst_air = get_user_move_input(BOMBERS_LAND_AIR, src_land);
@@ -1882,10 +1885,9 @@ bool move_land_unit_type(uint8_t unit_type) {
       valid_moves_count = 1;
       add_valid_land_moves(src_land, moves_remaining, unit_type);
       while (*total_units > 0) {
-        uint8_t dst_air;
-        if (valid_moves_count == 1) {
-          dst_air = valid_moves[0];
-        } else {
+        units_to_process = true;
+        uint8_t dst_air = valid_moves[0];
+        if (valid_moves_count > 1) {
           if (answers_remaining == 0)
             return true;
           dst_air = get_user_move_input(unit_type, src_land);
@@ -1976,7 +1978,7 @@ bool move_transport_units() {
     uint8_t max_state = STATES_MOVE_SEA[unit_type] - STATES_STAGING[unit_type];
     // uint8_t done_moving = 1;//STATES_UNLOADING[unit_type];
     // uint8_t min_state = 2;//STATES_UNLOADING[unit_type] + 1;
-    clear_move_history();
+    // clear_move_history();
     for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
       // for (int cur_state = max_state; cur_state >= min_state; cur_state--) {
       for (uint8_t i = 1; i < 3; i++) {
@@ -1993,10 +1995,9 @@ bool move_transport_units() {
         valid_moves_count = 1;
         add_valid_sea_moves(src_sea, moves_remaining);
         while (*total_ships > 0) {
-          uint8_t dst_air;
-          if (valid_moves_count == 1) {
-            dst_air = valid_moves[0];
-          } else {
+          units_to_process = true;
+          uint8_t dst_air = valid_moves[0];
+          if (valid_moves_count > 1) {
             if (answers_remaining == 0)
               return true;
             dst_air = get_user_move_input(unit_type, src_air);
@@ -2057,10 +2058,8 @@ bool move_subs() {
     add_valid_sub_moves(src_sea, SUB_MOVES_MAX);
     while (*total_subs > 0) {
       units_to_process = true;
-      uint8_t dst_air;
-      if (valid_moves_count == 1) {
-        dst_air = valid_moves[0];
-      } else {
+      uint8_t dst_air = valid_moves[0];
+      if (valid_moves_count > 1){
         if (answers_remaining == 0)
           return true;
         dst_air = get_user_move_input(SUBMARINES, src_air);
@@ -2110,7 +2109,7 @@ bool move_destroyers_battleships() {
     uint8_t done_moving = DONE_MOVING_SEA[unit_type];
     uint8_t moves_remaining = MAX_MOVE_SEA[unit_type];
     // TODO CHECKPOINT
-    clear_move_history();
+    // clear_move_history();
     for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
       uint8_t* total_ships = &sea_units_state[src_sea][unit_type][unmoved];
       if (*total_ships == 0) {
@@ -2122,10 +2121,9 @@ bool move_destroyers_battleships() {
       valid_moves_count = 1;
       add_valid_sea_moves(src_sea, moves_remaining);
       while (*total_ships > 0) {
-        uint8_t dst_air;
-        if (valid_moves_count == 1) {
-          dst_air = valid_moves[0];
-        } else {
+        units_to_process = true;
+        uint8_t dst_air = valid_moves[0];
+        if (valid_moves_count > 1) {
           if (answers_remaining == 0)
             return true;
           dst_air = get_user_move_input(unit_type, src_air);
@@ -2838,7 +2836,7 @@ bool unload_transports() {
     uint8_t unloading_state = STATES_UNLOADING[unit_type];
     uint8_t unload_cargo1 = UNLOAD_CARGO1[unit_type];
     uint8_t unload_cargo2 = UNLOAD_CARGO2[unit_type];
-    clear_move_history();
+//    clear_move_history();
     for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
       uint8_t* total_units = &sea_units_state[src_sea][unit_type][unloading_state];
       if (*total_units == 0) {
@@ -3442,7 +3440,7 @@ bool land_bomber_units() {
   // check if any bombers have moves remaining
   for (uint8_t cur_state1 = 0; cur_state1 < BOMBER_LAND_STATES - 2;
        cur_state1++) { // TODO optimize to find next bomber faster
-    clear_move_history();
+//    clear_move_history();
     for (int src_air = 0; src_air < AIRS_COUNT; src_air++) {
       uint8_t cur_state = (src_air < LANDS_COUNT ? cur_state1 + 1 : cur_state1);
       uint8_t* total_bomber_count = &air_units_state[src_air][BOMBERS_LAND_AIR][cur_state];
@@ -3463,6 +3461,7 @@ bool land_bomber_units() {
       uint8_t movement_remaining = cur_state + (src_air < LANDS_COUNT ? 0 : 1);
       add_valid_bomber_landing(src_air, movement_remaining);
       while (*total_bomber_count > 0) {
+        units_to_process = true;
         if (valid_moves_count == 0) {
           valid_moves[valid_moves_count++] = src_air;
         }
