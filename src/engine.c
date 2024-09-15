@@ -2995,7 +2995,7 @@ bool resolve_land_battles() {
             fmax(*factory_hp[src_land] - attacker_hits, -*factory_max[src_land]);
         continue;
       }
-    }
+    
 #ifdef DEBUG
     if (actually_print) {
       printf("Normal Land Combat\n");
