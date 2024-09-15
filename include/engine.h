@@ -160,4 +160,7 @@ GameState* get_game_state_copy();
 
 void load_single_game();
 bool end_turn();
+
+uint8_t get_attacker_hits(int attacker_damage);
+uint8_t get_defender_hits(int defender_damage);
 #endif
