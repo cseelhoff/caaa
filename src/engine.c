@@ -2942,17 +2942,7 @@ bool unload_transports() {
   return false;
 }
 #define MAX_COMBAT_ROUNDS 100
-bool resolve_land_battles() {
-
-  if (MCTS_ITERATIONS == 1242279 && answers_remaining >= 99695) {
-    printf("it: %d ans: %d\n", MCTS_ITERATIONS, answers_remaining);
-    printf("exporting1\n");
-    json = serialize_game_data_to_json(&state);
-    write_json_to_file("debug_data.json", json);
-    cJSON_Delete(json);
-    actually_print = true;
-  }
-  
+bool resolve_land_battles() { 
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     // check if battle is over
     if (state.flagged_for_combat[src_land] == 0) {
@@ -3214,11 +3204,6 @@ bool resolve_land_battles() {
 #ifdef DEBUG
       if (actually_print) {
         printf("Enemy Count: %d\n", enemy_units_count[src_land]);
-        printf("it: %d ans: %d\n", MCTS_ITERATIONS, answers_remaining);
-        printf("exporting\n");
-        json = serialize_game_data_to_json(&state);
-        write_json_to_file("debug_data.json", json);
-        cJSON_Delete(json);
       }
 #endif
       for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
