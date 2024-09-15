@@ -2426,9 +2426,9 @@ uint8_t get_attacker_hits(int attacker_damage) {
   uint8_t attacker_hits = 0;
   if (answers_remaining < 2) {
     if (is_allied_0[unlucky_player_idx]) {
-      attacker_hits = (attacker_damage / 6) + (1 < attacker_damage % 6 ? 1 : 0);
-    } else {
       attacker_hits = (attacker_damage / 6);
+    } else {
+      attacker_hits = (attacker_damage / 6) + (1 < attacker_damage % 6 ? 1 : 0);
     }
   } else {
     attacker_hits = (attacker_damage / 6) +
@@ -4051,7 +4051,8 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   //   (*actions)[0] = MAX_UINT8_T;
   //   return;
   // }
-  unlucky_player_idx = state.player_index;
+  //  unlucky_player_idx = state.player_index;
+  unlucky_player_idx = 0;
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
   answers_remaining = 0;
@@ -4116,7 +4117,8 @@ void apply_action(GameState* game_state, uint8_t action) {
   // }
   memcpy(&state, game_state, sizeof(GameState));
   refresh_full_cache();
-  unlucky_player_idx = state.player_index;
+//  unlucky_player_idx = state.player_index;
+  unlucky_player_idx = 0;
   answers_remaining = 1;
   selected_action = action;
   use_selected_action = true;
