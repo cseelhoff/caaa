@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 int main2() {
   printf("Starting CAAA \n");
   initialize_constants();
-  load_game_data("rel5410.json");
+  load_game_data("debug_data.json");
   refresh_full_cache();
   load_single_game();  
   return 0;

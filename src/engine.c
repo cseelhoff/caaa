@@ -2797,11 +2797,11 @@ void remove_sea_attackers(uint8_t src_sea, uint8_t hits) {
       return;
     }
   }
-// #ifdef DEBUG
-//         if (MCTS_ITERATIONS == 14500 && answers_remaining == 90659) {
-//           actually_print = true;
-//         }
-// #endif
+  // #ifdef DEBUG
+  //         if (MCTS_ITERATIONS == 14500 && answers_remaining == 90659) {
+  //           actually_print = true;
+  //         }
+  // #endif
   for (uint8_t unit_idx = 0; unit_idx < ATTACKER_SEA_UNIT_TYPES_COUNT_2; unit_idx++) {
     uint8_t unit_type = ORDER_OF_SEA_ATTACKERS_2[unit_idx];
     if (total_player_sea_unit_types[0][src_sea][unit_type] == 0)
@@ -2941,7 +2941,18 @@ bool unload_transports() {
   }
   return false;
 }
+#define MAX_COMBAT_ROUNDS 100
 bool resolve_land_battles() {
+
+  if (MCTS_ITERATIONS == 1242279 && answers_remaining >= 99695) {
+    printf("it: %d ans: %d\n", MCTS_ITERATIONS, answers_remaining);
+    printf("exporting1\n");
+    json = serialize_game_data_to_json(&state);
+    write_json_to_file("debug_data.json", json);
+    cJSON_Delete(json);
+    actually_print = true;
+  }
+  
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     // check if battle is over
     if (state.flagged_for_combat[src_land] == 0) {
@@ -3121,7 +3132,9 @@ bool resolve_land_battles() {
         continue;
       }
     }
+    uint8_t combat_rounds = 0;
     while (true) {
+      combat_rounds++;
       // print land location name
 #ifdef DEBUG
       if (actually_print) {
@@ -3161,7 +3174,8 @@ bool resolve_land_battles() {
           dst_air = ask_to_retreat();
         }
         // if retreat, move units to retreat zone immediately and end battle
-        if (src_land != dst_air) {
+        // max 100 combat rounds for fighters facing aa guns with unlucky dice
+        if (src_land != dst_air || combat_rounds > MAX_COMBAT_ROUNDS) {
 #ifdef DEBUG
           if (actually_print) {
             printf("Retreating land_battle from: %d to: %d\n", src_land, dst_air);
@@ -3200,6 +3214,11 @@ bool resolve_land_battles() {
 #ifdef DEBUG
       if (actually_print) {
         printf("Enemy Count: %d\n", enemy_units_count[src_land]);
+        printf("it: %d ans: %d\n", MCTS_ITERATIONS, answers_remaining);
+        printf("exporting\n");
+        json = serialize_game_data_to_json(&state);
+        write_json_to_file("debug_data.json", json);
+        cJSON_Delete(json);
       }
 #endif
       for (uint8_t enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
@@ -4270,6 +4289,7 @@ double evaluate_state(GameState* game_state) {
   int allied_score = 1; // one helps prevent division by zero
   int enemy_score = 1;
   allied_score += game_state->money[0];
+  /*
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     LandState* land_state = &game_state->land_state[land_idx];
     int total_units = 0;
@@ -4365,7 +4385,8 @@ double evaluate_state(GameState* game_state) {
     }
     allied_score += total_units * BOMBER_COST;
   }
-  for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
+  */
+  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     int score = game_state->money[player_idx];
     for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
       for (int unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
