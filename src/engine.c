@@ -2442,7 +2442,7 @@ bool resolve_sea_battles() {
 uint8_t get_attacker_hits(int attacker_damage) {
   uint8_t attacker_hits = 0;
   if (answers_remaining < 2) {
-    if (is_allied_0[unlucky_player_idx]) {
+    if (PLAYERS[state.player_index].is_allied[unlucky_player_idx]) {
       attacker_hits = (attacker_damage / 6);
     } else {
       attacker_hits = (attacker_damage / 6) + (1 < attacker_damage % 6 ? 1 : 0);
@@ -2457,7 +2457,7 @@ uint8_t get_attacker_hits(int attacker_damage) {
 uint8_t get_defender_hits(int defender_damage) {
   uint8_t defender_hits = 0;
   if (answers_remaining < 2) {
-    if (is_allied_0[unlucky_player_idx]) {
+    if (PLAYERS[state.player_index].is_allied[unlucky_player_idx]) {
       defender_hits = (defender_damage / 6) + (1 < defender_damage % 6 ? 1 : 0);
     } else {
       defender_hits = (defender_damage / 6);
