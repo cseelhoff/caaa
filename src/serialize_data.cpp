@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define PATH_MAX 4096
-void load_game_data_from_json(char* filename, GameState* data) {
+void load_game_data_from_json(char const* filename, GameState* data) {
   char cwd[PATH_MAX];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
     printf("Current working directory: %s\n", cwd);
@@ -45,14 +45,20 @@ cJSON* read_json_from_file(const char* filename) {
   long length = ftell(file);
   fseek(file, 0, SEEK_SET);
 
-  char* data = (char*)malloc(length + 1);
+  char* data = (char*)malloc((size_t)length + 1);
   if (data == NULL) {
     perror("Failed to allocate memory");
     fclose(file);
     return NULL;
   }
 
-  fread(data, 1, length, file);
+  size_t read_size = fread(data, 1, (size_t)length, file);
+  if (read_size != (size_t)length) {
+    perror("Failed to read the expected number of bytes");
+    free(data);
+    (void)fclose(file);
+    return NULL;
+  }
   data[length] = '\0';
   fclose(file);
 
@@ -74,7 +80,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
 
   cJSON* player_index = cJSON_GetObjectItem(json, "player_index");
   if (cJSON_IsNumber(player_index)) {
-    data->player_index = player_index->valueint;
+    data->player_index = (uint8_t)player_index->valueint;
   } else {
     fprintf(stderr, "Invalid player_index\n");
   }
@@ -92,7 +98,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     for (int i = 0; i < array_size && i < PLAYERS_COUNT; i++) {
       cJSON* money_item = cJSON_GetArrayItem(money_array, i);
       if (cJSON_IsNumber(money_item)) {
-        data->money[i] = money_item->valueint;
+        data->money[i] = (uint8_t)money_item->valueint;
       } else {
         fprintf(stderr, "Invalid money item\n");
       }
@@ -107,7 +113,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
       cJSON* builds_left_item = cJSON_GetArrayItem(builds_left_array, i);
       if (cJSON_IsNumber(builds_left_item)) {
-        data->builds_left[i] = builds_left_item->valueint;
+        data->builds_left[i] = (uint8_t)builds_left_item->valueint;
       } else {
         fprintf(stderr, "Invalid builds_left item\n");
       }
@@ -225,14 +231,14 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
 void set_land_state_signed_field(cJSON* json, const char* key, int8_t* field) {
   cJSON* item = cJSON_GetObjectItem(json, key);
   if (cJSON_IsNumber(item)) {
-    *field = item->valueint;
+    *field = (int8_t)item->valueint;
   }
 }
 
 void set_land_state_field(cJSON* json, const char* key, uint8_t* field) {
   cJSON* item = cJSON_GetObjectItem(json, key);
   if (cJSON_IsNumber(item)) {
-    *field = item->valueint;
+    *field = (uint8_t)item->valueint;
   }
 }
 
@@ -243,7 +249,7 @@ void extract_and_assign(cJSON* json, const char* key, uint8_t* target_array) {
     for (int i = 0; i < array_size; i++) {
       cJSON* item = cJSON_GetArrayItem(array, i);
       if (cJSON_IsNumber(item)) {
-        target_array[i] = item->valueint;
+        target_array[i] = (uint8_t)item->valueint;
       }
     }
   }

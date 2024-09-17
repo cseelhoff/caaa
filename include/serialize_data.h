@@ -4,7 +4,7 @@
 #include <cjson/cJSON.h>
 #include "game_state.h"
 
-void load_game_data_from_json(char* filename, GameState* data);
+void load_game_data_from_json(char const* filename, GameState* data);
 cJSON* read_json_from_file(const char *filename);
 void write_json_to_file(const char *filename, cJSON *json);
 cJSON* serialize_game_data_to_json(GameState *data);

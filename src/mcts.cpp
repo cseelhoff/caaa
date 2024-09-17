@@ -62,7 +62,7 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
   return node;
 }
 
-MCTSNode* mcts_search(GameState* initial_state, int iterations) {
+MCTSNode* mcts_search(GameState* initial_state, long iterations) {
   MCTSNode* root = create_node(initial_state, 0, NULL);
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
     if (MCTS_ITERATIONS % 50000 == 0) {
@@ -107,7 +107,7 @@ MCTSNode* mcts_search(GameState* initial_state, int iterations) {
   return root;
 }
 
-static void expand_node(MCTSNode* node) {
+void expand_node(MCTSNode* node) {
   uint8_t num_actions = 0;
   Actions actions = {0};
   ActionsPtr actionsPtr = &actions;
@@ -204,7 +204,7 @@ void print_mcts_tree3(MCTSNode* node, int depth) {
   // Recursively print the children
   uint8_t best_index = 0;
   double best_value = 0;
-  for (int i = 0; i < node->num_children; i++) {
+  for (uint8_t i = 0; i < node->num_children; i++) {
     double new_value = node->children[i]->value / node->children[i]->visits;
     if (new_value > best_value) {
       best_value = new_value;

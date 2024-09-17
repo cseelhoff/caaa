@@ -6,7 +6,6 @@
 //#include "mcts.h"
 #include "player.h"
 #include "sea.h"
-#include "team.h"
 #include "units/units.h"
 #include <stdint.h>
 

@@ -72,7 +72,7 @@ void intialize_airs_x_to_4_moves_away();
 void initialize_skip_4air_precals();
 void apply_skip(uint8_t src_air, uint8_t dst_air);
 
-void load_game_data();
+void load_game_data(char const* filename);
 
 void play_full_turn();
 void refresh_full_cache();

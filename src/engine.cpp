@@ -13,6 +13,7 @@
 #include "units/transport.h"
 #include "units/units.h"
 #include <math.h>
+#include <pybind11/pybind11.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,43 +25,43 @@
 uint8_t BLOCKADE_UNIT_TYPES[BLOCKADE_UNIT_TYPES_COUNT] = {DESTROYERS, CARRIERS, CRUISERS,
                                                           BATTLESHIPS, BS_DAMAGED};
 uint8_t LAND_VALUE[LANDS_COUNT] = {0};
-uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {0};
+uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {{0}};
 uint8_t AIR_CONN_COUNT[AIRS_COUNT] = {0};
-uint8_t AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {0};
+uint8_t AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {{0}};
 uint8_t AIR_DIST[AIRS_COUNT][AIRS_COUNT] = {0};
 
 LandPath LAND_PATH = {{MAX_UINT8_T}};
 LandPath LAND_PATH_ALT = {{MAX_UINT8_T}};
-uint8_t LANDS_WITHIN_2_MOVES[LANDS_COUNT][LANDS_COUNT - 1] = {0};
+uint8_t LANDS_WITHIN_2_MOVES[LANDS_COUNT][LANDS_COUNT - 1] = {{0}};
 uint8_t LANDS_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
-uint8_t LOAD_WITHIN_2_MOVES[LANDS_COUNT][SEAS_COUNT] = {0};
+uint8_t LOAD_WITHIN_2_MOVES[LANDS_COUNT][SEAS_COUNT] = {{0}};
 uint8_t LOAD_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
-uint8_t SEAS_WITHIN_1_MOVE[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {0};
-uint8_t SEAS_WITHIN_1_MOVE_COUNT[CANAL_STATES][SEAS_COUNT] = {0};
-uint8_t SEAS_WITHIN_2_MOVES[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {0};
-uint8_t SEAS_WITHIN_2_MOVES_COUNT[CANAL_STATES][SEAS_COUNT] = {0};
-uint8_t seas_within_1_move_canal[SEAS_COUNT][SEAS_COUNT - 1] = {0};
+uint8_t SEAS_WITHIN_1_MOVE[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
+uint8_t SEAS_WITHIN_1_MOVE_COUNT[CANAL_STATES][SEAS_COUNT] = {{0}};
+uint8_t SEAS_WITHIN_2_MOVES[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
+uint8_t SEAS_WITHIN_2_MOVES_COUNT[CANAL_STATES][SEAS_COUNT] = {{0}};
+uint8_t seas_within_1_move_canal[SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
 uint8_t seas_within_1_move_count_canal[SEAS_COUNT] = {0};
-uint8_t seas_within_2_moves_canal[SEAS_COUNT][SEAS_COUNT - 1] = {0};
+uint8_t seas_within_2_moves_canal[SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
 uint8_t seas_within_2_moves_count_canal[SEAS_COUNT] = {0};
-uint8_t AIR_WITHIN_X_MOVES[6][AIRS_COUNT][AIRS_COUNT - 1] = {0};
-uint8_t AIR_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {0};
-uint8_t AIR_TO_LAND_WITHIN_X_MOVES[6][AIRS_COUNT][LANDS_COUNT] = {0};
-uint8_t AIR_TO_LAND_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {0};
-uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {0};
-uint8_t sea_dist[SEAS_COUNT][SEAS_COUNT] = {0};
+uint8_t AIR_WITHIN_X_MOVES[6][AIRS_COUNT][AIRS_COUNT - 1] = {{0}};
+uint8_t AIR_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {{0}};
+uint8_t AIR_TO_LAND_WITHIN_X_MOVES[6][AIRS_COUNT][LANDS_COUNT] = {{0}};
+uint8_t AIR_TO_LAND_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {{0}};
+uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{0}};
+uint8_t sea_dist[SEAS_COUNT][SEAS_COUNT] = {{0}};
 uint8_t SEA_PATH[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{{MAX_UINT8_T}}};
 uint8_t SEA_PATH_ALT[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{{MAX_UINT8_T}}};
 uint8_t sea_path[SEAS_COUNT][SEAS_COUNT] = {{MAX_UINT8_T}};
 uint8_t sea_path_alt[SEAS_COUNT][SEAS_COUNT] = {{MAX_UINT8_T}};
 uint8_t LAND_TO_LAND_COUNT[LANDS_COUNT] = {0};
-uint8_t LAND_TO_LAND_CONN[LANDS_COUNT][MAX_LAND_TO_LAND_CONNECTIONS] = {0};
+uint8_t LAND_TO_LAND_CONN[LANDS_COUNT][MAX_LAND_TO_LAND_CONNECTIONS] = {{0}};
 uint8_t LAND_TO_SEA_COUNT[LANDS_COUNT] = {0};
-uint8_t LAND_TO_SEA_CONN[LANDS_COUNT][MAX_LAND_TO_SEA_CONNECTIONS] = {0};
+uint8_t LAND_TO_SEA_CONN[LANDS_COUNT][MAX_LAND_TO_SEA_CONNECTIONS] = {{0}};
 uint8_t SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
-uint8_t SEA_TO_SEA_CONN[SEAS_COUNT][MAX_SEA_TO_SEA_CONNECTIONS] = {0};
+uint8_t SEA_TO_SEA_CONN[SEAS_COUNT][MAX_SEA_TO_SEA_CONNECTIONS] = {{0}};
 uint8_t SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
-uint8_t SEA_TO_LAND_CONN[SEAS_COUNT][MAX_SEA_TO_LAND_CONNECTIONS] = {0};
+uint8_t SEA_TO_LAND_CONN[SEAS_COUNT][MAX_SEA_TO_LAND_CONNECTIONS] = {{0}};
 
 uint8_t ORDER_OF_LAND_DEFENDERS[DEFENDER_LAND_UNIT_TYPES_COUNT] = {
     AA_GUNS, BOMBERS_LAND_AIR, INFANTRY, ARTILLERY, TANKS, FIGHTERS};
@@ -82,7 +83,7 @@ uint16_t seed = 0;
 char printableGameStatus[PRINTABLE_GAME_STATUS_SIZE] = "";
 GameState state = {0};
 cJSON* json;
-
+// use __llvm_libc
 #define OTHER_LAND_UNITS_SIZE 30
 #define OTHER_SEA_UNITS_SIZE 42
 int MULTI_OTHER_LAND_UNITS_SIZE = (PLAYERS_COUNT - 2) * OTHER_LAND_UNITS_SIZE;
@@ -586,7 +587,7 @@ void initialize_skip_4air_precals() {
   }
 }
 
-void load_game_data(char* filename) {
+void load_game_data(char const* filename) {
   memset(&state, 0, sizeof(state));
   memset(&current_player_land_unit_types, 0, sizeof(current_player_land_unit_types));
   memset(&current_player_sea_unit_types, 0, sizeof(current_player_sea_unit_types));
@@ -4200,7 +4201,7 @@ void apply_action(GameState* game_state, uint8_t action) {
 }
 double random_play_until_terminal(GameState* game_state) {
   memcpy(&state, game_state, sizeof(GameState));
-  uint8_t starting_player = state.player_index;
+  //uint8_t starting_player = state.player_index;
   // if (starting_player >= PLAYERS_COUNT) {
   //   state.player_index -= PLAYERS_COUNT;
   // }
@@ -4269,108 +4270,10 @@ double evaluate_state(GameState* game_state) {
   if (starting_player >= PLAYERS_COUNT) {
     game_state->player_index -= PLAYERS_COUNT;
   }
-
   // Evaluate the game state and return a score
   int allied_score = 1; // one helps prevent division by zero
   int enemy_score = 1;
   allied_score += game_state->money[0];
-  /*
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    LandState* land_state = &game_state->land_state[land_idx];
-    int total_units = 0;
-    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
-      total_units += land_state->fighters[unit_state];
-    }
-    allied_score += total_units * FIGHTER_COST;
-    for (int unit_state = 0; unit_state < BOMBER_LAND_STATES; unit_state++) {
-      total_units += land_state->bombers[unit_state];
-    }
-    allied_score += total_units * BOMBER_COST;
-    for (int unit_state = 0; unit_state < INFANTRY_STATES; unit_state++) {
-      total_units += land_state->infantry[unit_state];
-    }
-    allied_score += total_units * INFANTRY_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < ARTILLERY_STATES; unit_state++) {
-      total_units += land_state->artillery[unit_state];
-    }
-    allied_score += total_units * ARTILLERY_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < TANK_STATES; unit_state++) {
-      total_units += land_state->tanks[unit_state];
-    }
-    allied_score += total_units * TANK_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < AA_GUN_STATES; unit_state++) {
-      total_units += land_state->aa_guns[unit_state];
-    }
-    allied_score += total_units * AA_GUN_COST;
-  }
-  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    UnitsSea* sea_state = &game_state->units_sea[sea_idx];
-    int total_units = 0;
-    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
-      total_units += sea_state->fighters[unit_state];
-    }
-    allied_score += total_units * FIGHTER_COST;
-    for (int unit_state = 0; unit_state < TRANS_EMPTY_STATES; unit_state++) {
-      total_units += sea_state->trans_empty[unit_state];
-    }
-    allied_score += total_units * TRANSPORT_COST;
-    for (int unit_state = 0; unit_state < TRANS_1I_STATES; unit_state++) {
-      total_units += sea_state->trans_1i[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1A_STATES; unit_state++) {
-      total_units += sea_state->trans_1a[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + ARTILLERY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1T_STATES; unit_state++) {
-      total_units += sea_state->trans_1t[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + TANK_COST);
-    for (int unit_state = 0; unit_state < TRANS_2I_STATES; unit_state++) {
-      total_units += sea_state->trans_2i[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + INFANTRY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1I_1A_STATES; unit_state++) {
-      total_units += sea_state->trans_1i_1a[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + ARTILLERY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1I_1T_STATES; unit_state++) {
-      total_units += sea_state->trans_1i_1t[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + TANK_COST);
-    for (int unit_state = 0; unit_state < SUB_STATES; unit_state++) {
-      total_units += sea_state->submarines[unit_state];
-    }
-    allied_score += total_units * SUB_COST;
-    for (int unit_state = 0; unit_state < DESTROYER_STATES; unit_state++) {
-      total_units += sea_state->destroyers[unit_state];
-    }
-    allied_score += total_units * DESTROYER_COST;
-    for (int unit_state = 0; unit_state < CARRIER_STATES; unit_state++) {
-      total_units += sea_state->carriers[unit_state];
-    }
-    allied_score += total_units * CARRIER_COST;
-    for (int unit_state = 0; unit_state < CRUISER_STATES; unit_state++) {
-      total_units += sea_state->cruisers[unit_state];
-    }
-    allied_score += total_units * CRUISER_COST;
-    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
-      total_units += sea_state->battleships[unit_state];
-    }
-    allied_score += total_units * BATTLESHIP_COST;
-    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
-      total_units += sea_state->bs_damaged[unit_state];
-    }
-    allied_score += total_units * BATTLESHIP_COST;
-    for (int unit_state = 0; unit_state < BOMBER_SEA_STATES; unit_state++) {
-      total_units += sea_state->bombers[unit_state];
-    }
-    allied_score += total_units * BOMBER_COST;
-  }
-  */
   for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     int score = game_state->money[player_idx];
     for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
@@ -4448,4 +4351,9 @@ void load_single_game() {
     rotate_turns();
     score = get_score();
   }
+}
+
+PYBIND11_MODULE(engine, handle) {
+  handle.doc() = "engine doc";
+  handle.def("random_play_until_terminal", &random_play_until_terminal);
 }
