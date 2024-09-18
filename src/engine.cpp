@@ -12,125 +12,145 @@
 #include "units/infantry.h"
 #include "units/transport.h"
 #include "units/units.h"
-#include <math.h>
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <cstring>
+#include <iomanip>
 #include <pybind11/pybind11.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sstream>
+#include <string>
 #include <sys/types.h>
 #include <unistd.h>
 
-uint8_t BLOCKADE_UNIT_TYPES[BLOCKADE_UNIT_TYPES_COUNT] = {DESTROYERS, CARRIERS, CRUISERS,
-                                                          BATTLESHIPS, BS_DAMAGED};
-uint8_t LAND_VALUE[LANDS_COUNT] = {0};
-uint8_t LAND_DIST[LANDS_COUNT][AIRS_COUNT] = {{0}};
-uint8_t AIR_CONN_COUNT[AIRS_COUNT] = {0};
-uint8_t AIR_CONNECTIONS[AIRS_COUNT][MAX_AIR_TO_AIR_CONNECTIONS] = {{0}};
-uint8_t AIR_DIST[AIRS_COUNT][AIRS_COUNT] = {0};
+using std::array;
 
-LandPath LAND_PATH = {{MAX_UINT8_T}};
-LandPath LAND_PATH_ALT = {{MAX_UINT8_T}};
-uint8_t LANDS_WITHIN_2_MOVES[LANDS_COUNT][LANDS_COUNT - 1] = {{0}};
-uint8_t LANDS_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
-uint8_t LOAD_WITHIN_2_MOVES[LANDS_COUNT][SEAS_COUNT] = {{0}};
-uint8_t LOAD_WITHIN_2_MOVES_COUNT[LANDS_COUNT] = {0};
-uint8_t SEAS_WITHIN_1_MOVE[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
-uint8_t SEAS_WITHIN_1_MOVE_COUNT[CANAL_STATES][SEAS_COUNT] = {{0}};
-uint8_t SEAS_WITHIN_2_MOVES[CANAL_STATES][SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
-uint8_t SEAS_WITHIN_2_MOVES_COUNT[CANAL_STATES][SEAS_COUNT] = {{0}};
-uint8_t seas_within_1_move_canal[SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
-uint8_t seas_within_1_move_count_canal[SEAS_COUNT] = {0};
-uint8_t seas_within_2_moves_canal[SEAS_COUNT][SEAS_COUNT - 1] = {{0}};
-uint8_t seas_within_2_moves_count_canal[SEAS_COUNT] = {0};
-uint8_t AIR_WITHIN_X_MOVES[6][AIRS_COUNT][AIRS_COUNT - 1] = {{0}};
-uint8_t AIR_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {{0}};
-uint8_t AIR_TO_LAND_WITHIN_X_MOVES[6][AIRS_COUNT][LANDS_COUNT] = {{0}};
-uint8_t AIR_TO_LAND_WITHIN_X_MOVES_COUNT[6][AIRS_COUNT] = {{0}};
-uint8_t SEA_DIST[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{0}};
-uint8_t sea_dist[SEAS_COUNT][SEAS_COUNT] = {{0}};
-uint8_t SEA_PATH[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{{MAX_UINT8_T}}};
-uint8_t SEA_PATH_ALT[CANAL_STATES][SEAS_COUNT][SEAS_COUNT] = {{{MAX_UINT8_T}}};
-uint8_t sea_path[SEAS_COUNT][SEAS_COUNT] = {{MAX_UINT8_T}};
-uint8_t sea_path_alt[SEAS_COUNT][SEAS_COUNT] = {{MAX_UINT8_T}};
-uint8_t LAND_TO_LAND_COUNT[LANDS_COUNT] = {0};
-uint8_t LAND_TO_LAND_CONN[LANDS_COUNT][MAX_LAND_TO_LAND_CONNECTIONS] = {{0}};
-uint8_t LAND_TO_SEA_COUNT[LANDS_COUNT] = {0};
-uint8_t LAND_TO_SEA_CONN[LANDS_COUNT][MAX_LAND_TO_SEA_CONNECTIONS] = {{0}};
-uint8_t SEA_TO_SEA_COUNT[SEAS_COUNT] = {0};
-uint8_t SEA_TO_SEA_CONN[SEAS_COUNT][MAX_SEA_TO_SEA_CONNECTIONS] = {{0}};
-uint8_t SEA_TO_LAND_COUNT[SEAS_COUNT] = {0};
-uint8_t SEA_TO_LAND_CONN[SEAS_COUNT][MAX_SEA_TO_LAND_CONNECTIONS] = {{0}};
+using ArrayOfAirs = array<uint8_t, AIRS_COUNT>;
+using ArrayOfLands = array<uint8_t, LANDS_COUNT>;
+using ArrayOfA2AConns = array<array<uint8_t, MAX_AIR_TO_AIR_CONNECTIONS>, AIRS_COUNT>;
+using ArrayOfLandToAirs = array<ArrayOfAirs, LANDS_COUNT>;
 
-uint8_t ORDER_OF_LAND_DEFENDERS[DEFENDER_LAND_UNIT_TYPES_COUNT] = {
+array<uint8_t, BLOCKADE_UNIT_TYPES_COUNT> BLOCKADE_UNIT_TYPES = {DESTROYERS, CARRIERS, CRUISERS,
+                                                                 BATTLESHIPS, BS_DAMAGED};
+ArrayOfLands LAND_VALUE = {0};
+ArrayOfLandToAirs LAND_DIST = {{{0}}};
+ArrayOfAirs AIR_CONN_COUNT = {0};
+ArrayOfA2AConns AIR_CONNECTIONS = {{{0}}};
+array<array<uint8_t, AIRS_COUNT>, AIRS_COUNT> AIR_DIST = {{{0}}};
+
+LandPath LAND_PATH = {{{MAX_UINT8_T}}};
+LandPath LAND_PATH_ALT = {{{MAX_UINT8_T}}};
+array<array<uint8_t, LANDS_COUNT - 1>, LANDS_COUNT> LANDS_WITHIN_2_MOVES = {{{0}}};
+array<uint8_t, LANDS_COUNT> LANDS_WITHIN_2_MOVES_COUNT = {0};
+array<array<uint8_t, SEAS_COUNT>, LANDS_COUNT> LOAD_WITHIN_2_MOVES = {{{0}}};
+array<uint8_t, LANDS_COUNT> LOAD_WITHIN_2_MOVES_COUNT = {0};
+array<array<array<uint8_t, SEAS_COUNT - 1>, SEAS_COUNT>, CANAL_STATES> SEAS_WITHIN_1_MOVE = {
+    {{{{0}}}}};
+array<array<uint8_t, SEAS_COUNT>, CANAL_STATES> SEAS_WITHIN_1_MOVE_COUNT = {{{0}}};
+array<array<array<uint8_t, SEAS_COUNT - 1>, SEAS_COUNT>, CANAL_STATES> SEAS_WITHIN_2_MOVES = {
+    {{{{0}}}}};
+array<array<uint8_t, SEAS_COUNT>, CANAL_STATES> SEAS_WITHIN_2_MOVES_COUNT = {{{0}}};
+array<array<uint8_t, SEAS_COUNT - 1>, SEAS_COUNT> seas_within_1_move_canal = {{{0}}};
+array<uint8_t, SEAS_COUNT> seas_within_1_move_count_canal = {0};
+array<array<uint8_t, SEAS_COUNT - 1>, SEAS_COUNT> seas_within_2_moves_canal = {{{0}}};
+array<uint8_t, SEAS_COUNT> seas_within_2_moves_count_canal = {0};
+constexpr uint8_t MAX_AIR_MOVES = 6;
+array<array<array<uint8_t, AIRS_COUNT - 1>, AIRS_COUNT>, MAX_AIR_MOVES> AIR_WITHIN_X_MOVES = {
+    {{0}}};
+array<array<uint8_t, AIRS_COUNT>, MAX_AIR_MOVES> AIR_WITHIN_X_MOVES_COUNT = {{{0}}};
+array<array<array<uint8_t, LANDS_COUNT>, AIRS_COUNT>, MAX_AIR_MOVES> AIR_TO_LAND_WITHIN_X_MOVES = {
+    {{0}}};
+array<array<uint8_t, AIRS_COUNT>, MAX_AIR_MOVES> AIR_TO_LAND_WITHIN_X_MOVES_COUNT = {{{0}}};
+array<array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT>, CANAL_STATES> SEA_DIST = {{{{{0}}}}};
+array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT> sea_dist = {{{0}}};
+array<array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT>, CANAL_STATES> SEA_PATH = {{{{{MAX_UINT8_T}}}}};
+array<array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT>, CANAL_STATES> SEA_PATH_ALT = {
+    {{{{MAX_UINT8_T}}}}};
+array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT> sea_path = {{{MAX_UINT8_T}}};
+array<array<uint8_t, SEAS_COUNT>, SEAS_COUNT> sea_path_alt = {{{MAX_UINT8_T}}};
+array<uint8_t, LANDS_COUNT> LAND_TO_LAND_COUNT = {0};
+array<array<uint8_t, MAX_LAND_TO_LAND_CONNECTIONS>, LANDS_COUNT> LAND_TO_LAND_CONN = {{{0}}};
+array<uint8_t, LANDS_COUNT> LAND_TO_SEA_COUNT = {0};
+array<array<uint8_t, MAX_LAND_TO_SEA_CONNECTIONS>, LANDS_COUNT> LAND_TO_SEA_CONN = {{{0}}};
+array<uint8_t, SEAS_COUNT> SEA_TO_SEA_COUNT = {0};
+array<array<uint8_t, MAX_SEA_TO_SEA_CONNECTIONS>, SEAS_COUNT> SEA_TO_SEA_CONN = {{{0}}};
+
+std::array<uint8_t, SEAS_COUNT> SEA_TO_LAND_COUNT = {0};
+std::array<std::array<uint8_t, MAX_SEA_TO_LAND_CONNECTIONS>, SEAS_COUNT> SEA_TO_LAND_CONN = {{{0}}};
+
+std::array<uint8_t, DEFENDER_LAND_UNIT_TYPES_COUNT> ORDER_OF_LAND_DEFENDERS = {
     AA_GUNS, BOMBERS_LAND_AIR, INFANTRY, ARTILLERY, TANKS, FIGHTERS};
 
-uint8_t ORDER_OF_LAND_ATTACKERS_1[ATTACKER_LAND_UNIT_TYPES_COUNT_1] = {INFANTRY, ARTILLERY, TANKS};
-uint8_t ORDER_OF_LAND_ATTACKERS_2[ATTACKER_LAND_UNIT_TYPES_COUNT_2] = {FIGHTERS, BOMBERS_LAND_AIR};
+std::array<uint8_t, ATTACKER_LAND_UNIT_TYPES_COUNT_1> ORDER_OF_LAND_ATTACKERS_1 = {
+    INFANTRY, ARTILLERY, TANKS};
+std::array<uint8_t, ATTACKER_LAND_UNIT_TYPES_COUNT_2> ORDER_OF_LAND_ATTACKERS_2 = {
+    FIGHTERS, BOMBERS_LAND_AIR};
 
-uint8_t ORDER_OF_SEA_DEFENDERS[DEFENDER_SEA_UNIT_TYPES_COUNT] = {
+std::array<uint8_t, DEFENDER_SEA_UNIT_TYPES_COUNT> ORDER_OF_SEA_DEFENDERS = {
     SUBMARINES, DESTROYERS, CARRIERS, CRUISERS, FIGHTERS,    BS_DAMAGED, TRANS_EMPTY,
     TRANS_1I,   TRANS_1A,   TRANS_1T, TRANS_2I, TRANS_1I_1A, TRANS_1I_1T};
-uint8_t ORDER_OF_SEA_ATTACKERS_1[ATTACKER_SEA_UNIT_TYPES_COUNT_1] = {SUBMARINES, DESTROYERS};
-uint8_t ORDER_OF_SEA_ATTACKERS_2[ATTACKER_SEA_UNIT_TYPES_COUNT_2] = {FIGHTERS, BOMBERS_SEA};
-uint8_t ORDER_OF_SEA_ATTACKERS_3[ATTACKER_SEA_UNIT_TYPES_COUNT_3] = {
+std::array<uint8_t, ATTACKER_SEA_UNIT_TYPES_COUNT_1> ORDER_OF_SEA_ATTACKERS_1 = {SUBMARINES,
+                                                                                 DESTROYERS};
+std::array<uint8_t, ATTACKER_SEA_UNIT_TYPES_COUNT_2> ORDER_OF_SEA_ATTACKERS_2 = {FIGHTERS,
+                                                                                 BOMBERS_SEA};
+std::array<uint8_t, ATTACKER_SEA_UNIT_TYPES_COUNT_3> ORDER_OF_SEA_ATTACKERS_3 = {
     BS_DAMAGED, TRANS_EMPTY, TRANS_1I, TRANS_1A, TRANS_1T, TRANS_2I, TRANS_1I_1A, TRANS_1I_1T};
-#define RANDOM_NUMBERS_SIZE 65536
-uint8_t RANDOM_NUMBERS[RANDOM_NUMBERS_SIZE] = {0};
+constexpr uint16_t RANDOM_NUMBERS_SIZE = 65535;
 uint16_t random_number_index = 0;
 uint16_t seed = 0;
-char printableGameStatus[PRINTABLE_GAME_STATUS_SIZE] = "";
-GameState state = {0};
+std::array<char, PRINTABLE_GAME_STATUS_SIZE> printableGameStatus = {""};
+GameState state;
 cJSON* json;
 // use __llvm_libc
-#define OTHER_LAND_UNITS_SIZE 30
-#define OTHER_SEA_UNITS_SIZE 42
+constexpr int OTHER_LAND_UNITS_SIZE = 30;
+constexpr int OTHER_SEA_UNITS_SIZE = 42;
 int MULTI_OTHER_LAND_UNITS_SIZE = (PLAYERS_COUNT - 2) * OTHER_LAND_UNITS_SIZE;
 int MULTI_OTHER_SEA_UNITS_SIZE = (PLAYERS_COUNT - 2) * OTHER_SEA_UNITS_SIZE;
 
-uint8_t* land_units_state[LANDS_COUNT][LAND_UNIT_TYPES_COUNT];
-uint8_t* sea_units_state[SEAS_COUNT][SEA_UNIT_TYPES_COUNT];
-uint8_t* air_units_state[AIRS_COUNT][AIR_UNIT_TYPES_COUNT];
-uint8_t* total_player_land_unit_types[PLAYERS_COUNT][LANDS_COUNT];
-uint8_t* total_player_sea_unit_types[PLAYERS_COUNT][SEAS_COUNT];
-uint8_t* owner_idx[LANDS_COUNT];
-uint8_t* factory_max[LANDS_COUNT];
-uint8_t* bombard_max[LANDS_COUNT];
-int8_t* factory_hp[LANDS_COUNT];                                            // allow negative
+std::array<uint8_t, RANDOM_NUMBERS_SIZE> RANDOM_NUMBERS = {0};
+std::array<std::array<uint8_t*, LAND_UNIT_TYPES_COUNT>, LANDS_COUNT> land_units_state;
+std::array<std::array<uint8_t*, SEA_UNIT_TYPES_COUNT>, SEAS_COUNT> sea_units_state;
+std::array<std::array<uint8_t*, AIR_UNIT_TYPES_COUNT>, AIRS_COUNT> air_units_state;
+std::array<std::array<uint8_t*, LANDS_COUNT>, PLAYERS_COUNT> total_player_land_unit_types;
+std::array<std::array<uint8_t*, SEAS_COUNT>, PLAYERS_COUNT> total_player_sea_unit_types;
+std::array<uint8_t*, LANDS_COUNT> owner_idx;
+std::array<uint8_t*, LANDS_COUNT> factory_max;
+std::array<uint8_t*, LANDS_COUNT> bombard_max;
+std::array<int8_t*, LANDS_COUNT> factory_hp;                                // allow negative
 uint8_t current_player_land_unit_types[LANDS_COUNT][LAND_UNIT_TYPES_COUNT]; // temp
 uint8_t current_player_sea_unit_types[SEAS_COUNT][SEA_UNIT_TYPES_COUNT];    // temp
 uint8_t total_land_unit_types_temp[LANDS_COUNT][LAND_UNIT_TYPES_COUNT];     // temp
 uint8_t total_sea_units_temp[SEAS_COUNT][SEA_UNIT_TYPES_COUNT];             // temp
-int income_per_turn[PLAYERS_COUNT + 1];
-int total_factory_count[PLAYERS_COUNT + 1] = {0};
-int factory_locations[PLAYERS_COUNT + 1][LANDS_COUNT] = {0};
-int total_player_land_units[PLAYERS_COUNT + 1][LANDS_COUNT];
-int total_player_sea_units[PLAYERS_COUNT + 1][SEAS_COUNT];
-int hist_skipped_airs[AIRS_COUNT][AIRS_COUNT] = {0};
-int hist_source_territories[AIRS_COUNT][AIRS_COUNT] = {0};
-int hist_source_territories_count[AIRS_COUNT] = {0};
 
-// int units_sea_blockade_total[PLAYERS_COUNT][SEAS_COUNT];
-uint8_t enemy_blockade_total[SEAS_COUNT] = {0};
-uint8_t enemy_destroyers_total[SEAS_COUNT] = {0};
-bool is_land_path_blocked[LANDS_COUNT][LANDS_COUNT] = {0};
-bool is_sea_path_blocked[SEAS_COUNT][SEAS_COUNT] = {0};
-bool is_sub_path_blocked[SEAS_COUNT][SEAS_COUNT] = {0};
-int transports_with_large_cargo_space[SEAS_COUNT];
-int transports_with_small_cargo_space[SEAS_COUNT];
+std::array<int, PLAYERS_COUNT + 1> income_per_turn = {0};
+std::array<int, PLAYERS_COUNT + 1> total_factory_count = {0};
+std::array<std::array<int, LANDS_COUNT>, PLAYERS_COUNT + 1> factory_locations = {0};
+std::array<std::array<int, LANDS_COUNT>, PLAYERS_COUNT + 1> total_player_land_units = {0};
+std::array<std::array<int, SEAS_COUNT>, PLAYERS_COUNT + 1> total_player_sea_units = {0};
+std::array<std::array<int, AIRS_COUNT>, AIRS_COUNT> hist_skipped_airs = {0};
+std::array<std::array<int, AIRS_COUNT>, AIRS_COUNT> hist_source_territories = {0};
+std::array<int, AIRS_COUNT> hist_source_territories_count = {0};
 
-uint8_t enemies_0[PLAYERS_COUNT - 1] = {0};
-bool is_allied_0[PLAYERS_COUNT] = {0};
+// std::array<std::array<int, SEAS_COUNT>, PLAYERS_COUNT> units_sea_blockade_total;
+std::array<uint8_t, SEAS_COUNT> enemy_blockade_total = {0};
+std::array<uint8_t, SEAS_COUNT> enemy_destroyers_total = {0};
+std::array<std::array<bool, LANDS_COUNT>, LANDS_COUNT> is_land_path_blocked = {0};
+std::array<std::array<bool, SEAS_COUNT>, SEAS_COUNT> is_sea_path_blocked = {0};
+std::array<std::array<bool, SEAS_COUNT>, SEAS_COUNT> is_sub_path_blocked = {0};
+std::array<int, SEAS_COUNT> transports_with_large_cargo_space;
+std::array<int, SEAS_COUNT> transports_with_small_cargo_space;
+
+std::array<uint8_t, PLAYERS_COUNT - 1> enemies_0 = {0};
+std::array<bool, PLAYERS_COUNT> is_allied_0 = {0};
 uint8_t enemies_count_0 = 0;
 uint8_t canal_state = 0;
-int allied_carriers[SEAS_COUNT] = {0};
-int enemy_units_count[AIRS_COUNT] = {0};
-bool canFighterLandHere[AIRS_COUNT] = {0};
-bool canFighterLandIn1Move[AIRS_COUNT] = {0};
-bool canBomberLandHere[AIRS_COUNT] = {0};
-bool canBomberLandIn1Move[AIRS_COUNT] = {0};
-bool canBomberLandIn2Moves[AIRS_COUNT] = {0};
+std::array<int, SEAS_COUNT> allied_carriers = {0};
+std::array<int, AIRS_COUNT> enemy_units_count = {0};
+std::array<bool, AIRS_COUNT> canFighterLandHere = {0};
+std::array<bool, AIRS_COUNT> canFighterLandIn1Move = {0};
+std::array<bool, AIRS_COUNT> canBomberLandHere = {0};
+std::array<bool, AIRS_COUNT> canBomberLandIn1Move = {0};
+std::array<bool, AIRS_COUNT> canBomberLandIn2Moves = {0};
 int step_id = 0;
 int answers_remaining = 0;
 bool use_selected_action = false;
@@ -156,9 +176,20 @@ void initialize_constants() {
   intialize_airs_x_to_4_moves_away();
   initialize_skip_4air_precals();
 }
-
+void land_dist_floyd_warshall() {
+  for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
+      for (uint8_t air_dst = 0; air_dst < AIRS_COUNT; air_dst++) {
+        uint8_t new_dist = LAND_DIST[src_land][land_idx] + LAND_DIST[land_idx][air_dst];
+        if (new_dist < LAND_DIST[src_land][air_dst]) {
+          LAND_DIST[src_land][air_dst] = new_dist;
+        }
+      }
+    }
+  }
+}
 void initialize_land_dist() {
-  memset(LAND_DIST, MAX_UINT8_T, sizeof(LAND_DIST));
+  std::fill(std::begin(LAND_DIST), std::end(LAND_DIST), MAX_UINT8_T);
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     LAND_VALUE[src_land] = LANDS[src_land].land_value;
     initialize_l2l_connections(src_land);
@@ -169,7 +200,7 @@ void initialize_land_dist() {
     set_l2l_land_dist_to_one(src_land);
     set_l2s_land_dist_to_one(src_land);
   }
-  floyd_warshall((uint8_t*)LAND_DIST, LANDS_COUNT, AIRS_COUNT);
+  land_dist_floyd_warshall();
 }
 void initialize_l2l_connections(uint8_t src_land) {
   LAND_TO_LAND_COUNT[src_land] = LANDS[src_land].land_conn_count;
@@ -203,21 +234,21 @@ void set_l2s_land_dist_to_one(uint8_t src_land) {
     LAND_DIST[src_land][dst_air] = 1;
   }
 }
-void floyd_warshall(uint8_t* dist, uint8_t terr_count, uint8_t dist_count) {
-  for (uint8_t terr_idx = 0; terr_idx < terr_count; terr_idx++) {
-    for (uint8_t src_terr = 0; src_terr < terr_count; src_terr++) {
-      for (uint8_t dst_terr = 0; dst_terr < dist_count; dst_terr++) {
+void sea_dist_floyd_warshall(uint8_t canal_idx) {
+  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
+      for (int dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
         uint8_t new_dist =
-            dist[src_terr * terr_count + terr_idx] + dist[terr_idx * dist_count + dst_terr];
-        if (new_dist < dist[src_terr * dist_count + dst_terr]) {
-          dist[src_terr * dist_count + dst_terr] = new_dist;
+            SEA_DIST[canal_idx][src_sea][sea_idx] + SEA_DIST[canal_idx][sea_idx][dst_sea];
+        if (new_dist < SEA_DIST[canal_idx][src_sea][dst_sea]) {
+          SEA_DIST[canal_idx][src_sea][dst_sea] = new_dist;
         }
       }
     }
   }
 }
 void initialize_sea_dist() {
-  memset(SEA_DIST, MAX_UINT8_T, sizeof(SEA_DIST));
+  std::fill(std::begin(SEA_DIST), std::end(SEA_DIST), MAX_UINT8_T);
   for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
     initialize_s2s_connections(src_sea);
     initialize_s2l_connections(src_sea);
@@ -226,7 +257,7 @@ void initialize_sea_dist() {
     initialize_sea_dist_zero(canal_idx);
     set_s2s_sea_dist_to_one(canal_idx);
     initialize_canals(canal_idx);
-    floyd_warshall((uint8_t*)SEA_DIST[canal_idx], SEAS_COUNT, SEAS_COUNT);
+    sea_dist_floyd_warshall(canal_idx);
   }
 }
 void initialize_s2s_connections(uint8_t src_sea) {
@@ -274,8 +305,20 @@ void initialize_canals(uint8_t canal_idx) {
     SEA_DIST[canal_idx][seas[1]][seas[0]] = 1;
   }
 }
+void air_dist_floyd_warshall() {
+  for (uint8_t air_index = 0; air_index < AIRS_COUNT; air_index++) {
+    for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
+      for (uint8_t dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
+        uint8_t new_dist = AIR_DIST[src_air][air_index] + AIR_DIST[air_index][dst_air];
+        if (new_dist < AIR_DIST[src_air][dst_air]) {
+          AIR_DIST[src_air][dst_air] = new_dist;
+        }
+      }
+    }
+  }
+}
 void initialize_air_dist() {
-  memset(AIR_DIST, MAX_UINT8_T, sizeof(AIR_DIST));
+  std::fill(std::begin(AIR_DIST), std::end(AIR_DIST), MAX_UINT8_T);
   initialize_air_dist_zero();
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     set_l2l_air_dist_to_one(src_land);
@@ -285,7 +328,7 @@ void initialize_air_dist() {
     set_s2l_air_dist_to_one(src_sea);
     set_s2s_air_dist_to_one(src_sea);
   }
-  floyd_warshall((uint8_t*)AIR_DIST, AIRS_COUNT, AIRS_COUNT);
+  air_dist_floyd_warshall();
 }
 void initialize_air_dist_zero() {
   for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
@@ -534,7 +577,7 @@ uint8_t AIRS_X_TO_4_MOVES_AWAY_COUNT[4][AIRS_COUNT] = {0};
 void intialize_airs_x_to_4_moves_away() {
   for (uint8_t moves = 1; moves <= 4; moves++) {
     for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
-      uint8_t* air_within_x_moves = AIR_WITHIN_X_MOVES[4 - 1][src_air];
+      auto& air_within_x_moves = AIR_WITHIN_X_MOVES[4 - 1][src_air];
       uint8_t air_within_x_moves_count = AIR_WITHIN_X_MOVES_COUNT[4 - 1][src_air];
       for (uint8_t dst_air_idx = 0; dst_air_idx < air_within_x_moves_count; dst_air_idx++) {
         uint8_t dst_air = air_within_x_moves[dst_air_idx];
@@ -558,9 +601,9 @@ void intialize_airs_x_to_4_moves_away() {
 //   if Distance[D][A] >= Distance[C][A] then SkippedMove[iterated_Terr][skipped_Terr] = true
 void initialize_skip_4air_precals() {
   for (uint8_t src_air = 0; src_air < AIRS_COUNT; src_air++) {
-    uint8_t* dist_src_air = AIR_DIST[src_air];
+    auto& dist_src_air = AIR_DIST[src_air];
     // get a list of all valid actions (possible destinations)
-    uint8_t* air_within_4_moves = AIR_WITHIN_X_MOVES[4 - 1][src_air];
+    auto& air_within_4_moves = AIR_WITHIN_X_MOVES[4 - 1][src_air];
     uint8_t air_within_4_moves_count = AIR_WITHIN_X_MOVES_COUNT[4 - 1][src_air];
     for (uint8_t selected_idx = 0; selected_idx < air_within_4_moves_count; selected_idx++) {
       uint8_t dst_air = air_within_4_moves[selected_idx];
@@ -573,7 +616,7 @@ void initialize_skip_4air_precals() {
         if (other_src_air <= src_air) {
           continue;
         }
-        uint8_t* other_src_air_dist = AIR_DIST[other_src_air];
+        auto& other_src_air_dist = AIR_DIST[other_src_air];
         for (uint8_t skipped_idx = selected_idx + 1; skipped_idx < air_within_4_moves_count;
              skipped_idx++) {
           uint8_t skipped_air = air_within_4_moves[skipped_idx];
@@ -623,15 +666,15 @@ void refresh_economy() {
 }
 void refresh_land_armies() {
   memset(current_player_land_unit_types, 0, sizeof(current_player_land_unit_types));
-  memset(total_player_land_units, 0, sizeof(total_player_land_units));
+  std::fill(std::begin(total_player_land_units), std::end(total_player_land_units), 0);
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     int land_owner = *owner_idx[land_idx];
     if (*factory_max[land_idx] > 0) {
       factory_locations[land_owner][total_factory_count[land_owner]++] = land_idx;
     }
     income_per_turn[land_owner] += LANDS[land_idx].land_value;
-    uint8_t* cp_land_unit_types_land = current_player_land_unit_types[land_idx];
-    uint8_t** land_units_state_land = land_units_state[land_idx];
+    auto& cp_land_unit_types_land = current_player_land_unit_types[land_idx];
+    auto& land_units_state_land = land_units_state[land_idx];
     for (int unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
       uint8_t* cp_land_unit_types_land_unit = &cp_land_unit_types_land[unit_idx];
       uint8_t* land_units_state_land_unit = land_units_state_land[unit_idx];
@@ -650,8 +693,8 @@ void refresh_land_armies() {
   }
 }
 void refresh_sea_navies() {
-  memset(current_player_sea_unit_types, 0, sizeof(current_player_sea_unit_types));
-  memset(total_player_sea_units, 0, sizeof(total_player_sea_units));
+  std::fill(std::begin(current_player_sea_unit_types), std::end(current_player_sea_unit_types), 0);
+  std::fill(std::begin(total_player_sea_units), std::end(total_player_sea_units), 0);
   for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     for (int unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
       uint8_t total_states = STATES_MOVE_SEA[unit_idx];
@@ -689,20 +732,25 @@ void refresh_canals() {
     }
   }
 
-  memcpy(sea_dist, SEA_DIST[canal_state], sizeof(sea_dist));
-  memcpy(sea_path, SEA_PATH[0][canal_state], sizeof(sea_path));
-  memcpy(sea_path_alt, SEA_PATH_ALT[canal_state], sizeof(sea_path_alt));
-  memcpy(seas_within_1_move_canal, SEAS_WITHIN_1_MOVE[canal_state],
-         sizeof(seas_within_1_move_canal));
-  memcpy(seas_within_1_move_count_canal, SEAS_WITHIN_1_MOVE_COUNT[canal_state],
-         sizeof(seas_within_1_move_count_canal));
-  memcpy(seas_within_2_moves_canal, SEAS_WITHIN_2_MOVES[canal_state],
-         sizeof(seas_within_2_moves_canal));
-  memcpy(seas_within_2_moves_count_canal, SEAS_WITHIN_2_MOVES_COUNT[canal_state],
-         sizeof(seas_within_2_moves_count_canal));
+  std::copy(std::begin(SEA_DIST[canal_state]), std::end(SEA_DIST[canal_state]),
+            std::begin(sea_dist));
+  std::copy(std::begin(SEA_PATH[0][canal_state]), std::end(SEA_PATH[0][canal_state]),
+            std::begin(sea_path));
+  std::copy(std::begin(SEA_PATH_ALT[canal_state]), std::end(SEA_PATH_ALT[canal_state]),
+            std::begin(sea_path_alt));
+  std::copy(std::begin(SEAS_WITHIN_1_MOVE[canal_state]), std::end(SEAS_WITHIN_1_MOVE[canal_state]),
+            std::begin(seas_within_1_move_canal));
+  std::copy(std::begin(SEAS_WITHIN_1_MOVE_COUNT[canal_state]),
+            std::end(SEAS_WITHIN_1_MOVE_COUNT[canal_state]),
+            std::begin(seas_within_1_move_count_canal));
+  std::copy(std::begin(SEAS_WITHIN_2_MOVES[canal_state]),
+            std::end(SEAS_WITHIN_2_MOVES[canal_state]), std::begin(seas_within_2_moves_canal));
+  std::copy(std::begin(SEAS_WITHIN_2_MOVES_COUNT[canal_state]),
+            std::end(SEAS_WITHIN_2_MOVES_COUNT[canal_state]),
+            std::begin(seas_within_2_moves_count_canal));
 }
 void refresh_enemy_armies() {
-  memset(enemy_units_count, 0, sizeof(enemy_units_count));
+  std::fill(std::begin(enemy_units_count), std::end(enemy_units_count), 0);
   for (uint8_t land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (uint8_t enemy_idx1 = 0; enemy_idx1 < enemies_count_0; enemy_idx1++) {
       uint8_t ememy_player_idx = enemies_0[enemy_idx1];
@@ -711,11 +759,11 @@ void refresh_enemy_armies() {
   }
 }
 void refresh_fleets() {
-  memset(enemy_destroyers_total, 0, sizeof(enemy_destroyers_total));
-  memset(enemy_blockade_total, 0, sizeof(enemy_blockade_total));
+  std::fill(std::begin(enemy_destroyers_total), std::end(enemy_destroyers_total), 0);
+  std::fill(std::begin(enemy_blockade_total), std::end(enemy_blockade_total), 0);
   for (uint8_t sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     uint8_t air_idx = sea_idx + LANDS_COUNT;
-    uint8_t* sea_units_0 = current_player_sea_unit_types[sea_idx];
+    auto& sea_units_0 = current_player_sea_unit_types[sea_idx];
     allied_carriers[sea_idx] = sea_units_0[CARRIERS];
     for (uint8_t player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       uint8_t* sea_units = total_player_sea_unit_types[player_idx][sea_idx];
@@ -736,7 +784,10 @@ void refresh_fleets() {
 }
 void refresh_land_path_blocked() {
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    for (uint8_t dst_land = 0; dst_land < LANDS_COUNT; dst_land++) { // todo this seems excessive
+    uint8_t lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
+    auto& lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
+    for (uint8_t conn_idx = 0; conn_idx < lands_within_2_moves_count; conn_idx++) {
+      uint8_t dst_land = lands_within_2_moves[conn_idx];
       uint8_t nextLandMovement = LAND_PATH[src_land][dst_land];
       uint8_t nextLandMovementAlt = LAND_PATH_ALT[src_land][dst_land];
       is_land_path_blocked[src_land][dst_land] =
@@ -747,7 +798,11 @@ void refresh_land_path_blocked() {
 }
 void refresh_sea_path_blocked() {
   for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    for (uint8_t dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) { // todo this seems excessive
+    //    for (uint8_t dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) { // todo this seems excessive
+    uint8_t seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
+    auto& seas_within_2_moves = SEAS_WITHIN_2_MOVES[canal_state][src_sea];
+    for (uint8_t conn_idx = 0; conn_idx < seas_within_2_moves_count; conn_idx++) {
+      uint8_t dst_sea = seas_within_2_moves[conn_idx];
       uint8_t nextSeaMovement = sea_path[src_sea][dst_sea];
       uint8_t nextSeaMovementAlt = sea_path_alt[src_sea][dst_sea];
       is_sea_path_blocked[src_sea][dst_sea] =
@@ -979,17 +1034,20 @@ void setPrintableStatus() {
   //-exec watch total_player_sea_units[0][0] if total_player_sea_units[0][0] < 0
   printableGameStatus[0] = '\0';
   if (actually_print) {
-    strcat(printableGameStatus, "---\n");
+    std::string printableGameStatus;
+    std::string threeCharStr;
+
+    printableGameStatus.append("---\n");
     setPrintableStatusLands();
     setPrintableStatusSeas();
-    strcat(printableGameStatus, "\n");
-    strcat(printableGameStatus, PLAYERS[state.player_index].color);
-    strcat(printableGameStatus, PLAYERS[state.player_index].name);
-    strcat(printableGameStatus, "\033[0m");
-    strcat(printableGameStatus, ": ");
-    sprintf(threeCharStr, "%d", state.money[0]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, " IPC\n");
+    printableGameStatus.append("\n");
+    printableGameStatus.append(PLAYERS[state.player_index].color);
+    printableGameStatus.append(PLAYERS[state.player_index].name);
+    printableGameStatus.append("\033[0m");
+    printableGameStatus.append(": ");
+    threeCharStr = std::to_string(state.money[0]);
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append(" IPC\n");
   }
 #endif
 }
@@ -1003,66 +1061,79 @@ void setPrintableStatusLands() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     //    LandState land_state = gameData.land_state[i];
     int land_owner = (*owner_idx[land_idx] + player_index) % PLAYERS_COUNT;
-    strcat(printableGameStatus, PLAYERS[land_owner].color);
-    sprintf(threeCharStr, "%d ", land_idx);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, LANDS[land_idx].name);
-    strcat(printableGameStatus, ": ");
-    strcat(printableGameStatus, PLAYERS[land_owner].name);
-    strcat(printableGameStatus, " ");
-    sprintf(threeCharStr, "%d", state.builds_left[land_idx]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", *factory_hp[land_idx]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", *factory_max[land_idx]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", LAND_VALUE[land_idx]);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, " Combat:");
+    std::string printableGameStatus;
+    std::string threeCharStr;
+    printableGameStatus.append(PLAYERS[land_owner].color);
+    threeCharStr = std::to_string(land_idx) + " ";
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append(LANDS[land_idx].name);
+    printableGameStatus.append(": ");
+    printableGameStatus.append(PLAYERS[land_owner].name);
+    printableGameStatus.append(" ");
+    threeCharStr = std::to_string(state.builds_left[land_idx]);
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append("/");
+    threeCharStr = std::to_string(*factory_hp[land_idx]);
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append("/");
+    threeCharStr = std::to_string(*factory_max[land_idx]);
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append("/");
+    threeCharStr = std::to_string(LAND_VALUE[land_idx]);
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append(" Combat:");
     if (state.flagged_for_combat[land_idx] > 0) {
-      strcat(printableGameStatus, "true\n");
+      printableGameStatus.append("true\n");
     } else {
-      strcat(printableGameStatus, "false\n");
+      printableGameStatus.append("false\n");
     }
+
     int grand_total = 0;
     for (uint8_t player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       grand_total += total_player_land_units[player_idx][land_idx];
     }
+
     if (grand_total == 0) {
-      strcat(printableGameStatus, "\033[0m");
+      printableGameStatus.append("\033[0m");
       continue;
     }
-    strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
+
+    printableGameStatus.append("                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
+
     if (total_player_land_units[0][land_idx] > 0) {
-      strcat(printableGameStatus, my_color);
-      uint8_t* other_land_units_here = current_player_land_unit_types[land_idx];
+      printableGameStatus.append(my_color);
+      uint8_t(&other_land_units_here)[LAND_UNIT_TYPES_COUNT] =
+          current_player_land_unit_types[land_idx];
       for (int land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
         uint8_t unit_count = other_land_units_here[land_unit_idx];
         if (unit_count > 0) {
-          strcat(printableGameStatus, my_name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[land_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
-          strcat(printableGameStatus, threeCharStr);
+          printableGameStatus.append(my_name);
+          printableGameStatus.append(" ");
+
+          std::stringstream paddedStrStream;
+          paddedStrStream << std::left << std::setw(14) << NAMES_UNIT_LAND[land_unit_idx];
+          printableGameStatus.append(paddedStrStream.str());
+
+          std::stringstream threeCharStrStream;
+          threeCharStrStream << std::right << std::setw(3) << unit_count;
+          printableGameStatus.append(threeCharStrStream.str());
+
           uint8_t* units_here = land_units_state[land_idx][land_unit_idx];
           for (int cur_state = 0; cur_state < STATES_MOVE_LAND[land_unit_idx]; cur_state++) {
-            sprintf(threeCharStr, "%3d", units_here[cur_state]);
-            strcat(printableGameStatus, threeCharStr);
+            std::stringstream stateStrStream;
+            stateStrStream << std::right << std::setw(3) << units_here[cur_state];
+            printableGameStatus.append(stateStrStream.str());
           }
-          strcat(printableGameStatus, "\n");
+          printableGameStatus.append("\n");
         }
       }
     }
-    strcat(printableGameStatus, "\033[0m");
+    printableGameStatus.append("\033[0m");
     for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       if (total_player_land_units[player_idx][land_idx] == 0)
         continue;
       int current_player_idx = (player_index + player_idx) % PLAYERS_COUNT;
-      strcat(printableGameStatus, PLAYERS[current_player_idx].color);
+      printableGameStatus.append(PLAYERS[current_player_idx].color);
       uint8_t* other_land_units_here = total_player_land_unit_types[player_idx][land_idx];
       if (*other_land_units_here == 255) {
         printf("ERROR: other_land_units_here == 255\n");
@@ -1071,18 +1142,23 @@ void setPrintableStatusLands() {
       for (int land_unit_idx = 0; land_unit_idx < LAND_UNIT_TYPES_COUNT; land_unit_idx++) {
         uint8_t unit_count = other_land_units_here[land_unit_idx];
         if (unit_count > 0) {
-          strcat(printableGameStatus, PLAYERS[current_player_idx].name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_LAND[land_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
-          strcat(printableGameStatus, threeCharStr);
-          strcat(printableGameStatus, "\n");
+          printableGameStatus.append(PLAYERS[current_player_idx].name);
+          printableGameStatus.append(" ");
+
+          std::stringstream paddedStrStream;
+          paddedStrStream << std::left << std::setw(14) << NAMES_UNIT_LAND[land_unit_idx];
+          printableGameStatus.append(paddedStrStream.str());
+
+          std::stringstream threeCharStrStream;
+          threeCharStrStream << std::right << std::setw(3) << unit_count;
+          printableGameStatus.append(threeCharStrStream.str());
+
+          printableGameStatus.append("\n");
         }
       }
-      strcat(printableGameStatus, "\033[0m");
+      printableGameStatus.append("\033[0m");
     }
-    strcat(printableGameStatus, "\n");
+    printableGameStatus.append("\n");
   }
 }
 #else
@@ -1100,54 +1176,75 @@ void setPrintableStatusSeas() {
       continue;
     }
     UnitsSea units_sea = state.units_sea[sea_index];
-    sprintf(threeCharStr, "%d ", LANDS_COUNT + sea_index);
-    strcat(printableGameStatus, threeCharStr);
-    strcat(printableGameStatus, SEAS[sea_index].name);
-    strcat(printableGameStatus, " Combat:");
+    std::string printableGameStatus;
+    std::string threeCharStr;
+    std::string paddedStr;
+
+    std::stringstream ss;
+    ss << (LANDS_COUNT + sea_index) << " ";
+    threeCharStr = ss.str();
+    printableGameStatus.append(threeCharStr);
+    printableGameStatus.append(SEAS[sea_index].name);
+    printableGameStatus.append(" Combat:");
     if (state.flagged_for_combat[sea_index + LANDS_COUNT] > 0) {
-      strcat(printableGameStatus, "true\n");
+      printableGameStatus.append("true\n");
     } else {
-      strcat(printableGameStatus, "false\n");
+      printableGameStatus.append("false\n");
     }
-    strcat(printableGameStatus, "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
-    strcat(printableGameStatus, PLAYERS[state.player_index].color);
+    printableGameStatus.append("                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n");
+    printableGameStatus.append(PLAYERS[state.player_index].color);
     if (total_player_sea_units[0][sea_index] > 0) {
       for (int sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT; sea_unit_idx++) {
         uint8_t unit_count = current_player_sea_unit_types[sea_index][sea_unit_idx];
         if (unit_count > 0) {
-          strcat(printableGameStatus, PLAYERS[state.player_index].name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[sea_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
-          strcat(printableGameStatus, threeCharStr);
+          printableGameStatus.append(PLAYERS[state.player_index].name);
+          printableGameStatus.append(" ");
+
+          std::stringstream paddedStrStream;
+          paddedStrStream << std::left << std::setw(14) << NAMES_UNIT_SEA[sea_unit_idx];
+          printableGameStatus.append(paddedStrStream.str());
+
+          std::stringstream threeCharStrStream;
+          threeCharStrStream << std::right << std::setw(3) << unit_count;
+          printableGameStatus.append(threeCharStrStream.str());
+
           for (int cur_state = 0; cur_state < STATES_MOVE_SEA[sea_unit_idx]; cur_state++) {
-            sprintf(threeCharStr, "%3d", sea_units_state[sea_index][sea_unit_idx][cur_state]);
-            strcat(printableGameStatus, threeCharStr);
+            std::stringstream stateStrStream;
+            stateStrStream << std::right << std::setw(3)
+                           << sea_units_state[sea_index][sea_unit_idx][cur_state];
+            printableGameStatus.append(stateStrStream.str());
           }
-          strcat(printableGameStatus, "\n");
+          printableGameStatus.append("\n");
         }
       }
     }
-    strcat(printableGameStatus, "\033[0m");
+    printableGameStatus.append("\033[0m");
     for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
       if (total_player_sea_units[player_idx][sea_index] == 0)
         continue;
-      strcat(printableGameStatus, PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].color);
+
+      printableGameStatus.append(PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].color);
+
       for (int sea_unit_idx = 0; sea_unit_idx < SEA_UNIT_TYPES_COUNT - 1; sea_unit_idx++) {
         uint8_t unit_count = total_player_sea_unit_types[player_idx][sea_index][sea_unit_idx];
         if (unit_count > 0) {
-          strcat(printableGameStatus,
-                 PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].name);
-          strcat(printableGameStatus, " ");
-          sprintf(paddedStr, "%-14s", NAMES_UNIT_SEA[sea_unit_idx]);
-          strcat(printableGameStatus, paddedStr);
-          sprintf(threeCharStr, "%3d", unit_count);
-          strcat(printableGameStatus, threeCharStr);
-          strcat(printableGameStatus, "\n");
+          printableGameStatus.append(
+              PLAYERS[(state.player_index + player_idx) % PLAYERS_COUNT].name);
+          printableGameStatus.append(" ");
+
+          std::stringstream paddedStrStream;
+          paddedStrStream << std::left << std::setw(14) << NAMES_UNIT_SEA[sea_unit_idx];
+          printableGameStatus.append(paddedStrStream.str());
+
+          std::stringstream threeCharStrStream;
+          threeCharStrStream << std::right << std::setw(3) << static_cast<int>(unit_count);
+          printableGameStatus.append(threeCharStrStream.str());
+
+          printableGameStatus.append("\n");
         }
       }
-      strcat(printableGameStatus, "\033[0m");
+
+      printableGameStatus.append("\033[0m");
     }
   }
 }
@@ -1235,26 +1332,35 @@ void clear_move_history() { memset(state.skipped_moves, 0, sizeof(state.skipped_
 uint8_t get_user_purchase_input(uint8_t src_air) {
   if (PLAYERS[state.player_index].is_human) {
     char stringBuffer[32];
+#include <sstream>
+#include <string>
+
+    std::string printableGameStatus;
+
     setPrintableStatus();
-    strcat(printableGameStatus, "Purchasing at ");
+    printableGameStatus.append("Purchasing at ");
     if (src_air < LANDS_COUNT) {
-      strcat(printableGameStatus, LANDS[src_air].name);
-      sprintf(stringBuffer, " %d=Finished ", valid_moves[0]);
-      strcat(printableGameStatus, stringBuffer);
+      printableGameStatus.append(LANDS[src_air].name);
+      std::stringstream ss;
+      ss << " " << valid_moves[0] << "=Finished ";
+      printableGameStatus.append(ss.str());
       for (uint8_t i = 1; i < valid_moves_count; i++) {
-        sprintf(stringBuffer, "%d=%s ", valid_moves[i], NAMES_UNIT_LAND[valid_moves[i]]);
-        strcat(printableGameStatus, stringBuffer);
+        ss.str(""); // Clear the stringstream
+        ss << valid_moves[i] << "=" << NAMES_UNIT_LAND[valid_moves[i]] << " ";
+        printableGameStatus.append(ss.str());
       }
     } else {
-      strcat(printableGameStatus, SEAS[src_air - LANDS_COUNT].name);
-      sprintf(stringBuffer, " %d=Finished ", valid_moves[0]);
-      strcat(printableGameStatus, stringBuffer);
+      printableGameStatus.append(SEAS[src_air - LANDS_COUNT].name);
+      std::stringstream ss;
+      ss << " " << valid_moves[0] << "=Finished ";
+      printableGameStatus.append(ss.str());
       for (uint8_t i = 1; i < valid_moves_count; i++) {
-        sprintf(stringBuffer, "%d=%s ", valid_moves[i], NAMES_UNIT_SEA[valid_moves[i]]);
-        strcat(printableGameStatus, stringBuffer);
+        ss.str(""); // Clear the stringstream
+        ss << valid_moves[i] << "=" << NAMES_UNIT_SEA[valid_moves[i]] << " ";
+        printableGameStatus.append(ss.str());
       }
     }
-    printf("%s\n", printableGameStatus);
+    printf("%s\n", printableGameStatus.c_str());
     return getUserInput();
   }
   return getAIInput();
@@ -1262,23 +1368,28 @@ uint8_t get_user_purchase_input(uint8_t src_air) {
 uint8_t get_user_move_input(uint8_t unit_type, uint8_t src_air) {
   if (PLAYERS[state.player_index].is_human) {
     setPrintableStatus();
-    strcat(printableGameStatus, "Moving ");
+#include <sstream>
+#include <string>
+
+    std::string printableGameStatus;
+
+    printableGameStatus.append("Moving ");
     if (src_air < LANDS_COUNT) {
-      strcat(printableGameStatus, NAMES_UNIT_LAND[unit_type]);
-      strcat(printableGameStatus, " From: ");
-      strcat(printableGameStatus, LANDS[src_air].name);
+      printableGameStatus.append(NAMES_UNIT_LAND[unit_type]);
+      printableGameStatus.append(" From: ");
+      printableGameStatus.append(LANDS[src_air].name);
     } else {
-      strcat(printableGameStatus, NAMES_UNIT_SEA[unit_type]);
-      strcat(printableGameStatus, " From: ");
-      strcat(printableGameStatus, SEAS[src_air - LANDS_COUNT].name);
+      printableGameStatus.append(NAMES_UNIT_SEA[unit_type]);
+      printableGameStatus.append(" From: ");
+      printableGameStatus.append(SEAS[src_air - LANDS_COUNT].name);
     }
-    strcat(printableGameStatus, " Valid Moves: ");
+    printableGameStatus.append(" Valid Moves: ");
     for (uint8_t i = 0; i < valid_moves_count; i++) {
-      char threeCharStr[6];
-      sprintf(threeCharStr, "%d ", valid_moves[i]);
-      strcat(printableGameStatus, threeCharStr);
+      std::stringstream ss;
+      ss << valid_moves[i] << " ";
+      printableGameStatus.append(ss.str());
     }
-    printf("%s\n", printableGameStatus);
+    printf("%s\n", printableGameStatus.c_str());
     return getUserInput();
   }
   return getAIInput();
@@ -1291,7 +1402,7 @@ bool load_transport(uint8_t unit_type, uint8_t src_land, uint8_t dst_sea, uint8_
   }
 #endif
   const uint8_t* load_unit_type = LOAD_UNIT_TYPE[unit_type];
-  uint8_t** units_sea_ptr_dst_sea = sea_units_state[dst_sea];
+  std::array<unsigned char*, 15>& units_sea_ptr_dst_sea = sea_units_state[dst_sea];
   for (uint8_t trans_type = (UNIT_WEIGHTS[unit_type] > 2) ? TRANS_1I : TRANS_1T;
        trans_type >= TRANS_EMPTY; trans_type--) {
     uint8_t* units_sea_ptr_dst_sea_trans_type = units_sea_ptr_dst_sea[trans_type];
@@ -1335,9 +1446,9 @@ void add_valid_land_moves(uint8_t src_land, uint8_t moves_remaining, uint8_t uni
   if (moves_remaining == 2) {
     // check for moving from land to land (two moves away)
     uint8_t lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
-    uint8_t* lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
-    uint8_t* land_dist = LAND_DIST[src_land];
-    bool* is_land_path_blocked_src_land = is_land_path_blocked[src_land];
+    auto& lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
+    array<array<unsigned char, 8>, 5>::value_type& land_dist = LAND_DIST[src_land];
+    auto& is_land_path_blocked_src_land = is_land_path_blocked[src_land];
     for (uint8_t land_idx = 0; land_idx < lands_within_2_moves_count; land_idx++) {
       uint8_t dst_land = lands_within_2_moves[land_idx];
       if (state.skipped_moves[src_land][dst_land].bit) {
@@ -1350,7 +1461,7 @@ void add_valid_land_moves(uint8_t src_land, uint8_t moves_remaining, uint8_t uni
     }
     // check for moving from land to sea (two moves away)
     uint8_t load_within_2_moves_count = LOAD_WITHIN_2_MOVES_COUNT[src_land];
-    uint8_t* load_within_2_moves = LOAD_WITHIN_2_MOVES[src_land];
+    auto& load_within_2_moves = LOAD_WITHIN_2_MOVES[src_land];
     for (uint8_t sea_idx = 0; sea_idx < load_within_2_moves_count; sea_idx++) {
       uint8_t dst_sea = load_within_2_moves[sea_idx];
       if (transports_with_large_cargo_space[dst_sea] == 0) { // assume large, only tanks move 2
@@ -1368,7 +1479,7 @@ void add_valid_land_moves(uint8_t src_land, uint8_t moves_remaining, uint8_t uni
   } else {
     // check for moving from land to land (one move away)
     uint8_t lands_within_1_move_count = LAND_TO_LAND_COUNT[src_land];
-    uint8_t* lands_within_1_move = LAND_TO_LAND_CONN[src_land];
+    auto& lands_within_1_move = LAND_TO_LAND_CONN[src_land];
     bool is_non_combat_unit = ATTACK_UNIT_LAND[unit_type] == 0;
     bool is_unloadable_unit = UNIT_WEIGHTS[unit_type] > 5;
     bool is_heavy_unit = UNIT_WEIGHTS[unit_type] > 2;
@@ -1386,7 +1497,7 @@ void add_valid_land_moves(uint8_t src_land, uint8_t moves_remaining, uint8_t uni
     if (is_unloadable_unit)
       return;
     uint8_t land_to_sea_count = LAND_TO_SEA_COUNT[src_land];
-    uint8_t* land_to_sea_conn = LAND_TO_SEA_CONN[src_land];
+    auto& land_to_sea_conn = LAND_TO_SEA_CONN[src_land];
     for (uint8_t sea_idx = 0; sea_idx < land_to_sea_count; sea_idx++) {
       uint8_t dst_sea = land_to_sea_conn[sea_idx];
       if (transports_with_small_cargo_space[dst_sea] == 0) {
@@ -1408,9 +1519,9 @@ void add_valid_sea_moves(uint8_t src_sea, uint8_t moves_remaining) {
   if (moves_remaining == 2) {
     // check for moving from sea to sea (two moves away)
     uint8_t seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
-    uint8_t* seas_within_2_moves =
+    auto seas_within_2_moves =
         SEAS_WITHIN_2_MOVES[canal_state][src_sea]; // TODO optimize canal_state
-    bool* is_sea_path_blocked_src_sea = is_sea_path_blocked[src_sea];
+    auto is_sea_path_blocked_src_sea = is_sea_path_blocked[src_sea];
     for (uint8_t sea_idx = 0; sea_idx < seas_within_2_moves_count; sea_idx++) {
       uint8_t dst_sea = seas_within_2_moves[sea_idx];
       if (is_sea_path_blocked_src_sea[dst_sea]) {
@@ -1426,8 +1537,7 @@ void add_valid_sea_moves(uint8_t src_sea, uint8_t moves_remaining) {
   } else {
     // check for moving from sea to sea (one move away)
     uint8_t seas_within_1_move_count = SEAS_WITHIN_1_MOVE_COUNT[canal_state][src_sea];
-    uint8_t* seas_within_1_move =
-        SEAS_WITHIN_1_MOVE[canal_state][src_sea]; // TODO optimize canal_state
+    auto seas_within_1_move = SEAS_WITHIN_1_MOVE[canal_state][src_sea]; // TODO optimize canal_state
     for (uint8_t sea_idx = 0; sea_idx < seas_within_1_move_count; sea_idx++) {
       uint8_t dst_sea = seas_within_1_move[sea_idx];
       uint8_t src_air = src_sea + LANDS_COUNT;
@@ -1444,9 +1554,9 @@ void add_valid_sub_moves(uint8_t src_sea, uint8_t moves_remaining) {
   if (moves_remaining == 2) {
     // check for moving from sea to sea (two moves away)
     uint8_t seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
-    uint8_t* seas_within_2_moves =
+    auto seas_within_2_moves =
         SEAS_WITHIN_2_MOVES[canal_state][src_sea]; // TODO optimize canal_state
-    bool* is_sub_path_blocked_src_sea = is_sub_path_blocked[src_sea];
+    auto is_sub_path_blocked_src_sea = is_sub_path_blocked[src_sea];
     for (uint8_t sea_idx = 0; sea_idx < seas_within_2_moves_count; sea_idx++) {
       uint8_t dst_sea = seas_within_2_moves[sea_idx];
       if (is_sub_path_blocked_src_sea[dst_sea]) {
@@ -1462,8 +1572,7 @@ void add_valid_sub_moves(uint8_t src_sea, uint8_t moves_remaining) {
   } else {
     // check for moving from sea to sea (one move away)
     uint8_t seas_within_1_move_count = SEAS_WITHIN_1_MOVE_COUNT[canal_state][src_sea];
-    uint8_t* seas_within_1_move =
-        SEAS_WITHIN_1_MOVE[canal_state][src_sea]; // TODO optimize canal_state
+    auto seas_within_1_move = SEAS_WITHIN_1_MOVE[canal_state][src_sea]; // TODO optimize canal_state
     for (uint8_t sea_idx = 0; sea_idx < seas_within_1_move_count; sea_idx++) {
       uint8_t dst_sea = seas_within_1_move[sea_idx];
       uint8_t src_air = src_sea + LANDS_COUNT;
@@ -1546,7 +1655,7 @@ bool stage_transport_units() {
 }
 
 void pre_move_fighter_units() {
-  memset(canFighterLandHere, 0, sizeof(canFighterLandHere));
+  std::fill(std::begin(canFighterLandHere), std::end(canFighterLandHere), 0);
 #ifdef DEBUG
   if (actually_print) {
     setPrintableStatus();
@@ -1566,25 +1675,25 @@ void pre_move_fighter_units() {
     // check for possiblity to build carrier under fighter
     if (land_owner == state.player_index && *factory_max[land_idx] > 0) {
       int land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
-      uint8_t* land_to_sea_conn = LAND_TO_SEA_CONN[land_idx];
+      auto& land_to_sea_conn = LAND_TO_SEA_CONN[land_idx];
       for (int conn_idx = 0; conn_idx < land_to_sea_count; conn_idx++) {
         canFighterLandHere[LANDS_COUNT + land_to_sea_conn[conn_idx]] = true;
       }
     }
   }
-  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+  for (ulong sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     if (allied_carriers[sea_idx] > 0) {
       canFighterLandHere[sea_idx + LANDS_COUNT] = true;
       // if player owns these carriers, then landing area is 2 spaces away
       if (sea_units_state[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
-        uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[sea_idx];
-        int sea_to_sea_count = SEA_TO_SEA_COUNT[sea_idx];
-        for (int conn_idx = 0; conn_idx < sea_to_sea_count; conn_idx++) {
+        auto& sea_to_sea_conn = SEA_TO_SEA_CONN[sea_idx];
+        ulong sea_to_sea_count = SEA_TO_SEA_COUNT[sea_idx];
+        for (ulong conn_idx = 0; conn_idx < sea_to_sea_count; conn_idx++) {
           uint8_t connected_sea1 = sea_to_sea_conn[conn_idx];
           canFighterLandHere[LANDS_COUNT + connected_sea1] = true;
-          int sea_to_sea_count2 = SEA_TO_SEA_COUNT[connected_sea1];
-          uint8_t* sea_to_sea_conn2 = SEA_TO_SEA_CONN[connected_sea1];
-          for (int conn2_idx = 0; conn2_idx < sea_to_sea_count2; conn2_idx++) {
+          ulong sea_to_sea_count2 = SEA_TO_SEA_COUNT[connected_sea1];
+          auto& sea_to_sea_conn2 = SEA_TO_SEA_CONN[connected_sea1];
+          for (ulong conn2_idx = 0; conn2_idx < sea_to_sea_count2; conn2_idx++) {
             canFighterLandHere[LANDS_COUNT + sea_to_sea_conn2[conn2_idx]] = true;
           }
         }
@@ -1592,10 +1701,10 @@ void pre_move_fighter_units() {
     }
   }
   // refresh_canFighterLandIn1Move
-  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
+  for (ulong air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
     canFighterLandIn1Move[air_idx] = false;
-    int air_conn_count = AIR_CONN_COUNT[air_idx];
-    for (int conn_idx = 0; conn_idx < air_conn_count; conn_idx++) {
+    ulong air_conn_count = AIR_CONN_COUNT[air_idx];
+    for (ulong conn_idx = 0; conn_idx < air_conn_count; conn_idx++) {
       if (canFighterLandHere[AIR_CONNECTIONS[air_idx][conn_idx]]) {
         canFighterLandIn1Move[air_idx] = true;
         break;
@@ -1705,7 +1814,7 @@ bool move_bomber_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     canBomberLandIn1Move[land_idx] = false;
     uint8_t land_conn_count = LANDS[land_idx].land_conn_count;
-    const uint8_t* connected_land_index = LANDS[land_idx].connected_land_index;
+    const uint8_t* connected_land_index = LANDS[land_idx].connected_land_index.data();
     for (int conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
       if (canBomberLandHere[connected_land_index[conn_idx]]) {
         canBomberLandIn1Move[land_idx] = true;
@@ -1725,18 +1834,18 @@ bool move_bomber_units() {
     }
   }
   // refresh_canBomberLandIn2Moves
-  for (int air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
+  for (ulong air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
     canBomberLandIn2Moves[air_idx] = false;
-    int air_conn_count = AIR_CONN_COUNT[air_idx];
-    uint8_t* air_conn = AIR_CONNECTIONS[air_idx];
-    for (int conn_idx = 0; conn_idx < air_conn_count; conn_idx++) {
+    ulong air_conn_count = AIR_CONN_COUNT[air_idx];
+    auto& air_conn = AIR_CONNECTIONS[air_idx];
+    for (ulong conn_idx = 0; conn_idx < air_conn_count; conn_idx++) {
       if (canBomberLandIn1Move[air_conn[conn_idx]]) {
         canBomberLandIn2Moves[air_idx] = true;
         break;
       }
     }
   }
-  for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
+  for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     uint8_t* total_bombers = &land_units_state[src_land][BOMBERS_LAND_AIR][BOMBER_MOVES_MAX];
     if (*total_bombers == 0) {
       continue;
@@ -2272,7 +2381,7 @@ bool resolve_sea_battles() {
         } else {
           valid_moves_count = 0;
         }
-        uint8_t* sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
+        auto& sea_to_sea_conn = SEA_TO_SEA_CONN[src_sea];
         for (int sea_conn_idx = 0; sea_conn_idx < SEA_TO_SEA_COUNT[src_sea]; sea_conn_idx++) {
           uint8_t sea_dst = sea_to_sea_conn[sea_conn_idx];
           if (enemy_blockade_total[sea_dst] == 0)
@@ -2496,7 +2605,6 @@ void sea_retreat(uint8_t src_sea, uint8_t dst_sea) {
 uint8_t ask_to_retreat() {
   if (PLAYERS[state.player_index].is_human) {
     setPrintableStatus();
-    strcat(printableGameStatus, "To where do you want to retreat (255 for no)? ");
     printf("%s\n", printableGameStatus);
     return getUserInput();
   }
@@ -2588,6 +2696,7 @@ void remove_land_attackers(uint8_t src_land, uint8_t hits) {
     }
   }
 }
+
 void remove_sea_defenders(uint8_t src_sea, uint8_t hits, bool defender_submerged) {
 #ifdef DEBUG
   if (actually_print) {
@@ -2943,7 +3052,7 @@ bool unload_transports() {
   return false;
 }
 #define MAX_COMBAT_ROUNDS 100
-bool resolve_land_battles() { 
+bool resolve_land_battles() {
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
     // check if battle is over
     if (state.flagged_for_combat[src_land] == 0) {
@@ -3148,7 +3257,7 @@ bool resolve_land_battles() {
         // ask to retreat (0-255, any non valid retreat zone is considered a no)
         valid_moves[0] = src_land;
         valid_moves_count = 1;
-        uint8_t* land_to_land_conn = LAND_TO_LAND_CONN[src_land];
+        auto& land_to_land_conn = LAND_TO_LAND_CONN[src_land];
         uint8_t land_to_land_count = LAND_TO_LAND_COUNT[src_land];
         for (int land_conn_idx = 0; land_conn_idx < land_to_land_count; land_conn_idx++) {
           uint8_t land_dst = land_to_land_conn[land_conn_idx];
@@ -3262,7 +3371,7 @@ bool resolve_land_battles() {
 }
 
 void add_valid_unload_moves(uint8_t src_sea) {
-  uint8_t* near_land = SEA_TO_LAND_CONN[src_sea];
+  auto& near_land = SEA_TO_LAND_CONN[src_sea];
   uint8_t near_land_count = SEA_TO_LAND_COUNT[src_sea];
   for (int land_idx = 0; land_idx < near_land_count; land_idx++) {
     uint8_t dst_land = near_land[land_idx];
@@ -3280,7 +3389,7 @@ void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves) {
            remaining_moves);
   }
 #endif
-  uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
+  auto near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
   uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
   for (int i = 0; i < near_air_count; i++) {
     uint8_t dst_air = near_air[i];
@@ -3298,7 +3407,7 @@ void add_valid_fighter_moves(uint8_t src_air, uint8_t remaining_moves) {
 }
 
 void add_valid_fighter_landing(uint8_t src_air, uint8_t remaining_moves) {
-  uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
+  auto near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
   uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
   for (int i = 0; i < near_air_count; i++) {
     uint8_t dst_air = near_air[i];
@@ -3312,7 +3421,7 @@ void add_valid_fighter_landing(uint8_t src_air, uint8_t remaining_moves) {
 }
 
 void add_valid_bomber_moves(uint8_t src_air, uint8_t remaining_moves) {
-  uint8_t* near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
+  auto near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
   uint8_t near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
   for (int i = 0; i < near_air_count; i++) {
     uint8_t dst_air = near_air[i];
@@ -3432,7 +3541,7 @@ void add_valid_bomber_landing(uint8_t src_air, uint8_t movement_remaining) {
     printf("movement_remaining: %d\n", movement_remaining);
   }
 #endif
-  uint8_t* near_land = AIR_TO_LAND_WITHIN_X_MOVES[movement_remaining - 1][src_air];
+  auto& near_land = AIR_TO_LAND_WITHIN_X_MOVES[movement_remaining - 1][src_air];
   for (int i = 0; i < AIR_TO_LAND_WITHIN_X_MOVES_COUNT[movement_remaining - 1][src_air]; i++) {
     uint8_t dst_air = near_land[i];
     if (canBomberLandHere[dst_air]) {
@@ -3919,133 +4028,6 @@ void rotate_turns() {
 #endif
 }
 
-double get_score() {
-
-  // Evaluate the game state and return a score
-  int allied_score = 1; // one helps prevent division by zero
-  int enemy_score = 1;
-  allied_score += state.money[0];
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    LandState* land_state = &state.land_state[land_idx];
-    int total_units = 0;
-    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
-      total_units += land_state->fighters[unit_state];
-    }
-    allied_score += total_units * FIGHTER_COST;
-    for (int unit_state = 0; unit_state < BOMBER_LAND_STATES; unit_state++) {
-      total_units += land_state->bombers[unit_state];
-    }
-    allied_score += total_units * BOMBER_COST;
-    for (int unit_state = 0; unit_state < INFANTRY_STATES; unit_state++) {
-      total_units += land_state->infantry[unit_state];
-    }
-    allied_score += total_units * INFANTRY_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < ARTILLERY_STATES; unit_state++) {
-      total_units += land_state->artillery[unit_state];
-    }
-    allied_score += total_units * ARTILLERY_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < TANK_STATES; unit_state++) {
-      total_units += land_state->tanks[unit_state];
-    }
-    allied_score += total_units * TANK_COST;
-    total_units = 0;
-    for (int unit_state = 0; unit_state < AA_GUN_STATES; unit_state++) {
-      total_units += land_state->aa_guns[unit_state];
-    }
-    allied_score += total_units * AA_GUN_COST;
-  }
-  for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    UnitsSea* sea_state = &state.units_sea[sea_idx];
-    int total_units = 0;
-    for (int unit_state = 0; unit_state < FIGHTER_STATES; unit_state++) {
-      total_units += sea_state->fighters[unit_state];
-    }
-    allied_score += total_units * FIGHTER_COST;
-    for (int unit_state = 0; unit_state < TRANS_EMPTY_STATES; unit_state++) {
-      total_units += sea_state->trans_empty[unit_state];
-    }
-    allied_score += total_units * TRANSPORT_COST;
-    for (int unit_state = 0; unit_state < TRANS_1I_STATES; unit_state++) {
-      total_units += sea_state->trans_1i[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1A_STATES; unit_state++) {
-      total_units += sea_state->trans_1a[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + ARTILLERY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1T_STATES; unit_state++) {
-      total_units += sea_state->trans_1t[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + TANK_COST);
-    for (int unit_state = 0; unit_state < TRANS_2I_STATES; unit_state++) {
-      total_units += sea_state->trans_2i[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + INFANTRY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1I_1A_STATES; unit_state++) {
-      total_units += sea_state->trans_1i_1a[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + ARTILLERY_COST);
-    for (int unit_state = 0; unit_state < TRANS_1I_1T_STATES; unit_state++) {
-      total_units += sea_state->trans_1i_1t[unit_state];
-    }
-    allied_score += total_units * (TRANSPORT_COST + INFANTRY_COST + TANK_COST);
-    for (int unit_state = 0; unit_state < SUB_STATES; unit_state++) {
-      total_units += sea_state->submarines[unit_state];
-    }
-    allied_score += total_units * SUB_COST;
-    for (int unit_state = 0; unit_state < DESTROYER_STATES; unit_state++) {
-      total_units += sea_state->destroyers[unit_state];
-    }
-    allied_score += total_units * DESTROYER_COST;
-    for (int unit_state = 0; unit_state < CARRIER_STATES; unit_state++) {
-      total_units += sea_state->carriers[unit_state];
-    }
-    allied_score += total_units * CARRIER_COST;
-    for (int unit_state = 0; unit_state < CRUISER_STATES; unit_state++) {
-      total_units += sea_state->cruisers[unit_state];
-    }
-    allied_score += total_units * CRUISER_COST;
-    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
-      total_units += sea_state->battleships[unit_state];
-    }
-    allied_score += total_units * BATTLESHIP_COST;
-    for (int unit_state = 0; unit_state < BATTLESHIP_STATES; unit_state++) {
-      total_units += sea_state->bs_damaged[unit_state];
-    }
-    allied_score += total_units * BATTLESHIP_COST;
-    for (int unit_state = 0; unit_state < BOMBER_SEA_STATES; unit_state++) {
-      total_units += sea_state->bombers[unit_state];
-    }
-    allied_score += total_units * BOMBER_COST;
-  }
-  for (int player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-    int score = state.money[player_idx];
-    for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-      for (int unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
-        score += total_player_land_unit_types[player_idx][land_idx][unit_type] *
-                 COST_UNIT_LAND[unit_type];
-      }
-    }
-    for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-      for (int unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
-        score +=
-            total_player_sea_unit_types[player_idx][sea_idx][unit_type] * COST_UNIT_SEA[unit_type];
-      }
-    }
-    if (PLAYERS[state.player_index].is_allied[(state.player_index + player_idx) % PLAYERS_COUNT]) {
-      allied_score += score;
-    } else {
-      enemy_score += score;
-    }
-  }
-  double score = ((double)allied_score / (double)(enemy_score + allied_score));
-
-  // return ((double)2 * (double)allied_score / (double)(enemy_score + allied_score)) - (double)1;
-  return ((double)allied_score / (double)(enemy_score + allied_score));
-}
-
 GameState* get_game_state_copy() {
   GameState* game_state = (GameState*)malloc(sizeof(GameState));
   memcpy(game_state, &state, sizeof(GameState));
@@ -4201,21 +4183,21 @@ void apply_action(GameState* game_state, uint8_t action) {
 }
 double random_play_until_terminal(GameState* game_state) {
   memcpy(&state, game_state, sizeof(GameState));
-  //uint8_t starting_player = state.player_index;
-  // if (starting_player >= PLAYERS_COUNT) {
-  //   state.player_index -= PLAYERS_COUNT;
-  // }
-  // if (MCTS_ITERATIONS == 7549) {
-  //   printf("%d, %d\n", seed, random_number_index);
-  //   json = serialize_game_data_to_json(game_state);
-  //   write_json_to_file("debug_data.json", json);
-  //   cJSON_Delete(json);
-  //   actually_print = true;
-  // }
+  // uint8_t starting_player = state.player_index;
+  //  if (starting_player >= PLAYERS_COUNT) {
+  //    state.player_index -= PLAYERS_COUNT;
+  //  }
+  //  if (MCTS_ITERATIONS == 7549) {
+  //    printf("%d, %d\n", seed, random_number_index);
+  //    json = serialize_game_data_to_json(game_state);
+  //    write_json_to_file("debug_data.json", json);
+  //    cJSON_Delete(json);
+  //    actually_print = true;
+  //  }
   refresh_full_cache();
   answers_remaining = 100000;
   use_selected_action = false;
-  double score = get_score();
+  double score = evaluate_state(&state);
   max_loops = 1000;
   random_number_index = (uint16_t)(rand() % RANDOM_NUMBERS_SIZE);
   // clear_move_history();
@@ -4251,7 +4233,7 @@ double random_play_until_terminal(GameState* game_state) {
     buy_factory();
     collect_money();
     rotate_turns();
-    score = get_score();
+    score = evaluate_state(&state);
   }
   if (state.player_index % 2 == 1) {
     score = 1 - score;
@@ -4265,48 +4247,11 @@ bool is_terminal_state(GameState* game_state) {
   return (score > 0.99 || score < 0.01);
 }
 
-double evaluate_state(GameState* game_state) {
-  uint8_t starting_player = game_state->player_index;
-  if (starting_player >= PLAYERS_COUNT) {
-    game_state->player_index -= PLAYERS_COUNT;
-  }
-  // Evaluate the game state and return a score
-  int allied_score = 1; // one helps prevent division by zero
-  int enemy_score = 1;
-  allied_score += game_state->money[0];
-  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    int score = game_state->money[player_idx];
-    for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-      for (int unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
-        score += total_player_land_unit_types[player_idx][land_idx][unit_type] *
-                 COST_UNIT_LAND[unit_type];
-      }
-    }
-    for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-      for (int unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
-        score +=
-            total_player_sea_unit_types[player_idx][sea_idx][unit_type] * COST_UNIT_SEA[unit_type];
-      }
-    }
-    if (PLAYERS[game_state->player_index]
-            .is_allied[(game_state->player_index + player_idx) % PLAYERS_COUNT]) {
-      allied_score += score;
-    } else {
-      enemy_score += score;
-    }
-  }
-  double score = ((double)allied_score / (double)(enemy_score + allied_score));
-  game_state->player_index = starting_player;
-  if (starting_player >= PLAYERS_COUNT) {
-    return 1 - score;
-  }
-  return score;
-}
 void load_single_game() {
   random_number_index = 34282;
   answers_remaining = 100000;
   use_selected_action = false;
-  double score = get_score();
+  double score = evaluate_state(&state);
   actually_print = true;
   max_loops = 1000;
   uint8_t player_idx = 4;
@@ -4349,10 +4294,47 @@ void load_single_game() {
     buy_factory();
     collect_money();
     rotate_turns();
-    score = get_score();
+    score = evaluate_state(&state);
   }
 }
 
+double evaluate_state(GameState* game_state) {
+  uint8_t starting_player = game_state->player_index;
+  if (starting_player >= PLAYERS_COUNT) {
+    game_state->player_index -= PLAYERS_COUNT;
+  }
+  // Evaluate the game state and return a score
+  int allied_score = 1; // one helps prevent division by zero
+  int enemy_score = 1;
+  allied_score += game_state->money[0];
+  for (int player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+    int score = game_state->money[player_idx];
+    for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+      for (int unit_type = 0; unit_type < LAND_UNIT_TYPES_COUNT; unit_type++) {
+        score += total_player_land_unit_types[player_idx][land_idx][unit_type] *
+                 COST_UNIT_LAND[unit_type];
+      }
+    }
+    for (int sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+      for (int unit_type = 0; unit_type < SEA_UNIT_TYPES_COUNT; unit_type++) {
+        score +=
+            total_player_sea_unit_types[player_idx][sea_idx][unit_type] * COST_UNIT_SEA[unit_type];
+      }
+    }
+    if (PLAYERS[game_state->player_index]
+            .is_allied[(game_state->player_index + player_idx) % PLAYERS_COUNT]) {
+      allied_score += score;
+    } else {
+      enemy_score += score;
+    }
+  }
+  double score = ((double)allied_score / (double)(enemy_score + allied_score));
+  game_state->player_index = starting_player;
+  if (starting_player >= PLAYERS_COUNT) {
+    return 1 - score;
+  }
+  return score;
+}
 PYBIND11_MODULE(engine, handle) {
   handle.doc() = "engine doc";
   handle.def("random_play_until_terminal", &random_play_until_terminal);

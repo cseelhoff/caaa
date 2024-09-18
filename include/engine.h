@@ -1,8 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 #include "game_state.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include <array>
 
 #define STRING_BUFFER_SIZE 64
 #define MIN_AIR_HOPS 2
@@ -24,7 +23,8 @@
 #define BLOCKADE_UNIT_TYPES_COUNT 5
 #define PRINTABLE_GAME_STATUS_SIZE 4096
 
-typedef uint8_t LandPath[LANDS_COUNT][AIRS_COUNT];
+using std::array;
+using LandPath = array<array<uint8_t, AIRS_COUNT>, LANDS_COUNT>;
 
 void initialize_constants();
 
@@ -157,10 +157,10 @@ bool is_terminal_state(GameState* game_state);
 double evaluate_state(GameState* game_state);
 double random_play_until_terminal(GameState* game_state);
 GameState* get_game_state_copy();
-
 void load_single_game();
 bool end_turn();
 
 uint8_t get_attacker_hits(int attacker_damage);
 uint8_t get_defender_hits(int defender_damage);
+
 #endif

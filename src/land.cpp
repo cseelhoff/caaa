@@ -1,7 +1,7 @@
 #include "land.h"
+#include <array>
 //  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
-
-const Land LANDS[LANDS_COUNT] = {
+const std::array<Land, LANDS_COUNT> LANDS = {{
   {"Washington", 4, 10, 2, 0, //owner, value, sea_con_count, land_conn_count
   {0, 1, 0, 0}, //sea
   {0, 0, 0, 0, 0, 0}}, //land
@@ -17,4 +17,4 @@ const Land LANDS[LANDS_COUNT] = {
   {"Japan", 3, 8, 1, 1,
   {0, 0, 0, 0}, 
   {3, 0, 0, 0, 0, 0}}  
-};
+}};
