@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "game_state.h"
+#include "game_state.hpp"
 
 typedef struct MCTSNode {
     GameState state;

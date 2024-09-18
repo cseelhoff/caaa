@@ -1,12 +1,11 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include "canal.h"
 #include "land.h"
-//#include "mcts.h"
 #include "player.h"
 #include "sea.h"
 #include "units/units.h"
+#include <array>
 #include <stdint.h>
 
 //#define STRING_BUFFER_SIZE 64
@@ -14,8 +13,8 @@
 #define MAX_AIR_TO_AIR_CONNECTIONS 7
 
 #define ACTIONS_COUNT 20
-typedef uint8_t Actions[ACTIONS_COUNT];
-typedef Actions* ActionsPtr;
+using Actions = std::array<uint8_t, ACTIONS_COUNT>;
+using ActionsPtr = Actions *;
 
 typedef struct {
     bool bit : 1;

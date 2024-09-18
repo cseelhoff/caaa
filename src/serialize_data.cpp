@@ -1,5 +1,5 @@
 #include "serialize_data.h"
-#include "game_state.h"
+#include "game_state.hpp"
 #include <cjson/cJSON.h>
 #include <stdint.h>
 #include <stdio.h>

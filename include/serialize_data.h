@@ -2,7 +2,7 @@
 #define SERIALIZE_DATA_H
 
 #include <cjson/cJSON.h>
-#include "game_state.h"
+#include "game_state.hpp"
 
 void load_game_data_from_json(char const* filename, GameState* data);
 cJSON* read_json_from_file(const char *filename);

@@ -1,6 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
-#include "game_state.h"
+#include "game_state.hpp"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -148,8 +148,6 @@ void sea_retreat(uint8_t src_sea, uint8_t retreat);
 void set_seed(uint16_t seed);
 
 GameState* clone_state(GameState* game_state);
-void free_state(GameState* game_state);
-
 
 void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions);
 void apply_action(GameState* game_state, uint8_t action);

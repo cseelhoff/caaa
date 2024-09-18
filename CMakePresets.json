@@ -3,7 +3,7 @@
     "configurePresets": [
         {
             "name": "x64-debug",
-            "displayName": "Clang 11.0.1 x86_64-pc-linux-gnu Debug",
+            "displayName": "Clang x86_64-pc-linux-gnu Debug",
             "description": "Using compilers: C = /usr/bin/clang, CXX = /usr/bin/clang++",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",
@@ -13,12 +13,14 @@
                 "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_FLAGS_DEBUG": "-g -DDEBUG -Wall -Wextra -Wconversion",
-                "CMAKE_CXX_FLAGS_DEBUG": "-g -DDEBUG -Wall -Wextra -Wconversion"
+                "CMAKE_CXX_FLAGS_DEBUG": "-g -DDEBUG -Wall -Wextra -Wconversion",
+                "CMAKE_CXX_STANDARD": "23",
+                "CMAKE_CXX_STANDARD_REQUIRED": "ON"
             }
         },
         {
             "name": "x64-release",
-            "displayName": "Clang 11.0.1 x86_64-pc-linux-gnu Release",
+            "displayName": "Clang x86_64-pc-linux-gnu Release",
             "inherits": "x64-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",

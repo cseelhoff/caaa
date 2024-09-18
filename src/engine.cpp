@@ -1,6 +1,6 @@
 #include "engine.h"
 #include "canal.h"
-#include "game_state.h"
+#include "game_state.hpp"
 #include "land.h"
 #include "mcts.h"
 #include "player.h"
@@ -4061,10 +4061,6 @@ GameState* clone_state(GameState* game_state) {
   return new_state;
 }
 
-void free_state(GameState* game_state) {
-  // Free the memory allocated for the game state
-  free(game_state);
-}
 void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPtr actions) {
   // Return the list of possible actions from the given state
   // if (MCTS_ITERATIONS == 6767) {
@@ -4125,7 +4121,8 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
     rotate_turns();
   }
   *num_actions = valid_moves_count;
-  memcpy(actions, valid_moves, valid_moves_count * sizeof(uint8_t));
+  //memcpy(actions, valid_moves, valid_moves_count * sizeof(uint8_t));
+  std::copy(&valid_moves,&valid_moves + valid_moves_count, actions);
 }
 void apply_action(GameState* game_state, uint8_t action) {
   // Apply the action to the game state
@@ -4354,6 +4351,13 @@ void load_single_game() {
 }
 
 PYBIND11_MODULE(engine, handle) {
-  handle.doc() = "engine doc";
+  handle.doc() = "caaa engine doc";
   handle.def("random_play_until_terminal", &random_play_until_terminal);
+  handle.def("clone_state", &clone_state);
+  handle.def("get_possible_actions", &get_possible_actions);
+  handle.def("apply_action",&apply_action);
+  handle.def("is_terminal_state", &is_terminal_state);
+  handle.def("initialize_constants", &initialize_constants);
+  handle.def("get_game_state_copy", &get_game_state_copy);
+  handle.def("evaluate_state", &evaluate_state);
 }

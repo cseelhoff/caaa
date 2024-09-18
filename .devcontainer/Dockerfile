@@ -1,17 +1,17 @@
-FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
+FROM mcr.microsoft.com/devcontainers/cpp:1-ubuntu-24.04
 
-ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
+# ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 
-# Optionally install the cmake for vcpkg
-COPY ./reinstall-cmake.sh /tmp/
+# # Optionally install the cmake for vcpkg
+# COPY ./reinstall-cmake.sh /tmp/
 
-RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
-        chmod +x /tmp/reinstall-cmake.sh && /tmp/reinstall-cmake.sh ${REINSTALL_CMAKE_VERSION_FROM_SOURCE}; \
-    fi \
-    && rm -f /tmp/reinstall-cmake.sh
+# RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
+#         chmod +x /tmp/reinstall-cmake.sh && /tmp/reinstall-cmake.sh ${REINSTALL_CMAKE_VERSION_FROM_SOURCE}; \
+#     fi \
+#     && rm -f /tmp/reinstall-cmake.sh
 
-RUN apt-get update && apt-get install -y clangd cppcheck clang-tidy python3-pip libcjson-dev pybind11-dev
-RUN pip3 install flawfinder lizard
+RUN apt-get update && apt-get install -y clangd cppcheck clang-tidy libcjson-dev pybind11-dev
+#RUN pip3 install flawfinder lizard
 
 # Cleanup
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*

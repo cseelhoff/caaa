@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(caaa VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -10,7 +10,7 @@ file(GLOB SOURCES "src/*.cpp")
 set(EXECUTABLE_NAME caaa)
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c++11)
+target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c++23)
 
 # Find and link the system-installed cJSON library
 find_package(cJSON REQUIRED)

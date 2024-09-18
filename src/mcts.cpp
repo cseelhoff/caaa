@@ -1,7 +1,6 @@
 #include "mcts.h"
-#include "game_state.h"
+#include "game_state.hpp"
 #include "player.h"
-#include "serialize_data.h"
 #include <cjson/cJSON.h>
 #include <math.h>
 #include <stdbool.h>
@@ -14,7 +13,6 @@ int MCTS_ITERATIONS = 0;
 
 // Function prototypes for game-specific logic
 extern GameState* clone_state(GameState* state);
-extern void free_state(GameState* state);
 extern void get_possible_actions(GameState* state, uint8_t* num_actions, ActionsPtr actions);
 extern void apply_action(GameState* state, uint8_t action);
 extern bool is_terminal_state(GameState* state);
