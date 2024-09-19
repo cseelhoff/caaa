@@ -10,7 +10,7 @@ file(GLOB SOURCES "src/*.cpp")
 set(EXECUTABLE_NAME caaa)
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c++23)
+target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c++11)
 
 # Find and link the system-installed cJSON library
 find_package(cJSON REQUIRED)
@@ -18,7 +18,8 @@ target_link_libraries(${EXECUTABLE_NAME} PRIVATE cjson)
 
 find_package(pybind11 REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE pybind11::module)
-pybind11_add_module(engine src/engine.cpp)
+pybind11_add_module(engine ${SOURCES})
+target_link_libraries(engine PRIVATE cjson)
 
 # Find Python
 find_package(Python3 REQUIRED COMPONENTS Development)
