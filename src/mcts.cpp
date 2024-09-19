@@ -63,7 +63,7 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
 MCTSNode* mcts_search(GameState* initial_state, long iterations) {
   MCTSNode* root = create_node(initial_state, 0, NULL);
   for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 50000 == 0) {
+    if (MCTS_ITERATIONS % 500 == 0) {
       printf("Iteration %d\n", MCTS_ITERATIONS);
       print_mcts(root);
     }

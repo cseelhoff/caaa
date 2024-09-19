@@ -736,7 +736,10 @@ void refresh_fleets() {
 }
 void refresh_land_path_blocked() {
   for (uint8_t src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    for (uint8_t dst_land = 0; dst_land < LANDS_COUNT; dst_land++) { // todo this seems excessive
+    uint8_t lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
+    auto& lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
+    for (uint8_t conn_idx = 0; conn_idx < lands_within_2_moves_count; conn_idx++) {
+      uint8_t dst_land = lands_within_2_moves[conn_idx];
       uint8_t nextLandMovement = LAND_PATH[src_land][dst_land];
       uint8_t nextLandMovementAlt = LAND_PATH_ALT[src_land][dst_land];
       is_land_path_blocked[src_land][dst_land] =
@@ -747,7 +750,11 @@ void refresh_land_path_blocked() {
 }
 void refresh_sea_path_blocked() {
   for (uint8_t src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    for (uint8_t dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) { // todo this seems excessive
+    //    for (uint8_t dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) { // todo this seems excessive
+    uint8_t seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
+    auto& seas_within_2_moves = SEAS_WITHIN_2_MOVES[canal_state][src_sea];
+    for (uint8_t conn_idx = 0; conn_idx < seas_within_2_moves_count; conn_idx++) {
+      uint8_t dst_sea = seas_within_2_moves[conn_idx];
       uint8_t nextSeaMovement = sea_path[src_sea][dst_sea];
       uint8_t nextSeaMovementAlt = sea_path_alt[src_sea][dst_sea];
       is_sea_path_blocked[src_sea][dst_sea] =
@@ -4122,7 +4129,8 @@ void get_possible_actions(GameState* game_state, uint8_t* num_actions, ActionsPt
   }
   *num_actions = valid_moves_count;
   //memcpy(actions, valid_moves, valid_moves_count * sizeof(uint8_t));
-  std::copy(&valid_moves,&valid_moves + valid_moves_count, actions);
+  std::memcpy(actions, &valid_moves, valid_moves_count * sizeof(uint8_t));
+  //std::copy(&valid_moves,&valid_moves + valid_moves_count, actions);
 }
 void apply_action(GameState* game_state, uint8_t action) {
   // Apply the action to the game state

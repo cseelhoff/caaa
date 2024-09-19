@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:1-ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
 
 # ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 
@@ -10,7 +10,7 @@ FROM mcr.microsoft.com/devcontainers/cpp:1-ubuntu-24.04
 #     fi \
 #     && rm -f /tmp/reinstall-cmake.sh
 
-RUN apt-get update && apt-get install -y clangd cppcheck clang-tidy libcjson-dev pybind11-dev
+RUN apt-get update && apt-get install -y clangd cppcheck clang-tidy libcjson-dev pybind11-dev python3-dev
 #RUN pip3 install flawfinder lizard
 
 # Cleanup
