@@ -4368,4 +4368,5 @@ PYBIND11_MODULE(engine, handle) {
   handle.def("initialize_constants", &initialize_constants);
   handle.def("get_game_state_copy", &get_game_state_copy);
   handle.def("evaluate_state", &evaluate_state);
+  handle.def("load_game_data", &load_game_data);
 }
