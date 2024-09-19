@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <stdint.h>
 
 #define ALIGNMENT_128 128
@@ -48,3 +49,5 @@ typedef uint8_t CarrierSpace;
 typedef uint8_t Action;
 typedef uint8_t ActionCount;
 typedef uint8_t BuildsLeft;
+
+

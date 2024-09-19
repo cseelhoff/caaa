@@ -13,58 +13,101 @@
 #include "sub.h"
 #include "tank.h"
 #include "transport.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include <array>
+#include <cstdint>
+#include <limits>
 
-#define SEA_UNIT_TYPES_COUNT 15
-#define FIGHTERS 0
-#define TRANS_EMPTY 1
-#define TRANS_1I 2
-#define TRANS_1A 3
-#define TRANS_1T 4
-#define TRANS_2I 5
-#define TRANS_1I_1A 6
-#define TRANS_1I_1T 7
-#define SUBMARINES 8
-#define DESTROYERS 9
-#define CARRIERS 10
-#define CRUISERS 11
-#define BATTLESHIPS 12
-#define BS_DAMAGED 13
-#define BOMBERS_SEA 14
+enum SeaUnitTypesEnum {
+  FIGHTERS,
+  TRANS_EMPTY,
+  TRANS_1I,
+  TRANS_1A,
+  TRANS_1T,
+  TRANS_2I,
+  TRANS_1I_1A,
+  TRANS_1I_1T,
+  SUBMARINES,
+  DESTROYERS,
+  CARRIERS,
+  CRUISERS,
+  BATTLESHIPS,
+  BS_DAMAGED,
+  BOMBERS_SEA,
+  SEA_UNIT_TYPES_COUNT
+};
 
-#define LAND_UNIT_TYPES_COUNT 6
-#define BOMBERS_LAND_AIR 1
-#define INFANTRY 2
-#define ARTILLERY 3
-#define TANKS 4
-#define AA_GUNS 5
+enum LandUnitTypeEnum {
+  FIGHTERS_LAND,
+  BOMBERS_LAND_AIR,
+  INFANTRY,
+  ARTILLERY,
+  TANKS,
+  AA_GUNS,
+  LAND_UNIT_TYPES_COUNT
+};
 
-#define AIR_UNIT_TYPES_COUNT 2
-#define MAX_UINT8_T 255
+enum AirUnitTypeEnum {
+    FIGHTERS_AIR,
+    BOMBERS_AIR,
+    AIR_UNIT_TYPES_COUNT
+};
 
-#define COST_UNIT_SEA_COUNT 7
+//#define MAX_UINT8_T 255
 
-extern const char* NAMES_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t UNIT_WEIGHTS[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t ATTACK_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t DEFENSE_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t MAX_MOVE_LAND[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t STATES_MOVE_LAND[LAND_UNIT_TYPES_COUNT];
-extern const uint8_t COST_UNIT_LAND[LAND_UNIT_TYPES_COUNT];
-extern const char* NAMES_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t ATTACK_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t DEFENSE_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t MAX_MOVE_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t STATES_MOVE_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t COST_UNIT_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t BUY_UNIT_SEA[COST_UNIT_SEA_COUNT];
-extern const uint8_t STATES_STAGING[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t STATES_UNLOADING[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t LOAD_UNIT_TYPE[LAND_UNIT_TYPES_COUNT][SEA_UNIT_TYPES_COUNT];
-extern const uint8_t UNLOAD_CARGO1[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t UNLOAD_CARGO2[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t UNMOVED_SEA[SEA_UNIT_TYPES_COUNT];
-extern const uint8_t DONE_MOVING_SEA[SEA_UNIT_TYPES_COUNT];
+constexpr int COST_UNIT_SEA_COUNT = 7;
+constexpr int BLOCKADE_UNIT_TYPES_COUNT = 5;
+constexpr int DEFENDER_LAND_UNIT_TYPES_COUNT = 6;
+constexpr int ATTACKER_LAND_UNIT_TYPES_COUNT_1 = 3;
+constexpr int ATTACKER_LAND_UNIT_TYPES_COUNT_2 = 2;
+constexpr int DEFENDER_SEA_UNIT_TYPES_COUNT = 13;
+constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_1 = 2;
+constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_2 = 2;
+constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_3 = 8;
+#define MAX_INT std::numeric_limits<int>::max()
 
+// Define type aliases for the arrays
+using Landunittypes = std::array<int, LAND_UNIT_TYPES_COUNT>;
+using Seanunittypes = std::array<int, SEA_UNIT_TYPES_COUNT>;
+using LandUTSeaUT = std::array<Seanunittypes, LAND_UNIT_TYPES_COUNT>;
+using LandUnitNames = std::array<const char*, LAND_UNIT_TYPES_COUNT>;
+using SeaUnitNames = std::array<const char*, SEA_UNIT_TYPES_COUNT>;
+using BuyableSeaUnits = std::array<int, COST_UNIT_SEA_COUNT>;
+using BlockadeUnitTypes = std::array<int, BLOCKADE_UNIT_TYPES_COUNT>;
+using OrderOfLandAttackers1 = std::array<int, ATTACKER_LAND_UNIT_TYPES_COUNT_1>;
+using OrderOfLandAttackers2 = std::array<int, ATTACKER_LAND_UNIT_TYPES_COUNT_2>;
+using OrderOfSeaDefenders = std::array<int, DEFENDER_SEA_UNIT_TYPES_COUNT>;
+using OrderOfSeaAttackers1 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_1>;
+using OrderOfSeaAttackers2 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_2>;
+using OrderOfSeaAttackers3 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_3>;
+
+// Declare the arrays as extern
+extern const LandUnitNames NAMES_UNIT_LAND;
+extern const Landunittypes UNIT_WEIGHTS;
+extern const Landunittypes ATTACK_UNIT_LAND;
+extern const Landunittypes DEFENSE_UNIT_LAND;
+extern const Landunittypes MAX_MOVE_LAND;
+extern const Landunittypes STATES_MOVE_LAND;
+extern const Landunittypes COST_UNIT_LAND;
+extern const SeaUnitNames NAMES_UNIT_SEA;
+extern const Seanunittypes ATTACK_UNIT_SEA;
+extern const Seanunittypes DEFENSE_UNIT_SEA;
+extern const Seanunittypes MAX_MOVE_SEA;
+extern const Seanunittypes STATES_MOVE_SEA;
+extern const Seanunittypes COST_UNIT_SEA;
+extern const BuyableSeaUnits BUY_UNIT_SEA;
+extern const Seanunittypes STATES_STAGING;
+extern const Seanunittypes STATES_UNLOADING;
+extern const LandUTSeaUT LOAD_UNIT_TYPE;
+extern const Seanunittypes UNLOAD_CARGO1;
+extern const Seanunittypes UNLOAD_CARGO2;
+extern const Seanunittypes UNMOVED_SEA;
+extern const Seanunittypes DONE_MOVING_SEA;
+extern const BlockadeUnitTypes BLOCKADE_UNIT_TYPES;
+extern const Landunittypes ORDER_OF_LAND_DEFENDERS;
+extern const OrderOfLandAttackers1 ORDER_OF_LAND_ATTACKERS_1;
+extern const OrderOfLandAttackers2 ORDER_OF_LAND_ATTACKERS_2;
+extern const OrderOfSeaDefenders ORDER_OF_SEA_DEFENDERS;
+extern const OrderOfSeaAttackers1 ORDER_OF_SEA_ATTACKERS_1;
+extern const OrderOfSeaAttackers2 ORDER_OF_SEA_ATTACKERS_2;
+extern const OrderOfSeaAttackers3 ORDER_OF_SEA_ATTACKERS_3;
 #endif

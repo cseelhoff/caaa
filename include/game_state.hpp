@@ -16,6 +16,9 @@
 using Actions = std::array<uint8_t, ACTIONS_COUNT>;
 using ActionsPtr = Actions *;
 
+using AirArray = std::array<int, AIRS_COUNT>;
+using A2AConn = std::array<int, MAX_AIR_TO_AIR_CONNECTIONS>;
+
 typedef struct {
     bool bit : 1;
 } BitField;
