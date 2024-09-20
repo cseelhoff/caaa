@@ -16,6 +16,7 @@ target_compile_options(${EXECUTABLE_NAME} PRIVATE -std=c++23)
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
+# Add pybind11 as a dependency
 find_package(pybind11 REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE pybind11::module)
 pybind11_add_module(engine ${SOURCES})
@@ -29,6 +30,14 @@ include_directories(${Python3_INCLUDE_DIRS})
 
 # Link Python library
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${Python3_LIBRARIES})
+
+# Add Boost.Hana as a dependency
+find_package(Boost REQUIRED)
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${Boost_LIBRARIES})
+  target_link_libraries(engine PRIVATE ${Boost_LIBRARIES})
+endif()
 
 # Enable Clang-Tidy
 find_program(CLANG_TIDY "clang-tidy")
