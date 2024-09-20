@@ -20,6 +20,12 @@
   for (auto& row : arr) {                                                                          \
     std::fill(std::begin(row), std::end(row), value);                                              \
   }
+#define FILL_3D_ARRAY(array, value)                                                                \
+  for (auto& matrix : array) {                                                                     \
+    for (auto& row : matrix) {                                                                     \
+      std::fill(std::begin(row), std::end(row), value);                                            \
+    }                                                                                              \
+  }
 
 #define MAX_INT std::numeric_limits<int>::max()
 
@@ -131,6 +137,7 @@ int unlucky_player_idx = 0;
 void initialize_constants() {
   actually_print = PLAYERS[0].is_human;
   initialize_land_dist();
+  land_dist_floyd_warshall();
   initialize_sea_dist();
   initialize_air_dist();
   initialize_land_path();
@@ -148,45 +155,33 @@ void initialize_land_dist() {
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
     LAND_VALUE[src_land] = LANDS[src_land].land_value;
     Land land = LANDS[src_land];
-    LAND_TO_LAND_COUNT[src_land] = land.land_conn_count;
-    COPY_SUB_ARRAY(land.land_conns, LAND_TO_LAND_CONN[src_land],
-                   LAND_TO_LAND_COUNT[src_land]);
-    LAND_TO_SEA_COUNT[src_land] = land.sea_conn_count;
-    COPY_SUB_ARRAY(land.sea_conns, LAND_TO_SEA_CONN[src_land],
-                   LAND_TO_SEA_COUNT[src_land]);
-    initialize_land_dist_zero(src_land);
-  }
-  for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    set_l2l_land_dist_to_one(src_land);
-    set_l2s_land_dist_to_one(src_land);
-  }
-  land_dist_floyd_warshall();
-}
-
-void initialize_land_dist_zero(int src_land) {
-  for (int dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
-    if (src_land == dst_air) {
-      LAND_DIST[src_land][dst_air] = 0;
+    // initialize LAND_TO_LAND_CONN
+    int land_conn_count = land.land_conn_count;
+    LAND_TO_LAND_COUNT[src_land] = land_conn_count;
+    COPY_SUB_ARRAY(land.land_conns, LAND_TO_LAND_CONN[src_land], LAND_TO_LAND_COUNT[src_land]);
+    // set_l2l_land_dist_to_one
+    for (uint conn_idx = 0; conn_idx < (uint)land_conn_count; conn_idx++) {
+      uint dst_land = (uint)land.land_conns[conn_idx];
+      LAND_DIST[src_land][dst_land] = 1;
+      LAND_DIST[dst_land][src_land] = 1;
+    }
+    // initialize LAND_TO_SEA_CONN
+    int sea_conn_count = land.sea_conn_count;
+    LAND_TO_SEA_COUNT[src_land] = sea_conn_count;
+    COPY_SUB_ARRAY(land.sea_conns, LAND_TO_SEA_CONN[src_land], LAND_TO_SEA_COUNT[src_land]);
+    LAND_DIST[src_land][src_land] = 0;
+    // set_l2s_land_dist_to_one
+    for (uint conn_idx = 0; conn_idx < (uint)sea_conn_count; conn_idx++) {
+      uint dst_air = (uint)land.sea_conns[conn_idx] + LANDS_COUNT;
+      LAND_DIST[src_land][dst_air] = 1;
     }
   }
 }
-void set_l2l_land_dist_to_one(int src_land) {
-  for (int conn_idx = 0; conn_idx < LANDS[src_land].land_conn_count; conn_idx++) {
-    int dst_land = LANDS[src_land].land_conns[conn_idx];
-    LAND_DIST[src_land][dst_land] = 1;
-    LAND_DIST[dst_land][src_land] = 1;
-  }
-}
-void set_l2s_land_dist_to_one(int src_land) {
-  for (int conn_idx = 0; conn_idx < LANDS[src_land].sea_conn_count; conn_idx++) {
-    int dst_air = LANDS[src_land].sea_conns[conn_idx] + LANDS_COUNT;
-    LAND_DIST[src_land][dst_air] = 1;
-  }
-}
+
 void land_dist_floyd_warshall() {
-  for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    for (int src_land = 0; src_land < LANDS_COUNT; src_land++) {
-      for (int air_dst = 0; air_dst < AIRS_COUNT; air_dst++) {
+  for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
+      for (uint air_dst = 0; air_dst < AIRS_COUNT; air_dst++) {
         int new_dist = LAND_DIST[src_land][land_idx] + LAND_DIST[land_idx][air_dst];
         if (new_dist < LAND_DIST[src_land][air_dst]) {
           LAND_DIST[src_land][air_dst] = new_dist;
@@ -197,7 +192,7 @@ void land_dist_floyd_warshall() {
 }
 
 void initialize_sea_dist() {
-  FILL_ARRAY(SEA_DIST, MAX_INT);
+  FILL_3D_ARRAY(SEA_DIST, std::numeric_limits<int>::max());
   for (int src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
     initialize_s2s_connections(src_sea);
     initialize_s2l_connections(src_sea);
