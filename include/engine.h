@@ -1,12 +1,10 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 #include "game_state.hpp"
-#include <stdbool.h>
-#include <stdint.h>
-#include <sys/types.h>
 #include "canal.h"
 #include "land.h"
 #include "sea.h"
+#include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64
 #define MIN_AIR_HOPS 2
@@ -60,6 +58,8 @@ using PtrLandUTArray = std::array<PtrLandunittypes, LANDS_COUNT>;
 using PtrSeaUTArray = std::array<PtrSeaunittypes, SEAS_COUNT>;
 using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;
 using CanalSeaSeaArray = std::array<SeaSeaArray, CANAL_STATES>;
+using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
+using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
 
 
 void initialize_constants();

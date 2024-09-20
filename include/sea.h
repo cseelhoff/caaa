@@ -14,7 +14,7 @@ using SeaSeaArray = std::array<SeaArray, SEAS_COUNT>;
 
 constexpr int SEA_ALIGNMENT = 128;
 
-using Sea = struct {
+struct Sea {
   const char* name;
   int sea_conn_count;
   int land_conn_count;

@@ -13,7 +13,7 @@ using LandArray = std::array<int, LANDS_COUNT>;
 using PtrLandArray = std::array<int*, LANDS_COUNT>;
 
 typedef struct {
-  char* name;
+  const char* name;
   int original_owner_index;
   int land_value;
   int sea_conn_count;
