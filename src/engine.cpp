@@ -13,8 +13,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define COPY_ARRAY(src, dest) std::copy(std::begin(src), std::end(src), std::begin(dest))
-#define FILL_ARRAY(arr, value) std::fill(std::begin(arr), std::end(arr), value)
+#define COPY_FULL_ARRAY(src, dest) std::copy(std::begin(src), std::end(src), std::begin(dest));
+#define COPY_SUB_ARRAY(src, dest, count) std::copy_n((src).begin(), count, (dest).begin());
+#define FILL_ARRAY(arr, value) std::fill(std::begin(arr), std::end(arr), value);
+#define FILL_2D_ARRAY(arr, value)                                                                  \
+  for (auto& row : arr) {                                                                          \
+    std::fill(std::begin(row), std::end(row), value);                                              \
+  }
 
 #define MAX_INT std::numeric_limits<int>::max()
 
@@ -139,11 +144,16 @@ void initialize_constants() {
 }
 
 void initialize_land_dist() {
-  FILL_ARRAY(LAND_DIST, MAX_INT);  
+  FILL_2D_ARRAY(LAND_DIST, MAX_INT)
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
     LAND_VALUE[src_land] = LANDS[src_land].land_value;
-    initialize_l2l_connections(src_land);
-    initialize_l2s_connections(src_land);
+    Land land = LANDS[src_land];
+    LAND_TO_LAND_COUNT[src_land] = land.land_conn_count;
+    COPY_SUB_ARRAY(land.land_conns, LAND_TO_LAND_CONN[src_land],
+                   LAND_TO_LAND_COUNT[src_land]);
+    LAND_TO_SEA_COUNT[src_land] = land.sea_conn_count;
+    COPY_SUB_ARRAY(land.sea_conns, LAND_TO_SEA_CONN[src_land],
+                   LAND_TO_SEA_COUNT[src_land]);
     initialize_land_dist_zero(src_land);
   }
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
@@ -152,19 +162,7 @@ void initialize_land_dist() {
   }
   land_dist_floyd_warshall();
 }
-void initialize_l2l_connections(uint src_land) {
-  LAND_TO_LAND_COUNT[src_land] = LANDS[src_land].land_conn_count;
-  uint conn_idx = 0;
-  for (const auto& connected_land : LANDS[src_land].connected_land_index) {
-    LAND_TO_LAND_CONN[src_land][conn_idx++] = connected_land;
-  }
-}
-void initialize_l2s_connections(uint src_land) {
-  LAND_TO_SEA_COUNT[src_land] = LANDS[src_land].sea_conn_count;
-  for (uint conn_idx = 0; conn_idx < LAND_TO_SEA_COUNT[src_land]; conn_idx++) {
-    LAND_TO_SEA_CONN[src_land][conn_idx] = LANDS[src_land].connected_sea_index[conn_idx];
-  }
-}
+
 void initialize_land_dist_zero(int src_land) {
   for (int dst_air = 0; dst_air < AIRS_COUNT; dst_air++) {
     if (src_land == dst_air) {
@@ -174,14 +172,14 @@ void initialize_land_dist_zero(int src_land) {
 }
 void set_l2l_land_dist_to_one(int src_land) {
   for (int conn_idx = 0; conn_idx < LANDS[src_land].land_conn_count; conn_idx++) {
-    int dst_land = LANDS[src_land].connected_land_index[conn_idx];
+    int dst_land = LANDS[src_land].land_conns[conn_idx];
     LAND_DIST[src_land][dst_land] = 1;
     LAND_DIST[dst_land][src_land] = 1;
   }
 }
 void set_l2s_land_dist_to_one(int src_land) {
   for (int conn_idx = 0; conn_idx < LANDS[src_land].sea_conn_count; conn_idx++) {
-    int dst_air = LANDS[src_land].connected_sea_index[conn_idx] + LANDS_COUNT;
+    int dst_air = LANDS[src_land].sea_conns[conn_idx] + LANDS_COUNT;
     LAND_DIST[src_land][dst_air] = 1;
   }
 }
@@ -1713,7 +1711,7 @@ bool move_bomber_units() {
   for (int land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     canBomberLandIn1Move[land_idx] = false;
     int land_conn_count = LANDS[land_idx].land_conn_count;
-    auto connected_land_index = LANDS[land_idx].connected_land_index;
+    auto connected_land_index = LANDS[land_idx].land_conns;
     for (int conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
       if (canBomberLandHere[connected_land_index[conn_idx]]) {
         canBomberLandIn1Move[land_idx] = true;
@@ -3842,7 +3840,8 @@ void rotate_turns() {
     memcpy(&current_player_sea_unit_types[dst_sea], &state.other_sea_units[0][dst_sea],
            SEA_UNIT_TYPES_COUNT - 1);
   }
-  memmove(&state.other_sea_units[0], &state.other_sea_units[1], sizeof(state.other_sea_units[0]) * (PLAYERS_COUNT - 2));
+  memmove(&state.other_sea_units[0], &state.other_sea_units[1],
+          sizeof(state.other_sea_units[0]) * (PLAYERS_COUNT - 2));
   //  memcpy(&data.other_sea_units[PLAYERS_COUNT - 2], &other_sea_units_temp, OTHER_SEA_UNITS_SIZE);
   memset(&state.units_sea, 0, sizeof(state.units_sea));
   for (int dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
@@ -4362,7 +4361,7 @@ PYBIND11_MODULE(engine, handle) {
   handle.def("random_play_until_terminal", &random_play_until_terminal);
   handle.def("clone_state", &clone_state);
   handle.def("get_possible_actions", &get_possible_actions);
-  //handle.def("apply_action", &apply_action);
+  // handle.def("apply_action", &apply_action);
   handle.def("is_terminal_state", &is_terminal_state);
   handle.def("initialize_constants", &initialize_constants);
   handle.def("get_game_state_copy", &get_game_state_copy);

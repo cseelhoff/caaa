@@ -5,13 +5,16 @@
 
 #define CANALS_COUNT 2
 #define CANAL_STATES 4
+#define ALIGNMENT_32 32
 
-using Canal = struct {
-    char* name;
-    int seas[2];
-    int lands[2];
-};
+struct Canal {
+    const char* name;
+    std::array<int, 2> seas;
+    std::array<int, 2> lands;
+} __attribute__((aligned(ALIGNMENT_32)));
 
-extern const Canal CANALS[CANALS_COUNT];
+using CanalStructs = std::array<Canal, CANALS_COUNT>;
+
+extern const CanalStructs CANALS;
 
 #endif
