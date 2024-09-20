@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   // Initialize the game state
 
   MCTSNode* root = mcts_search(initial_state, iterations);
-  uint8_t best_action = select_best_action(root);
+  uint best_action = select_best_action(root);
   //print_mcts(root);
   print_mcts(root);
   printf("Best action: %d\n", best_action);

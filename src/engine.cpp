@@ -89,7 +89,7 @@ PlayersbufSeaUTArray total_player_sea_unit_types;
 PtrLandArray owner_idx;
 PtrLandArray factory_max;
 PtrLandArray bombard_max;
-PtrLandArray factory_hp;                    // allow negative
+PtrLandArray factory_dmg;                   // no negative
 LandUTArray current_player_land_unit_types; // temp
 SeaUTArray current_player_sea_unit_types;   // temp
 LandUTArray total_land_unit_types_temp;     // temp
@@ -278,12 +278,12 @@ void initialize_air_dist_zero() {
 }
 void set_l2l_air_dist_to_one(uint src_land) {
   auto l2l_conn = LAND_TO_LAND_CONN[src_land];
-  for (uint conn_idx = 0; conn_idx < (uint)LAND_TO_LAND_COUNT[src_land]; conn_idx++) {
+  for (uint conn_idx = 0; conn_idx < LAND_TO_LAND_COUNT[src_land]; conn_idx++) {
     uint dst_air = l2l_conn[conn_idx];
-    AIR_CONNECTIONS[src_land][(uint)AIR_CONN_COUNT[src_land]] = dst_air;
+    AIR_CONNECTIONS[src_land][AIR_CONN_COUNT[src_land]] = dst_air;
     AIR_CONN_COUNT[src_land]++;
-    AIR_DIST[src_land][(uint)dst_air] = 1;
-    AIR_DIST[(uint)dst_air][src_land] = 1;
+    AIR_DIST[src_land][dst_air] = 1;
+    AIR_DIST[dst_air][src_land] = 1;
   }
 }
 void set_l2s_air_dist_to_one(uint src_land) {
@@ -432,7 +432,7 @@ void initialize_air_within_x_moves() {
       if (src_air == dst_air) {
         continue;
       }
-      for (uint i = 0; i < 5; i++) {
+      for (uint i = 0; i < (MAX_AIR_HOPS - 1); i++) {
         if (AIR_DIST[src_air][dst_air] <= i + 1) {
           AIR_WITHIN_X_MOVES[i][src_air][AIR_WITHIN_X_MOVES_COUNT[i][src_air]++] = dst_air;
         }
@@ -440,9 +440,10 @@ void initialize_air_within_x_moves() {
       if (dst_air >= LANDS_COUNT) { // bombers can only end on land
         continue;
       }
-      if (AIR_DIST[src_air][dst_air] <= 6) {
-        AIR_WITHIN_X_MOVES[5][src_air][AIR_WITHIN_X_MOVES_COUNT[5][src_air]] = dst_air;
-        AIR_WITHIN_X_MOVES_COUNT[5][src_air]++;
+      if (AIR_DIST[src_air][dst_air] <= MAX_AIR_HOPS) {
+        AIR_WITHIN_X_MOVES[MAX_AIR_HOPS - 1][src_air]
+                          [AIR_WITHIN_X_MOVES_COUNT[MAX_AIR_HOPS - 1][src_air]] = dst_air;
+        AIR_WITHIN_X_MOVES_COUNT[MAX_AIR_HOPS - 1][src_air]++;
       }
     }
   }
@@ -453,7 +454,7 @@ void initialize_air_to_land_within_x_moves() {
       if (src_air == dst_land) {
         continue;
       }
-      for (uint i = 0; i < 6; i++) {
+      for (uint i = 0; i < MAX_AIR_HOPS; i++) {
         if (AIR_DIST[src_air][dst_land] <= i + 1) {
           uint count = AIR_TO_LAND_WITHIN_X_MOVES_COUNT[i][src_air];
           AIR_TO_LAND_WITHIN_X_MOVES[i][src_air][count] = dst_land;
@@ -467,7 +468,7 @@ void initialize_air_to_land_within_x_moves() {
 #define ACTION_COUNT 256
 void initialize_random_numbers() {
   for (uint i = 0; i < RANDOM_MAX; i++) {
-    RANDOM_NUMBERS[i] = (rand() % ACTION_COUNT);
+    RANDOM_NUMBERS[i] = static_cast<uint>(rand() % ACTION_COUNT);
   }
 }
 void initialize_land_pointers() {
@@ -487,7 +488,7 @@ void initialize_land_pointers() {
     }
     owner_idx[land_idx] = &state.land_state[land_idx].owner_idx;
     bombard_max[land_idx] = &state.land_state[land_idx].bombard_max;
-    factory_hp[land_idx] = &state.land_state[land_idx].factory_hp;
+    factory_dmg[land_idx] = &state.land_state[land_idx].factory_dmg;
     factory_max[land_idx] = &state.land_state[land_idx].factory_max;
   }
 }
@@ -997,8 +998,8 @@ void setPrintableStatus() {
 void setPrintableStatusLands() {
   char threeCharStr[6];
   char paddedStr[32];
-  char* my_color = PLAYERS[state.player_index].color;
-  char* my_name = PLAYERS[state.player_index].name;
+  const char* my_color = PLAYERS[state.player_index].color;
+  const char* my_name = PLAYERS[state.player_index].name;
   uint player_index = state.player_index;
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     //    LandState land_state = gameData.land_state[i];
@@ -1013,7 +1014,7 @@ void setPrintableStatusLands() {
     sprintf(threeCharStr, "%d", state.builds_left[land_idx]);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, "/");
-    sprintf(threeCharStr, "%d", *factory_hp[land_idx]);
+    sprintf(threeCharStr, "%d", *factory_dmg[land_idx]);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, "/");
     sprintf(threeCharStr, "%d", *factory_max[land_idx]);
@@ -1228,10 +1229,10 @@ void apply_skip(uint src_air, uint dst_air) {
 
 void clear_move_history() {
   for (auto& move : state.skipped_moves) {
-      for(auto& bit : move) {
-          bit.bit = false;
-      }
-  }  // FILL_2D_ARRAY(state.skipped_moves, 0);
+    for (auto& bit : move) {
+      bit.bit = false;
+    }
+  } // FILL_2D_ARRAY(state.skipped_moves, 0);
 }
 
 uint get_user_purchase_input(uint src_air) {
@@ -2980,7 +2981,7 @@ bool resolve_land_battles() {
       auto other_land_units_ptr_0_src_land = total_player_land_unit_types[0][src_land];
       uint* bombers_count = &other_land_units_ptr_0_src_land[BOMBERS_LAND_AIR];
       if (*bombers_count > 0 && total_player_land_units[0][src_land] == *bombers_count) {
-        if (*factory_hp[src_land] > -*factory_max[src_land]) {
+        if (*factory_dmg[src_land] < *factory_max[src_land] * 2) {
 #ifdef DEBUG
           if (actually_print) {
             printf("Strategic Bombing");
@@ -3010,8 +3011,8 @@ bool resolve_land_battles() {
           attacker_damage = *bombers_count * 21;
           attacker_hits = get_attacker_hits(attacker_damage);
         }
-        *factory_hp[src_land] =
-            fmax(*factory_hp[src_land] - attacker_hits, -*factory_max[src_land]);
+        *factory_dmg[src_land] =
+            std::max(*factory_dmg[src_land] + attacker_hits, *factory_max[src_land] * 2);
         continue;
       }
 
@@ -3322,7 +3323,7 @@ void add_valid_bomber_moves(uint src_air, uint remaining_moves) {
         (air_dist == 5 && canBomberLandIn1Move[dst_air])) {
       if (!canBomberLandHere[dst_air] && enemy_units_count[dst_air] == 0) {
         if (dst_air >= LANDS_COUNT || *factory_max[dst_air] == 0 ||
-            *factory_hp[dst_air] == -*factory_max[dst_air]) // waste of a move
+            *factory_dmg[dst_air] == *factory_max[dst_air] * 2) // waste of a move
           continue;
       }
       // add_valid_air_move_if_history_allows_X(dst_air, src_air, air_dist);
@@ -3587,8 +3588,9 @@ bool buy_units() {
           break;
         }
         uint units_built = *factory_max[dst_land] - state.builds_left[dst_land];
-        if (*factory_hp[dst_land] <= units_built)
-          repair_cost = 1 + units_built - *factory_hp[dst_land]; // subtracting a negative
+        if (*factory_max[dst_land] < 1 + units_built + *factory_dmg[dst_land]) {
+          repair_cost = 1 + units_built + *factory_dmg[dst_land] - *factory_max[dst_land];
+        }
         // add all units that can be bought
         valid_moves_count = 1;
         for (uint unit_type_idx = COST_UNIT_SEA_COUNT - 1; unit_type_idx >= 0; unit_type_idx--) {
@@ -3637,7 +3639,7 @@ bool buy_units() {
           state.builds_left[LAND_TO_SEA_CONN[dst_land][sea_idx2] + LANDS_COUNT]--;
         }
         state.builds_left[dst_land]--;
-        *factory_hp[dst_land] += repair_cost;
+        *factory_dmg[dst_land] -= repair_cost;
         state.money[0] -= COST_UNIT_SEA[purchase] + repair_cost;
         sea_units_state[dst_sea][purchase][0]++;
         total_player_sea_units[0][dst_sea]++;
@@ -3664,8 +3666,9 @@ bool buy_units() {
         break;
       }
       uint units_built = *factory_max[dst_land] - state.builds_left[dst_land];
-      if (*factory_hp[dst_land] <= units_built)
-        repair_cost = 1 + units_built - *factory_hp[dst_land]; // subtracting a negative
+      if (*factory_max[dst_land] < 1 + units_built + *factory_dmg[dst_land]) {
+        repair_cost = 1 + units_built + *factory_dmg[dst_land] - *factory_max[dst_land];
+      }
       // add all units that can be bought
       valid_moves_count = 1;
       for (uint unit_type = LAND_UNIT_TYPES_COUNT - 1; unit_type >= 0; unit_type--) {
@@ -3699,7 +3702,7 @@ bool buy_units() {
       }
 #endif
       state.builds_left[dst_land]--;
-      *factory_hp[dst_land] += repair_cost;
+      *factory_dmg[dst_land] -= repair_cost;
       state.money[0] -= COST_UNIT_LAND[purchase] + repair_cost;
       land_units_state[dst_land][purchase][0]++;
       total_player_land_units[0][dst_land]++;
@@ -4261,7 +4264,7 @@ PYBIND11_MODULE(engine, handle) {
   handle.doc() = "caaa engine doc";
   handle.def("random_play_until_terminal", &random_play_until_terminal);
   handle.def("clone_state", &clone_state);
-  //handle.def("get_possible_actions", &get_possible_actions);
+  // handle.def("get_possible_actions", &get_possible_actions);
   handle.def("apply_action", &apply_action);
   handle.def("is_terminal_state", &is_terminal_state);
   handle.def("initialize_constants", &initialize_constants);

@@ -1,25 +1,25 @@
 #ifndef MCTS_H
 #define MCTS_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "game_state.hpp"
+#include <array>
 
-typedef struct MCTSNode {
+#define ALIGNMENT 128
+struct MCTSNode {
     GameState state;
-    uint8_t action;
+    uint action;
     struct MCTSNode* parent;
     struct MCTSNode** children;
-    int num_children;
-    int visits;
+    uint num_children;
+    uint visits;
     double value;
-} MCTSNode;
+} __attribute__((aligned(ALIGNMENT)));
 extern int MCTS_ITERATIONS;// = 0;
 MCTSNode* mcts_search(GameState* initial_state, long iterations);
-uint8_t select_best_action(MCTSNode* root);
-#define MAX_ACTIONS 1000
-typedef uint8_t Action_Sequence[MAX_ACTIONS];
-void print_mcts_tree(MCTSNode* node, uint8_t depth, Action_Sequence current_sequence, int length);
+uint select_best_action(MCTSNode* root);
+constexpr uint MAX_ACTIONS = 1000;
+using Action_Sequence = std::array<uint, MAX_ACTIONS>;
+void print_mcts_tree(MCTSNode* node, uint depth, Action_Sequence current_sequence, uint length);
 void print_mcts(MCTSNode* root);
 void print_top_action_sequences();
 void expand_node(MCTSNode* node);

@@ -6,7 +6,6 @@
 #include "sea.h"
 #include "units/units.h"
 #include <array>
-#include <stdint.h>
 
 //#define STRING_BUFFER_SIZE 64
 #define AIRS_COUNT LANDS_COUNT + SEAS_COUNT
@@ -27,7 +26,7 @@ constexpr int ALIGNMENT_128 = 128;
 
 struct LandState {
   uint owner_idx; // rotates
-  uint factory_hp;
+  uint factory_dmg;
   uint factory_max;
   uint bombard_max; // bombarded, resets
   std::array<uint, FIGHTER_STATES> fighters;                        // rotates

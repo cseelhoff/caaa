@@ -80,7 +80,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
 
   cJSON* player_index = cJSON_GetObjectItem(json, "player_index");
   if (cJSON_IsNumber(player_index)) {
-    data->player_index = (uint8_t)player_index->valueint;
+    data->player_index = (uint)player_index->valueint;
   } else {
     fprintf(stderr, "Invalid player_index\n");
   }
@@ -98,7 +98,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     for (int i = 0; i < array_size && i < PLAYERS_COUNT; i++) {
       cJSON* money_item = cJSON_GetArrayItem(money_array, i);
       if (cJSON_IsNumber(money_item)) {
-        data->money[i] = (uint8_t)money_item->valueint;
+        data->money[i] = (uint)money_item->valueint;
       } else {
         fprintf(stderr, "Invalid money item\n");
       }
@@ -113,7 +113,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
       cJSON* builds_left_item = cJSON_GetArrayItem(builds_left_array, i);
       if (cJSON_IsNumber(builds_left_item)) {
-        data->builds_left[i] = (uint8_t)builds_left_item->valueint;
+        data->builds_left[i] = (uint)builds_left_item->valueint;
       } else {
         fprintf(stderr, "Invalid builds_left item\n");
       }
@@ -150,7 +150,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
     for (int i = 0; i < array_size && i < AIRS_COUNT; i++) {
       cJSON* flagged_for_combat_item = cJSON_GetArrayItem(flagged_for_combat, i);
       if (cJSON_IsNumber(flagged_for_combat_item)) {
-        data->flagged_for_combat[i] = (uint8_t)flagged_for_combat_item->valueint;
+        data->flagged_for_combat[i] = (uint)flagged_for_combat_item->valueint;
       } else {
         fprintf(stderr, "Invalid flagged_for_combat item\n");
       }
@@ -173,7 +173,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
             for (int k = 0; k < inner_size && k < LAND_UNIT_TYPES_COUNT; k++) {
               cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
-                data->other_land_units[i][j][k] = (uint8_t)item->valueint;
+                data->other_land_units[i][j][k] = (uint)item->valueint;
               }
             }
           }
@@ -198,7 +198,7 @@ void deserialize_game_data_from_json(cJSON* json, GameState* data) {
             for (int k = 0; k < inner_size && k < SEA_UNIT_TYPES_COUNT; k++) {
               cJSON* item = cJSON_GetArrayItem(inner_array, k);
               if (cJSON_IsNumber(item)) {
-                data->other_sea_units[i][j][k] = (uint8_t)item->valueint;
+                data->other_sea_units[i][j][k] = (uint)item->valueint;
               } else {
                 fprintf(stderr, "Invalid other_sea_units item\n");
               }
@@ -235,21 +235,21 @@ void set_land_state_signed_field(cJSON* json, const char* key, int8_t* field) {
   }
 }
 
-void set_land_state_field(cJSON* json, const char* key, uint8_t* field) {
+void set_land_state_field(cJSON* json, const char* key, uint* field) {
   cJSON* item = cJSON_GetObjectItem(json, key);
   if (cJSON_IsNumber(item)) {
-    *field = (uint8_t)item->valueint;
+    *field = (uint)item->valueint;
   }
 }
 
-void extract_and_assign(cJSON* json, const char* key, uint8_t* target_array) {
+void extract_and_assign(cJSON* json, const char* key, uint* target_array) {
   cJSON* array = cJSON_GetObjectItem(json, key);
   if (cJSON_IsArray(array)) {
     int array_size = cJSON_GetArraySize(array);
     for (int i = 0; i < array_size; i++) {
       cJSON* item = cJSON_GetArrayItem(array, i);
       if (cJSON_IsNumber(item)) {
-        target_array[i] = (uint8_t)item->valueint;
+        target_array[i] = (uint)item->valueint;
       }
     }
   }
@@ -321,7 +321,7 @@ cJSON* serialize_game_data_to_json(GameState* data) {
   return json;
 }
 
-void add_array_to_json(cJSON* json, const char* key, uint8_t* array, int size) {
+void add_array_to_json(cJSON* json, const char* key, uint* array, int size) {
   cJSON* json_array = cJSON_CreateArray();
   for (int i = 0; i < size; i++) {
     cJSON_AddItemToArray(json_array, cJSON_CreateNumber(array[i]));

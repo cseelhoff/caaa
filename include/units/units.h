@@ -53,8 +53,6 @@ enum AirUnitTypeEnum {
     AIR_UNIT_TYPES_COUNT
 };
 
-//#define MAX_UINT8_T 255
-
 constexpr int COST_UNIT_SEA_COUNT = 7;
 constexpr int BLOCKADE_UNIT_TYPES_COUNT = 5;
 constexpr int DEFENDER_LAND_UNIT_TYPES_COUNT = 6;

@@ -1,20 +1,25 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <array>
+#include <sys/types.h>
 
 #define PLAYERS_COUNT 5
-typedef struct {
-  char* name;
-  char* capital_name;
-  char* color;
-  int capital_territory_index;
-  uint8_t team;
-  bool is_allied[PLAYERS_COUNT]; //alied with self
-  bool is_human;
-} Player;
+#define PLAYER_ALIGNMENT 64
 
-extern const Player PLAYERS[PLAYERS_COUNT];
+using PlayerArray = std::array<uint, PLAYERS_COUNT>;
+
+struct Player {
+  const char* name;
+  const char* capital_name;
+  const char* color;
+  uint capital_territory_index;
+  PlayerArray is_allied; //alied with self
+  bool is_human;
+} __attribute__((aligned(PLAYER_ALIGNMENT)));
+
+using PlayersStructs = std::array<Player, PLAYERS_COUNT>;
+
+extern const PlayersStructs PLAYERS;
 
 #endif
