@@ -1,9 +1,9 @@
-#include "serialize_data.h"
+#include "serialize_data.hpp"
 #include "game_state.hpp"
 #include <cjson/cJSON.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 
 #define PATH_MAX 4096
@@ -218,7 +218,7 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   }
   set_land_state_field(json, "owner_index", &land_state->owner_idx);
   // set_land_state_field(json, "builds_left", &land_state->builds_left);
-  set_land_state_signed_field(json, "factory_hp", &land_state->factory_hp);
+  set_land_state_field(json, "factory_dmg", &land_state->factory_dmg);
   set_land_state_field(json, "factory_max", &land_state->factory_max);
   extract_and_assign(json, FIGHTER_NAME, land_state->fighters);
   extract_and_assign(json, BOMBER_NAME, land_state->bombers);
@@ -226,13 +226,6 @@ void deserialize_land_state_from_json(LandState* land_state, cJSON* json) {
   extract_and_assign(json, ARTILLERY_NAME, land_state->artillery);
   extract_and_assign(json, TANK_NAME, land_state->tanks);
   extract_and_assign(json, AA_GUN_NAME, land_state->aa_guns);
-}
-
-void set_land_state_signed_field(cJSON* json, const char* key, int8_t* field) {
-  cJSON* item = cJSON_GetObjectItem(json, key);
-  if (cJSON_IsNumber(item)) {
-    *field = (int8_t)item->valueint;
-  }
 }
 
 void set_land_state_field(cJSON* json, const char* key, uint* field) {

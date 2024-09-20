@@ -1,6 +1,6 @@
-#include "mcts.h"
+#include "mcts.hpp"
 #include "game_state.hpp"
-#include "player.h"
+#include "player.hpp"
 #include <cjson/cJSON.h>
 #include <math.h>
 #include <stdbool.h>

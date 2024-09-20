@@ -1,5 +1,5 @@
-#include "engine.h"
-#include "mcts.h"
+#include "engine.hpp"
+#include "mcts.hpp"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

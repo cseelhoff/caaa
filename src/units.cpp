@@ -1,9 +1,9 @@
-#include "units/units.h"
-#include "units/artillery.h"
-#include "units/bomber.h"
-#include "units/infantry.h"
-#include "units/tank.h"
-#include "units/transport.h"
+#include "units/units.hpp"
+#include "units/artillery.hpp"
+#include "units/bomber.hpp"
+#include "units/infantry.hpp"
+#include "units/tank.hpp"
+#include "units/transport.hpp"
 
 const LandUnitNames NAMES_UNIT_LAND = {FIGHTER_NAME,   BOMBER_NAME, INFANTRY_NAME,
                                        ARTILLERY_NAME, TANK_NAME,   AA_GUN_NAME};

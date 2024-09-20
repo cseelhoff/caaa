@@ -1,10 +1,10 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include "land.h"
-#include "player.h"
-#include "sea.h"
-#include "units/units.h"
+#include "land.hpp"
+#include "player.hpp"
+#include "sea.hpp"
+#include "units/units.hpp"
 #include <array>
 
 //#define STRING_BUFFER_SIZE 64

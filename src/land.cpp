@@ -1,4 +1,4 @@
-#include "land.h"
+#include "land.hpp"
 //  PACIFIC | USA | ATLANTIC | ENG | BALTIC | GER | RUS | JAP | PAC
 const LandStructs LANDS = {{
   {"Washington", 4, 10, 2, 0, // owner, value, sea_con_count, land_conn_count

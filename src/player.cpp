@@ -1,4 +1,4 @@
-#include "player.h"
+#include "player.hpp"
 
 const PlayersStructs PLAYERS = {{
   {"Rus", "Rus", "\033[1;31m", 3, {1, 0, 1, 0, 1}, false},

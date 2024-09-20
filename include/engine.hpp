@@ -1,9 +1,9 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 #include "game_state.hpp"
-#include "canal.h"
-#include "land.h"
-#include "sea.h"
+#include "canal.hpp"
+#include "land.hpp"
+#include "sea.hpp"
 #include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64

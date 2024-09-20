@@ -1,4 +1,4 @@
-#include "canal.h"
+#include "canal.hpp"
 
 const CanalStructs CANALS = {{
     {"Panama", {0, 1}, {0, 1}},
