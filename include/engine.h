@@ -21,16 +21,12 @@
 #define RANDOM_NUMBERS_SIZE 65536
 #define PLAYERS_COUNT_P1 PLAYERS_COUNT + 1
 
-using SeaArray = std::array<int, SEAS_COUNT>;
-using S2SConn = std::array<int, MAX_SEA_TO_SEA_CONNECTIONS>;
-using AirArray = std::array<int, AIRS_COUNT>;
-using L2LConn = std::array<int, MAX_LAND_TO_LAND_CONNECTIONS>;
-using A2AConn = std::array<int, MAX_AIR_TO_AIR_CONNECTIONS>;
-using L2SConn = std::array<int, MAX_LAND_TO_SEA_CONNECTIONS>;
-using S2LConn = std::array<int, MAX_SEA_TO_LAND_CONNECTIONS>;
-using LandArray = std::array<int, LANDS_COUNT>;
-using RandomNumberArray = std::array<int, RANDOM_NUMBERS_SIZE>;
-using Playersbuf = std::array<int, PLAYERS_COUNT_P1>;
+using PtrSeaunittypes = std::array<uint*, SEA_UNIT_TYPES_COUNT>;
+using PtrAirunittypes = std::array<uint*, AIR_UNIT_TYPES_COUNT>;
+using PtrLandunittypes = std::array<uint*, LAND_UNIT_TYPES_COUNT>;
+using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
+using RandomNumberArray = std::array<uint, RANDOM_NUMBERS_SIZE>;
+using Playersbuf = std::array<uint, PLAYERS_COUNT_P1>;
 using SeaS2SArray = std::array<S2SConn, SEAS_COUNT>;
 using LandAirArray = std::array<AirArray, LANDS_COUNT>;
 using AirA2AArray = std::array<A2AConn, AIRS_COUNT>;
@@ -49,11 +45,7 @@ using SeaS2LArray = std::array<S2LConn, SEAS_COUNT>;
 using PlayersbufLandArray = std::array<LandArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaArray = std::array<SeaArray, PLAYERS_COUNT_P1>;
 using LandUTArray = std::array<Landunittypes, LANDS_COUNT>;
-using Seaunittypes = std::array<int, SEA_UNIT_TYPES_COUNT>;
 using SeaUTArray = std::array<Seaunittypes, SEAS_COUNT>;
-using PtrSeaunittypes = std::array<int*, SEA_UNIT_TYPES_COUNT>;
-using PtrAirunittypes = std::array<int*, AIR_UNIT_TYPES_COUNT>;
-using PtrLandunittypes = std::array<int*, LAND_UNIT_TYPES_COUNT>;
 using PtrLandUTArray = std::array<PtrLandunittypes, LANDS_COUNT>;
 using PtrSeaUTArray = std::array<PtrSeaunittypes, SEAS_COUNT>;
 using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;

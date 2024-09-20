@@ -16,6 +16,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <sys/types.h>
 
 enum SeaUnitTypesEnum {
   FIGHTERS,
@@ -66,19 +67,19 @@ constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_3 = 8;
 #define MAX_INT std::numeric_limits<int>::max()
 
 // Define type aliases for the arrays
-using Landunittypes = std::array<int, LAND_UNIT_TYPES_COUNT>;
-using Seanunittypes = std::array<int, SEA_UNIT_TYPES_COUNT>;
+using Landunittypes = std::array<uint, LAND_UNIT_TYPES_COUNT>;
+using Seanunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
 using LandUTSeaUT = std::array<Seanunittypes, LAND_UNIT_TYPES_COUNT>;
 using LandUnitNames = std::array<const char*, LAND_UNIT_TYPES_COUNT>;
 using SeaUnitNames = std::array<const char*, SEA_UNIT_TYPES_COUNT>;
-using BuyableSeaUnits = std::array<int, COST_UNIT_SEA_COUNT>;
-using BlockadeUnitTypes = std::array<int, BLOCKADE_UNIT_TYPES_COUNT>;
-using OrderOfLandAttackers1 = std::array<int, ATTACKER_LAND_UNIT_TYPES_COUNT_1>;
-using OrderOfLandAttackers2 = std::array<int, ATTACKER_LAND_UNIT_TYPES_COUNT_2>;
-using OrderOfSeaDefenders = std::array<int, DEFENDER_SEA_UNIT_TYPES_COUNT>;
-using OrderOfSeaAttackers1 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_1>;
-using OrderOfSeaAttackers2 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_2>;
-using OrderOfSeaAttackers3 = std::array<int, ATTACKER_SEA_UNIT_TYPES_COUNT_3>;
+using BuyableSeaUnits = std::array<uint, COST_UNIT_SEA_COUNT>;
+using BlockadeUnitTypes = std::array<uint, BLOCKADE_UNIT_TYPES_COUNT>;
+using OrderOfLandAttackers1 = std::array<uint, ATTACKER_LAND_UNIT_TYPES_COUNT_1>;
+using OrderOfLandAttackers2 = std::array<uint, ATTACKER_LAND_UNIT_TYPES_COUNT_2>;
+using OrderOfSeaDefenders = std::array<uint, DEFENDER_SEA_UNIT_TYPES_COUNT>;
+using OrderOfSeaAttackers1 = std::array<uint, ATTACKER_SEA_UNIT_TYPES_COUNT_1>;
+using OrderOfSeaAttackers2 = std::array<uint, ATTACKER_SEA_UNIT_TYPES_COUNT_2>;
+using OrderOfSeaAttackers3 = std::array<uint, ATTACKER_SEA_UNIT_TYPES_COUNT_3>;
 
 // Declare the arrays as extern
 extern const LandUnitNames NAMES_UNIT_LAND;
