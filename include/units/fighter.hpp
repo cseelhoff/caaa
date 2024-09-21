@@ -1,6 +1,4 @@
-#ifndef FIGHTER_H
-#define FIGHTER_H
-
+#pragma once
 #define FIGHTER_NAME "fighters"
 #define FIGHTER_ATTACK 3
 #define FIGHTER_DEFENSE 4
@@ -9,5 +7,3 @@
 #define FIGHTER_DONE_MOVING 0
 #define FIGHTER_UNMOVED FIGHTER_MOVES_MAX
 #define FIGHTER_STATES FIGHTER_MOVES_MAX + 1
-
-#endif

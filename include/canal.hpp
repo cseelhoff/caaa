@@ -1,6 +1,4 @@
-#ifndef CANAL_H
-#define CANAL_H
-
+#pragma once
 #include <array>
 #include <sys/types.h>
 
@@ -17,5 +15,3 @@ struct Canal {
 using CanalStructs = std::array<Canal, CANALS_COUNT>;
 
 extern const CanalStructs CANALS;
-
-#endif

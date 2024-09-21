@@ -2,12 +2,11 @@
 #include "game_state.hpp"
 #include "player.hpp"
 #include <cjson/cJSON.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <memory>
 
 // Function prototypes for game-specific logic
 extern GameState* clone_state(GameState* state);
@@ -17,18 +16,16 @@ extern bool is_terminal_state(GameState* state);
 extern double evaluate_state(GameState* state);
 extern double random_play_until_terminal(GameState* state);
 
-#define EXPLORATION_CONSTANT 1.414
+constexpr double EXPLORATION_CONSTANT = 1.414;
 //#define EXPLORATION_CONSTANT 2
 
 bool check5 = false;
 
-static MCTSNode* create_node(GameState* state, uint action, MCTSNode* parent) {
-  MCTSNode* node = (MCTSNode*)malloc(sizeof(MCTSNode));
+static std::unique_ptr<MCTSNode> create_node(GameState* state, uint action, MCTSNode* parent) {
+  auto node = std::make_unique<MCTSNode>();
   node->state = *state; //*clone_state(state);
   node->action = action;
   node->parent = parent;
-  node->children = NULL;
-  node->num_children = 0;
   node->visits = 0;
   node->value = 0.0;
   return node;
@@ -42,63 +39,46 @@ static MCTSNode* create_node(GameState* state, uint action, MCTSNode* parent) {
 
 static MCTSNode* select_best_leaf(MCTSNode* node) {
   double best_value = -std::numeric_limits<double>::infinity();
-  MCTSNode* best_child = NULL;
-  for (uint i = 0; i < node->num_children; i++) {
-    MCTSNode* child = node->children[i];
+  MCTSNode* best_child = nullptr;
+  for (auto& child : node->children) {
     double uct_value = child->value / (child->visits + 1) +
                        EXPLORATION_CONSTANT * sqrt(log(node->visits + 1) / (child->visits + 1));
     if (uct_value > best_value) {
       best_value = uct_value;
-      best_child = child;
+      best_child = child.get();
     }
   }
-  node = best_child;
-  return node;
+  return best_child;
 }
 
 MCTSNode* mcts_search(GameState* initial_state, uint iterations) {
-  MCTSNode* root = create_node(initial_state, 0, NULL);
-  for (MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
-    if (MCTS_ITERATIONS % 500 == 0) {
-      printf("Iteration %d\n", MCTS_ITERATIONS);
-      print_mcts(root);
+  auto root = create_node(initial_state, 0, nullptr);
+  constexpr uint PRINT_INTERVAL = 500;
+
+  for (uint MCTS_ITERATIONS = 0; MCTS_ITERATIONS < iterations; MCTS_ITERATIONS++) {
+    if (MCTS_ITERATIONS % PRINT_INTERVAL == 0) {
+      std::cout << "Iteration " << MCTS_ITERATIONS << std::endl;
+      print_mcts(root.get());
     }
     // select best leaf from node root
-    MCTSNode* node = select_best_leaf(root);
-    // if (MCTS_ITERATIONS == 6575) {
-    //   write_json_to_file("debug_save.json", serialize_game_data_to_json(&node->state));
-    // }
-    // printf("Action Chain: <-%d", node->action);
-    // MCTSNode* parent = node->parent;
-    // while(parent != NULL) {
-    //   printf("<-%d", parent->action);
-    //   parent = parent->parent;
-    // }
-    // printf("\n");
+    MCTSNode* node = select_best_leaf(root.get());
     if (!is_terminal_state(&node->state)) {
       expand_node(node);
-      node = node->children[rand() % node->num_children];
+      node = node->children[static_cast<uint>(rand()) % node->children.size()].get();
     }
-    // if (MCTS_ITERATIONS == 7549) {
-    //   write_json_to_file("debug_save.json", serialize_game_data_to_json(&node->state));
-    // }
-
-    // simulate
-
     double result = random_play_until_terminal(&node->state);
     // backpropagate
-    while (node != NULL) {
+    while (node != nullptr) {
       node->visits++;
-      if (node->parent != NULL && node->parent->state.player_index % 2 == 0) {
+      if (node->parent != nullptr && node->parent->state.player_index % 2 == 0) {
         node->value += result;
       } else {
         node->value += 1 - result;
       }
-      // node->value += result;
       node = node->parent;
     }
   }
-  return root;
+  return root.release();
 }
 
 void expand_node(MCTSNode* node) {
@@ -108,128 +88,138 @@ void expand_node(MCTSNode* node) {
   //  printf("Expanding node: %d\n", node->action);
 
   get_possible_actions(&node->state, &num_actions, actionsPtr);
-  node->children = (MCTSNode**)malloc((unsigned long)num_actions * sizeof(MCTSNode*));
-  node->num_children = num_actions;
-  for (int i = 0; i < num_actions; i++) {
+  node->children.reserve(num_actions);
+  for (uint i = 0; i < num_actions; i++) {
     GameState* new_state = clone_state(&node->state);
     uint next_action = actions[i];
     apply_action(new_state, next_action);
-    node->children[i] = create_node(new_state, next_action, node);
+    node->children.push_back(create_node(new_state, next_action, node));
     // free_state(new_state);
   }
 }
-
 template <typename T, std::size_t N>
 constexpr void copy_full_array(const std::array<T, N>& src, std::array<T, N>& dest) {
-    std::copy(src.begin(), src.end(), dest.begin());
+  std::copy(src.begin(), src.end(), dest.begin());
 }
 //#define COPY_SUB_ARRAY(src, dest, count) std::copy_n((src).begin(), count, (dest).begin());
 
-#define MAX_ACTION_SEQUENCES 20
-Action_Sequence action_sequences[MAX_ACTION_SEQUENCES] = {0};
-int action_sequence_lengths[MAX_ACTION_SEQUENCES] = {0};
-int action_sequence_visits[MAX_ACTION_SEQUENCES] = {0};
-double action_sequence_values[MAX_ACTION_SEQUENCES] = {0};
+constexpr uint MAX_ACTION_SEQUENCES = 20;
+std::array<Action_Sequence, MAX_ACTION_SEQUENCES> action_sequences = {};
+std::array<uint, MAX_ACTION_SEQUENCES> action_sequence_lengths = {0};
+std::array<uint, MAX_ACTION_SEQUENCES> action_sequence_visits = {0};
+std::array<double, MAX_ACTION_SEQUENCES> action_sequence_values = {0};
 
 // Helper function to update the top 20 action sequences
-void update_top_action_sequences(Action_Sequence current_sequence, int length, double value,
-                                 int visits) {
-  for (int i = 0; i < MAX_ACTION_SEQUENCES; i++) {
-    if (visits > action_sequence_visits[i]) {
+void update_top_action_sequences(Action_Sequence current_sequence, uint length, double value,
+                                 uint visits) {
+  for (uint i = 0; i < MAX_ACTION_SEQUENCES; i++) {
+    if (visits > action_sequence_visits.at(i)) {
       // Shift lower value sequences down
-      for (int j = MAX_ACTION_SEQUENCES - 1; j > i; j--) {
-        action_sequence_values[j] = action_sequence_values[j - 1];
-        action_sequence_lengths[j] = action_sequence_lengths[j - 1];
-        copy_full_array(action_sequences[j - 1], action_sequences[j]);
+      for (uint j = MAX_ACTION_SEQUENCES - 1; j > i; j--) {
+        action_sequence_values.at(j) = action_sequence_values.at(j - 1);
+        action_sequence_lengths.at(j) = action_sequence_lengths.at(j - 1);
+        copy_full_array(action_sequences.at(j - 1), action_sequences.at(j));
       }
       // Insert the new sequence
-      action_sequence_values[i] = value;
-      action_sequence_lengths[i] = length;
-      copy_full_array(current_sequence, action_sequences[i]);
+      action_sequence_values.at(i) = value;
+      action_sequence_lengths.at(i) = length;
+      copy_full_array(current_sequence, action_sequences.at(i));
       break;
     }
   }
 }
-#define MAX_DEPTH 40
-#define MIN_VISITS 10000
+constexpr uint MAX_DEPTH = 40;
+constexpr uint MIN_VISITS = 10000;
+
 // Function to print the MCTS tree and keep track of action sequences
 void print_mcts_tree(MCTSNode* node, uint depth, Action_Sequence current_sequence, uint length) {
-  if (node == NULL) {
+  if (node == nullptr) {
     return;
   }
   current_sequence[length++] = node->action;
-  if ((node->num_children == 0 || depth == MAX_DEPTH)) {
+  if (node->children.empty() || depth == MAX_DEPTH) {
     update_top_action_sequences(current_sequence, length, node->value / node->visits, node->visits);
     return;
   }
   bool has_mature_child = false;
 
-  for (uint i = 0; i < node->num_children; i++) {
-    if (node->children[i]->visits > MIN_VISITS) {
+  for (const auto& child : node->children) {
+    if (child->visits > MIN_VISITS) {
       has_mature_child = true;
-      print_mcts_tree(node->children[i], depth + 1, current_sequence, length);
+      print_mcts_tree(child.get(), depth + 1, current_sequence, length);
     }
   }
   if (!has_mature_child) {
     update_top_action_sequences(current_sequence, length, node->value / node->visits, node->visits);
   }
 }
-
 // Function to print the top 20 action sequences
 void print_top_action_sequences() {
-  for (int i = 0; i < MAX_ACTION_SEQUENCES; i++) {
-    if (action_sequence_values[i] > 0) {
-      printf("value: %.4f visits: %8d Actions:", action_sequence_values[i],
-             action_sequence_visits[i]);
-      for (int j = 1; j < action_sequence_lengths[i]; j++) {
-        printf(" %3d", action_sequences[i][j]);
+  constexpr int VISITS_WIDTH = 8;
+  for (uint i = 0; i < MAX_ACTION_SEQUENCES; i++) {
+    if (action_sequence_values.at(i) > 0) {
+      std::cout << "value: " << std::fixed << std::setprecision(4) << action_sequence_values.at(i)
+                << " visits: " << std::setw(VISITS_WIDTH) << action_sequence_visits.at(i)
+                << " Actions:";
+      for (uint j = 1; j < action_sequence_lengths.at(i); j++) {
+        std::cout << " " << std::setw(3) << action_sequences.at(i).at(j);
       }
-      printf("\n");
+      std::cout << std::endl;
     }
   }
 }
-void print_mcts_tree3(MCTSNode* node, int depth) {
-  if (node == NULL)
-    return;
-  if (depth > 40 | node->num_children == 0) {
+
+void print_mcts_tree3(MCTSNode* node, uint depth) {
+  if (node == nullptr) {
     return;
   }
-  if (node->parent != NULL) {
-    printf("%sAction: %d, Visits: %d, Value: %.2f, Avg:%.4f\033[0m\n",
-           PLAYERS[node->parent->state.player_index].color, node->action, node->visits, node->value,
-           node->value / node->visits);
+  constexpr uint MAX_PRINT_DEPTH = 40;
+  if (depth > MAX_PRINT_DEPTH || node->children.empty()) {
+    return;
+  }
+  if (node->parent != nullptr) {
+    std::cout << PLAYERS[node->parent->state.player_index].color << "Action: " << node->action
+              << ", Visits: " << node->visits << ", Value: " << std::fixed << std::setprecision(2)
+              << node->value << ", Avg:" << std::fixed << std::setprecision(4)
+              << (node->value / node->visits) << "\033[0m" << std::endl;
   }
   // Recursively print the children
   uint best_index = 0;
   double best_value = 0;
-  for (uint i = 0; i < node->num_children; i++) {
+  for (uint i = 0; i < node->children.size(); i++) {
     double new_value = node->children[i]->value / node->children[i]->visits;
     if (new_value > best_value) {
       best_value = new_value;
       best_index = i;
     }
   }
-  print_mcts_tree3(node->children[best_index], depth + 1);
+  print_mcts_tree3(node->children[best_index].get(), depth + 1);
 }
-void print_mcts_tree2(MCTSNode* node, int depth) {
-  if (node == NULL)
+
+void print_mcts_tree2(MCTSNode* node, uint depth) {
+  if (node == nullptr) {
     return;
+  }
   if (depth > 3) {
     return;
   }
 
   // Print the current node
-  for (int i = 0; i < depth; i++) {
-    printf("  ");
+  for (uint i = 0; i < depth; i++) {
+    std::cout << "  ";
   }
-  printf("Action: %d, Visits: %d, Value: %.2f, Avg:%.4f\n", node->action, node->visits, node->value,
-         node->value / node->visits);
+  std::cout << "Action: " << node->action 
+            << ", Visits: " << node->visits 
+            << ", Value: " << std::fixed << std::setprecision(2) << node->value 
+            << ", Avg:" << std::fixed << std::setprecision(4) << (node->value / node->visits) 
+            << std::endl;
 
   // Recursively print the children
-  for (int i = 0; i < node->num_children; i++) {
-    print_mcts_tree2(node->children[i], depth + 1);
+  for (const auto& child : node->children) {
+    print_mcts_tree2(child.get(), depth + 1);
   }
 }
+
 // Public function to print the MCTS tree starting from the root
 void print_mcts(MCTSNode* root) {
   // Action_Sequence current_sequence = {0};
@@ -238,18 +228,17 @@ void print_mcts(MCTSNode* root) {
   //   action_sequence_visits[i] = 0;
   // }
   // print_mcts_tree(root, 0, current_sequence, 0);
-  print_mcts_tree3(root, 0);
+  print_mcts_tree2(root, 0);
   // print_top_action_sequences();
 }
 
 uint select_best_action(MCTSNode* root) {
-  MCTSNode* best_child = NULL;
-  double best_value = -INFINITY;
-  for (uint i = 0; i < root->num_children; i++) {
-    MCTSNode* child = root->children[i];
+  MCTSNode* best_child = nullptr;
+  double best_value = -std::numeric_limits<double>::infinity();
+  for (const auto& child : root->children) {
     if (child->value > best_value) {
       best_value = child->value;
-      best_child = child;
+      best_child = child.get();
     }
   }
   return best_child->action;

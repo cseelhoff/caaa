@@ -1,6 +1,4 @@
-#ifndef PLAYER_H
-#define PLAYER_H
-
+#pragma once
 #include <array>
 #include <sys/types.h>
 
@@ -21,5 +19,3 @@ struct Player {
 using PlayersStructs = std::array<Player, PLAYERS_COUNT>;
 
 extern const PlayersStructs PLAYERS;
-
-#endif

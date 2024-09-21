@@ -1,6 +1,4 @@
-#ifndef SEA_H
-#define SEA_H
-
+#pragma once
 #include <array>
 #include <limits>
 #include <sys/types.h>
@@ -28,5 +26,3 @@ struct Sea {
 using SeaStructs = std::array<Sea, SEAS_COUNT>;
 
 extern const SeaStructs SEAS;
-
-#endif

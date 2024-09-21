@@ -1,6 +1,4 @@
-#ifndef LAND_H
-#define LAND_H
-
+#pragma once
 #include <array>
 #include <sys/types.h>
 
@@ -27,5 +25,3 @@ struct Land {
 using LandStructs = std::array<Land, LANDS_COUNT>;
 
 extern const LandStructs LANDS;
-
-#endif

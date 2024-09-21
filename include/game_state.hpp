@@ -1,6 +1,4 @@
-#ifndef GAME_STATE_H
-#define GAME_STATE_H
-
+#pragma once
 #include "land.hpp"
 #include "player.hpp"
 #include "sea.hpp"
@@ -69,4 +67,3 @@ struct GameState {
   std::array<uint, AIRS_COUNT> flagged_for_combat; // track retreats
   std::array<std::array<BitField, AIRS_COUNT>, AIRS_COUNT> skipped_moves;
 } __attribute__((aligned(ALIGNMENT_128)));
-#endif

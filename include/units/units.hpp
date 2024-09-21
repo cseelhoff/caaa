@@ -1,6 +1,4 @@
-#ifndef UNITS_H
-#define UNITS_H
-
+#pragma once
 #include "aa_gun.hpp"
 #include "artillery.hpp"
 #include "battleship.hpp"
@@ -109,4 +107,3 @@ extern const OrderOfSeaDefenders ORDER_OF_SEA_DEFENDERS;
 extern const OrderOfSeaAttackers1 ORDER_OF_SEA_ATTACKERS_1;
 extern const OrderOfSeaAttackers2 ORDER_OF_SEA_ATTACKERS_2;
 extern const OrderOfSeaAttackers3 ORDER_OF_SEA_ATTACKERS_3;
-#endif

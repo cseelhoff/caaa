@@ -4,11 +4,12 @@
 #include "mcts.hpp"
 #include "player.hpp"
 #include "sea.hpp"
-#include "serialize_data.hpp"
+#include "json_state.hpp"
 #include "units/fighter.hpp"
 #include "units/units.hpp"
 #include <array>
 #include <cstdint>
+#include <iostream>
 #include <limits>
 #include <pybind11/pybind11.h>
 #include <sys/types.h>
@@ -74,7 +75,6 @@ RandomNumberArray RANDOM_NUMBERS = {0};
 uint random_number_index = 0;
 uint seed = 0;
 GameState state;
-cJSON* json;
 // use __llvm_libc
 //#define OTHER_LAND_UNITS_SIZE 30
 //#define OTHER_SEA_UNITS_SIZE 42
@@ -585,13 +585,16 @@ void initialize_skip_4air_precals() {
   }
 }
 
-void load_game_data(char const* filename) {
+void load_game_data(const std::string& filename) {
   memset(&state, 0, sizeof(state));
   memset(&current_player_land_unit_types, 0, sizeof(current_player_land_unit_types));
   memset(&current_player_sea_unit_types, 0, sizeof(current_player_sea_unit_types));
   memset(&total_player_land_units, 0, sizeof(total_player_land_units));
   memset(&total_player_sea_units, 0, sizeof(total_player_sea_units));
-  load_game_data_from_json(filename, &state);
+  bool result = load_game_state_from_json(filename, state);
+  if (!result) {
+    throw std::runtime_error("Failed to load game state from file: " + filename);
+  }
   refresh_full_cache();
 }
 void refresh_full_cache() {
@@ -1098,7 +1101,7 @@ void setPrintableStatusSeas() {
     if (grand_total == 0) {
       continue;
     }
-    UnitsSea units_sea = state.units_sea[sea_index];
+    //UnitsSea units_sea = state.units_sea[sea_index];
     sprintf(threeCharStr, "%d ", LANDS_COUNT + sea_index);
     strcat(printableGameStatus, threeCharStr);
     strcat(printableGameStatus, SEAS[sea_index].name);
@@ -1201,9 +1204,6 @@ uint getAIInput() {
 
 void update_move_history_4air(uint src_air, uint dst_air) {
   // get a list of newly skipped valid_actions
-#ifdef DEBUG
-  uint valid_moves_idx = valid_moves_count;
-#endif
   while (true) {
     uint valid_action = valid_moves[valid_moves_count];
     if (valid_action == dst_air) {
@@ -1556,9 +1556,6 @@ void pre_move_fighter_units() {
   if (actually_print) {
     setPrintableStatus();
     printf("%s\n", printableGameStatus);
-    if (enemy_units_count[2] == -1) {
-      printf("DEBUG: enemy_units_count[2] == -1\n");
-    }
   }
 #endif
   //  clear_move_history();
@@ -1786,7 +1783,6 @@ bool move_bomber_units() {
           printf("Bomber moving to sea. Possibly flagging for combat\n");
         }
 #endif
-        uint dst_sea = dst_air - LANDS_COUNT;
         state.flagged_for_combat[dst_air] = enemy_units_count[dst_air] > 0;
       }
       uint airDistance = AIR_DIST[src_land][dst_air];
@@ -4260,11 +4256,11 @@ PYBIND11_MODULE(engine, handle) {
   handle.doc() = "caaa engine doc";
   handle.def("random_play_until_terminal", &random_play_until_terminal);
   handle.def("clone_state", &clone_state);
-  // handle.def("get_possible_actions", &get_possible_actions);
+  //handle.def("get_possible_actions", &get_possible_actions);
   handle.def("apply_action", &apply_action);
   handle.def("is_terminal_state", &is_terminal_state);
   handle.def("initialize_constants", &initialize_constants);
   handle.def("get_game_state_copy", &get_game_state_copy);
   handle.def("evaluate_state", &evaluate_state);
-  handle.def("load_game_data", &load_game_data);
+  handle.def("load_game_state_from_json", &load_game_state_from_json);
 }

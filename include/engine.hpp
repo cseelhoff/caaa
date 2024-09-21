@@ -1,5 +1,4 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 #include "game_state.hpp"
 #include "canal.hpp"
 #include "land.hpp"
@@ -201,4 +200,3 @@ bool end_turn();
 
 uint get_attacker_hits(uint attacker_damage);
 uint get_defender_hits(uint defender_damage);
-#endif
