@@ -56,6 +56,9 @@ struct UnitsSea {
   std::array<uint, BOMBER_SEA_STATES> bombers;     // move remain 1,2,3,4,5
 } __attribute__((aligned(ALIGNMENT_128)));
 
+using BfAirArray = std::array<BitField, AIRS_COUNT>;
+using BfAirAirArray = std::array<BfAirArray, AIRS_COUNT>;
+
 struct GameState {
   uint player_index; // rotates
   std::array<uint, PLAYERS_COUNT> money; // rotates
@@ -65,5 +68,5 @@ struct GameState {
   std::array<std::array<std::array<uint, LAND_UNIT_TYPES_COUNT>, LANDS_COUNT>, PLAYERS_COUNT - 1> other_land_units; // rotates
   std::array<std::array<std::array<uint, SEA_UNIT_TYPES_COUNT>, SEAS_COUNT>, PLAYERS_COUNT - 1> other_sea_units; 
   std::array<uint, AIRS_COUNT> flagged_for_combat; // track retreats
-  std::array<std::array<BitField, AIRS_COUNT>, AIRS_COUNT> skipped_moves;
+  BfAirAirArray skipped_moves;
 } __attribute__((aligned(ALIGNMENT_128)));

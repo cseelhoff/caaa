@@ -1,10 +1,10 @@
 #pragma once
 #include "game_state.hpp"
 #include <array>
-#include <memory>
-#include <vector>
 #include <cmath>
 #include <limits>
+#include <memory>
+#include <vector>
 
 #define ALIGNMENT 128
 struct MCTSNode {
