@@ -31,14 +31,6 @@ include_directories(${Python3_INCLUDE_DIRS})
 # Link Python library
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${Python3_LIBRARIES})
 
-# Add Boost.Hana as a dependency
-find_package(Boost REQUIRED)
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-  target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${Boost_LIBRARIES})
-  target_link_libraries(engine PRIVATE ${Boost_LIBRARIES})
-endif()
-
 # Enable Clang-Tidy
 find_program(CLANG_TIDY "clang-tidy")
 if(CLANG_TIDY)

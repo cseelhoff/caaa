@@ -4,6 +4,7 @@
 #include "canal.hpp"
 #include "land.hpp"
 #include "sea.hpp"
+#include "units/fighter.hpp"
 #include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64
@@ -51,6 +52,15 @@ using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;
 using CanalSeaSeaArray = std::array<SeaSeaArray, CANAL_STATES>;
 using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
+using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
+using FightermovesAirArray = std::array<AirArray, FIGHTER_MOVES_MAX>;
+using FightermovesAirAirArray = std::array<AirAirArray, FIGHTER_MOVES_MAX>;
+using BoolPlayersbuf = std::array<bool, PLAYERS_COUNT_P1>;
+using BoolAirArray = std::array<bool, AIRS_COUNT>;
+using BoolSeaArray = std::array<bool, SEAS_COUNT>;
+using BoolSeaSeaArray = std::array<BoolSeaArray, SEAS_COUNT>;
+using BoolLandArray = std::array<bool, LANDS_COUNT>;
+using BoolLandLandArray = std::array<BoolLandArray, LANDS_COUNT>;
 
 
 void initialize_constants();
