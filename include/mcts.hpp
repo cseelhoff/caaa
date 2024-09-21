@@ -15,7 +15,6 @@ struct MCTSNode {
     uint visits;
     double value;
 } __attribute__((aligned(ALIGNMENT)));
-extern uint MCTS_ITERATIONS;// = 0;
 MCTSNode* mcts_search(GameState* initial_state, uint iterations);
 uint select_best_action(MCTSNode* root);
 constexpr uint MAX_ACTIONS = 1000;

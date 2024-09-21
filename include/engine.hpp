@@ -4,6 +4,7 @@
 #include "land.hpp"
 #include "sea.hpp"
 #include "units/fighter.hpp"
+#include <string>
 #include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64
@@ -94,7 +95,7 @@ void set_land_path_for_l2l(uint src_land, uint intermediate_land, LandAirArray l
 void set_land_path_for_l2s(uint src_land, uint intermediate_land, LandAirArray land_path);
 
 void initialize_sea_path();
-void initialize_sea_path_2(uint mid_sea, uint src_sea, uint canal_state_idx, CanalSeaSeaArray* sea_path_ptr);
+void initialize_sea_path_2(uint mid_sea_idx, uint src_sea, uint canal_state_idx, CanalSeaSeaArray* sea_path_ptr);
 
 void initialize_within_x_moves();
 void initialize_land_within_2_moves(uint src_land);
@@ -111,7 +112,7 @@ void intialize_airs_x_to_4_moves_away();
 void initialize_skip_4air_precals();
 void apply_skip(uint src_air, uint dst_air);
 
-void load_game_data(char const* filename);
+void load_game_data(const std::string& filename);
 
 void play_full_turn();
 void refresh_full_cache();
