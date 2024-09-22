@@ -38,3 +38,13 @@ if(CLANG_TIDY)
   set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY};${CLANG_TIDY_EXCLUDES}")
   set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY};${CLANG_TIDY_EXCLUDES}")
 endif()
+# Define the source and destination paths
+set(GAME_DATA_FILE ${CMAKE_SOURCE_DIR}/game_data.json)
+set(OUTPUT_DIR ${CMAKE_BINARY_DIR})
+
+# Add custom command for copying the file
+add_custom_command(
+    TARGET ${EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${GAME_DATA_FILE} ${OUTPUT_DIR}/game_data.json
+)

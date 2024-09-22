@@ -11,62 +11,85 @@
 
 #define ACTIONS_COUNT 20
 using Actions = std::array<uint, ACTIONS_COUNT>;
-using ActionsPtr = Actions *;
+using ActionsPtr = Actions*;
 
 using AirArray = std::array<uint, AIRS_COUNT>;
 using A2AConn = std::array<uint, MAX_AIR_TO_AIR_CONNECTIONS>;
+using BoolAirArray = std::array<bool, AIRS_COUNT>;
 
-using BitField = struct {
-    bool bit : 1;
-};
+using BitField = struct { bool bit : 1; };
 
 constexpr int ALIGNMENT_128 = 128;
+using Fighterstates = std::array<uint, FIGHTER_STATES>;
+using Bomberlandstates = std::array<uint, BOMBER_LAND_STATES>;
+using Infantrystates = std::array<uint, INFANTRY_STATES>;
+using Artillerystates = std::array<uint, ARTILLERY_STATES>;
+using Tankstates = std::array<uint, TANK_STATES>;
+using AAgunstates = std::array<uint, AA_GUN_STATES>;
+using Bomberseastates = std::array<uint, BOMBER_SEA_STATES>;
+using TransEmptystates = std::array<uint, TRANS_EMPTY_STATES>;
+using Trans1istates = std::array<uint, TRANS_1I_STATES>;
+using Trans1astates = std::array<uint, TRANS_1A_STATES>;
+using Trans1tstates = std::array<uint, TRANS_1T_STATES>;
+using Trans2istates = std::array<uint, TRANS_2I_STATES>;
+using Trans1i1astates = std::array<uint, TRANS_1I_1A_STATES>;
+using Trans1i1tstates = std::array<uint, TRANS_1I_1T_STATES>;
+using Submarinestates = std::array<uint, SUB_STATES>;
+using Destroyerstates = std::array<uint, DESTROYER_STATES>;
+using Carrierstates = std::array<uint, CARRIER_STATES>;
+using Cruiserstates = std::array<uint, CRUISER_STATES>;
+using Battleshipstates = std::array<uint, BATTLESHIP_STATES>;
 
 struct LandState {
   uint owner_idx; // rotates
   uint factory_dmg;
   uint factory_max;
-  uint bombard_max; // bombarded, resets
-  std::array<uint, FIGHTER_STATES> fighters;                        // rotates
-  std::array<uint, BOMBER_LAND_STATES> bombers;                     // rotates
-  std::array<uint, INFANTRY_STATES> infantry;                       // rotates
-  std::array<uint, ARTILLERY_STATES> artillery;                     // rotates
-  std::array<uint, TANK_STATES> tanks;                              // rotates
-  std::array<uint, AA_GUN_STATES> aa_guns;                          // rotates
+  uint bombard_max;          // bombarded, resets
+  Fighterstates fighters;    // rotates
+  Bomberlandstates bombers;  // rotates
+  Infantrystates infantry;   // rotates
+  Artillerystates artillery; // rotates
+  Tankstates tanks;          // rotates
+  AAgunstates aa_guns;       // rotates
 } __attribute__((aligned(ALIGNMENT_128)));
 
 struct UnitsSea {
-  std::array<uint, FIGHTER_STATES> fighters;
-  // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
-  std::array<uint, TRANS_EMPTY_STATES> trans_empty;
-  // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left, 4 = needs staging
-  std::array<uint, TRANS_1I_STATES> trans_1i;
-  std::array<uint, TRANS_1A_STATES> trans_1a;
-  std::array<uint, TRANS_1T_STATES> trans_1t;
-  // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
-  std::array<uint, TRANS_2I_STATES> trans_2i;
-  std::array<uint, TRANS_1I_1A_STATES> trans_1i_1a;
-  std::array<uint, TRANS_1I_1T_STATES> trans_1i_1t;
-  std::array<uint, SUB_STATES> submarines;
-  std::array<uint, DESTROYER_STATES> destroyers;
-  std::array<uint, CARRIER_STATES> carriers;
-  std::array<uint, CRUISER_STATES> cruisers;       // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  std::array<uint, BATTLESHIP_STATES> battleships; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  std::array<uint, BATTLESHIP_STATES> bs_damaged;  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
-  std::array<uint, BOMBER_SEA_STATES> bombers;     // move remain 1,2,3,4,5
+  Fighterstates fighters; // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
+  TransEmptystates trans_empty; // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov
+                                // left, 4 = needs staging
+  Trans1istates trans_1i;
+  Trans1astates trans_1a;
+  Trans1tstates trans_1t; // 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
+  Trans2istates trans_2i;
+  Trans1i1astates trans_1i_1a;
+  Trans1i1tstates trans_1i_1t;
+  Submarinestates submarines;
+  Destroyerstates destroyers;
+  Carrierstates carriers;
+  Cruiserstates cruisers;       // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  Battleshipstates battleships; // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  Battleshipstates bs_damaged;  // 0=no att, 1=0 mov can bombard, 2 = 2 mov
+  Bomberseastates bombers;      // move remain 1,2,3,4,5
 } __attribute__((aligned(ALIGNMENT_128)));
 
+using PlayersArray = std::array<uint, PLAYERS_COUNT>;
+using LandStateArray = std::array<LandState, LANDS_COUNT>;
+using SeaStateArray = std::array<UnitsSea, SEAS_COUNT>;
+using LandUTArray = std::array<Landunittypes, LANDS_COUNT>;
+using SeaUTArray = std::array<Seaunittypes, SEAS_COUNT>;
+using OplayerLandUTArray = std::array<LandUTArray, PLAYERS_COUNT - 1>;
+using OplayerSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT - 1>;
 using BfAirArray = std::array<BitField, AIRS_COUNT>;
 using BfAirAirArray = std::array<BfAirArray, AIRS_COUNT>;
 
 struct GameState {
-  uint player_index; // rotates
-  std::array<uint, PLAYERS_COUNT> money; // rotates
-  std::array<uint, AIRS_COUNT> builds_left; 
-  std::array<LandState, LANDS_COUNT> land_state;
-  std::array<UnitsSea, SEAS_COUNT> units_sea;
-  std::array<std::array<std::array<uint, LAND_UNIT_TYPES_COUNT>, LANDS_COUNT>, PLAYERS_COUNT - 1> other_land_units; // rotates
-  std::array<std::array<std::array<uint, SEA_UNIT_TYPES_COUNT>, SEAS_COUNT>, PLAYERS_COUNT - 1> other_sea_units; 
-  std::array<uint, AIRS_COUNT> flagged_for_combat; // track retreats
+  uint player_index;  // rotates
+  PlayersArray money; // rotates
+  AirArray builds_left;
+  LandStateArray land_state;
+  SeaStateArray units_sea;
+  OplayerLandUTArray other_land_units; // rotates
+  OplayerSeaUTArray other_sea_units;
+  AirArray combat_status; // track retreats
   BfAirAirArray skipped_moves;
 } __attribute__((aligned(ALIGNMENT_128)));

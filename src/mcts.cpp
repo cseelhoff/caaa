@@ -39,7 +39,7 @@ static std::unique_ptr<MCTSNode> create_node(GameState* state, uint action, MCTS
 
 static MCTSNode* select_best_leaf(MCTSNode* node) {
   double best_value = -std::numeric_limits<double>::infinity();
-  MCTSNode* best_child = nullptr;
+  MCTSNode* best_child = node;
   for (auto& child : node->children) {
     double uct_value = child->value / (child->visits + 1) +
                        EXPLORATION_CONSTANT * sqrt(log(node->visits + 1) / (child->visits + 1));
