@@ -1,8 +1,21 @@
 #pragma once
-#include "game_state_json.hpp"
-#include "units/transport.hpp"
+#include "land.hpp"
+#include "player.hpp"
+#include "sea.hpp"
+#include "units/units.hpp"
+#include <array>
 #include <cmath>
 
+constexpr uint AIRS_COUNT = LANDS_COUNT + SEAS_COUNT;
+constexpr uint MAX_AIR_TO_AIR_CONNECTIONS = 7;
+constexpr uint ALIGNMENT_128 = 128;
+constexpr uint ALIGNMENT_64 = 64;
+constexpr uint ALIGNMENT_32 = 32;
+
+using AirArray = std::array<uint, AIRS_COUNT>;
+using PlayersArray = std::array<uint, PLAYERS_COUNT>;
+using A2AConn = std::array<uint, MAX_AIR_TO_AIR_CONNECTIONS>;
+using BoolAirArray = std::array<bool, AIRS_COUNT>;
 using ActiveLandFighters = std::array<uint, static_cast<std::size_t>(LANDS_COUNT* FIGHTER_STATES)>;
 using ActiveLandBombers =
     std::array<uint, static_cast<std::size_t>(LANDS_COUNT* BOMBER_LAND_STATES)>;

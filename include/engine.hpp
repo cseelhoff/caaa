@@ -1,5 +1,5 @@
 #pragma once
-#include "game_state.hpp"
+#include "game_state_memory.hpp"
 #include "canal.hpp"
 #include "map_cache.hpp"
 #include "land.hpp"
@@ -9,16 +9,6 @@
 #include <sys/types.h>
 
 #define STRING_BUFFER_SIZE 64
-#define MIN_AIR_HOPS 2
-#define MAX_AIR_HOPS 6
-#define MIN_SEA_HOPS 1
-#define MAX_SEA_HOPS 2
-#define MIN_LAND_HOPS 1
-#define MAX_LAND_HOPS 2
-#define AIR_MOVE_SIZE 1 + MAX_AIR_HOPS - MIN_AIR_HOPS
-#define SEA_MOVE_SIZE 1 + MAX_SEA_HOPS - MIN_SEA_HOPS
-#define LAND_MOVE_SIZE 1 + MAX_LAND_HOPS - MIN_LAND_HOPS
-#define PLAYERS_COUNT_P1 PLAYERS_COUNT + 1
 #define PRINTABLE_GAME_STATUS_SIZE 4096
 #define RANDOM_NUMBERS_SIZE 65536
 
@@ -28,15 +18,6 @@ using PtrLandunittypes = std::array<uint*, LAND_UNIT_TYPES_COUNT>;
 using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
 using RandomNumberArray = std::array<uint, RANDOM_NUMBERS_SIZE>;
 using Playersbuf = std::array<uint, PLAYERS_COUNT_P1>;
-using SeaS2SArray = std::array<S2SConn, SEAS_COUNT>;
-using AirLandArray = std::array<LandArray, AIRS_COUNT>;
-using AirhopAirAirArray = std::array<AirAirArray, MAX_AIR_HOPS>;
-using AirhopAirArray = std::array<AirArray, MAX_AIR_HOPS>;
-using AirhopAirLandArray = std::array<AirLandArray, MAX_AIR_HOPS>;
-using AirhopLandArray = std::array<LandArray, MAX_AIR_HOPS>;
-using LandL2LArray = std::array<L2LConn, LANDS_COUNT>;
-using LandL2SArray = std::array<L2SConn, LANDS_COUNT>;
-using SeaS2LArray = std::array<S2LConn, SEAS_COUNT>;
 using PlayersbufLandArray = std::array<LandArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaArray = std::array<SeaArray, PLAYERS_COUNT_P1>;
 using PtrLandUTArray = std::array<PtrLandunittypes, LANDS_COUNT>;
@@ -45,62 +26,16 @@ using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;
 using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
 using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
-using FightermovesAirArray = std::array<AirArray, FIGHTER_MOVES_MAX>;
-using FightermovesAirAirArray = std::array<AirAirArray, FIGHTER_MOVES_MAX>;
 using BoolPlayersbuf = std::array<bool, PLAYERS_COUNT_P1>;
 using BoolSeaArray = std::array<bool, SEAS_COUNT>;
 using BoolSeaSeaArray = std::array<BoolSeaArray, SEAS_COUNT>;
 using BoolLandArray = std::array<bool, LANDS_COUNT>;
 using BoolLandLandArray = std::array<BoolLandArray, LANDS_COUNT>;
 
-
-void initialize_constants();
-
-void initialize_land_dist();
-void initialize_l2l_connections(uint src_land);
-void initialize_l2s_connections(uint src_land);
-void initialize_land_dist_zero(uint src_land);
-void set_l2l_land_dist_to_one(uint src_land);
-void set_l2s_land_dist_to_one(uint src_land);
-void land_dist_floyd_warshall();
-//void floyd_warshall(int* dist, int terr_count, int dist_count);
-
-void initialize_sea_dist();
-void initialize_s2s_connections(uint src_sea);
-void initialize_s2l_connections(uint src_sea);
-void initialize_sea_dist_zero(uint canal_idx);
-void set_s2s_sea_dist_to_one(uint canal_idx);
-void initialize_canals(uint canal_idx);
-void sea_dist_floyd_warshall(uint canal_idx);
-
-void initialize_air_dist();
-void initialize_air_dist_zero();
-void set_l2l_air_dist_to_one(uint src_land);
-void set_l2s_air_dist_to_one(uint src_land);
-void set_s2l_air_dist_to_one(uint src_sea);
-void set_s2s_air_dist_to_one(uint src_sea);
-void air_dist_floyd_warshall();
-
-void initialize_land_path();
-void set_land_path_for_l2l(uint src_land, uint intermediate_land, LandAirArray land_path);
-void set_land_path_for_l2s(uint src_land, uint intermediate_land, LandAirArray land_path);
-
-void initialize_sea_path();
-void initialize_sea_path_2(uint mid_sea_idx, uint src_sea, uint canal_state_idx, CanalSeaSeaArray* sea_path_ptr);
-
-void initialize_within_x_moves();
-void initialize_land_within_2_moves(uint src_land);
-void initialize_load_within_2_moves(uint src_land);
-void initialize_sea_within_x_moves();
-void initialize_air_within_x_moves();
-void initialize_air_to_land_within_x_moves();
-
 void initialize_random_numbers();
 void initialize_land_pointers();
 void initialize_sea_pointers();
 
-void intialize_airs_x_to_4_moves_away();
-void initialize_skip_4air_precals();
 void apply_skip(uint src_air, uint dst_air);
 
 void load_game_data(const std::string& filename);

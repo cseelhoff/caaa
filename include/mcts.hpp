@@ -1,5 +1,6 @@
 #pragma once
-#include "game_state.hpp"
+#include "game_state_MCTS.hpp"
+#include "game_state_memory.hpp"
 #include <array>
 #include <cmath>
 #include <limits>
@@ -8,14 +9,14 @@
 
 #define ALIGNMENT 128
 struct MCTSNode {
-    GameStateJson state;
+    GameStateMemory state;
     uint action;
     MCTSNode* parent;
     std::vector<std::unique_ptr<MCTSNode>> children;
     uint visits;
     double value;
 } __attribute__((aligned(ALIGNMENT)));
-MCTSNode* mcts_search(GameStateJson* initial_state, uint iterations);
+MCTSNode* mcts_search(GameStateMemory* initial_state, uint iterations);
 uint select_best_action(MCTSNode* root);
 constexpr uint MAX_ACTIONS = 1000;
 using Action_Sequence = std::array<uint, MAX_ACTIONS>;
