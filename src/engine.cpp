@@ -3887,9 +3887,14 @@ void rotate_turns() {
   }
 #endif
   COPY_FULL_ARRAY(current_player_land_unit_types, total_land_unit_types_temp);
+  total_land_unit_types_temp = current_player_land_unit_types;
   COPY_FULL_ARRAY(state.other_land_units[0], current_player_land_unit_types);
-  memmove(&state.other_land_units[0], &state.other_land_units[1],
-          sizeof(state.other_land_units[0]) * (PLAYERS_COUNT - 2));
+  // memmove(&state.other_land_units[0], &state.other_land_units[1],
+  //         sizeof(state.other_land_units[0]) * (PLAYERS_COUNT - 2));
+  std::move(&state.other_land_units[1], &state.other_land_units[PLAYERS_COUNT - 1],
+            &state.other_land_units[0]);
+  // std::uninitialized_move_n(state.other_land_units[1], PLAYERS_COUNT - 2,
+  // state.other_land_units[0]);
   memcpy(&state.other_land_units[PLAYERS_COUNT - 2], &total_land_unit_types_temp,
          sizeof(state.other_land_units[0]));
   for (uint dst_land = 0; dst_land < LANDS_COUNT; dst_land++) {
@@ -3915,8 +3920,12 @@ void rotate_turns() {
     memcpy(&current_player_sea_unit_types[dst_sea], &state.other_sea_units[0][dst_sea],
            SEA_UNIT_TYPES_COUNT - 1);
   }
-  memmove(&state.other_sea_units[0], &state.other_sea_units[1],
-          sizeof(state.other_sea_units[0]) * (PLAYERS_COUNT - 2));
+  // memmove(&state.other_sea_units[0], &state.other_sea_units[1],
+  //         sizeof(state.other_sea_units[0]) * (PLAYERS_COUNT - 2));
+  std::move(&state.other_sea_units[1], &state.other_sea_units[PLAYERS_COUNT - 1],
+            &state.other_sea_units[0]);
+  // std::uninitialized_move_n(state.other_sea_units[1], PLAYERS_COUNT - 2,
+  // state.other_sea_units[0]);
   //  memcpy(&data.other_sea_units[PLAYERS_COUNT - 2], &other_sea_units_temp, OTHER_SEA_UNITS_SIZE);
   memset(&state.units_sea, 0, sizeof(state.units_sea));
   for (uint dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) {
@@ -4032,23 +4041,23 @@ double get_score() {
 }
 
 GameState* get_game_state_copy() {
-  GameState* game_state = (GameState*)malloc(sizeof(GameState));
-  memcpy(game_state, &state, sizeof(GameState));
-  return game_state;
+  // GameState* game_state = (GameState*)malloc(sizeof(GameState));
+  // memcpy(game_state, &state, sizeof(GameState));
+  auto new_state = std::make_unique<GameState>(state);
+  return new_state.release();
 }
 
 // Implement these functions based on your game logic
 GameState* clone_state(GameState* game_state) {
-  // Deep copy the game state
-  GameState* new_state = (GameState*)malloc(sizeof(GameState));
-  // Copy the basic structure
-  memcpy(new_state, game_state, sizeof(GameState));
-  return new_state;
+  // Use the copy constructor to create a deep copy of the game state
+  auto new_state = std::make_unique<GameState>(*game_state);
+  return new_state.release();
 }
 
 void get_possible_actions(GameState* game_state, uint* num_actions, ActionsPtr actions) {
   unlucky_player_idx = 0;
-  memcpy(&state, game_state, sizeof(GameState));
+  // memcpy(&state, game_state, sizeof(GameState));
+  state = *game_state;
   refresh_full_cache();
   answers_remaining = 0;
   random_number_index = 0;
@@ -4112,7 +4121,8 @@ void apply_action(GameState* game_state, uint action) {
   //   game_state->player_index -= PLAYERS_COUNT;
   //   return;
   // }
-  memcpy(&state, game_state, sizeof(GameState));
+  // memcpy(&state, game_state, sizeof(GameState));
+  state = *game_state;
   refresh_full_cache();
   //  unlucky_player_idx = state.player_index;
   unlucky_player_idx = 0;
@@ -4169,10 +4179,12 @@ void apply_action(GameState* game_state, uint action) {
   //   //       PLAYERS[state.player_index].name);
   //   state.player_index += PLAYERS_COUNT;
   // }
-  memcpy(game_state, &state, sizeof(GameState));
+  // memcpy(game_state, &state, sizeof(GameState));
+  *game_state = state;
 }
 double random_play_until_terminal(GameState* game_state) {
-  memcpy(&state, game_state, sizeof(GameState));
+  // memcpy(&state, game_state, sizeof(GameState));
+  state = *game_state;
   refresh_full_cache();
   answers_remaining = 100000;
   use_selected_action = false;
@@ -4181,37 +4193,82 @@ double random_play_until_terminal(GameState* game_state) {
   random_number_index = static_cast<uint>(rand() % RANDOM_NUMBERS_SIZE);
   // clear_move_history();
   while (score > 0.01 && score < 0.99 && max_loops-- > 0) {
-    // printf("max_loops: %d\n", max_loops);
-    //  if(max_loops == 2) {
-    //    setPrintableStatus();
-    //    printf("%s\n", printableGameStatus);
-    //    printf("DEBUG: max_loops reached\n");
-    //  }
-    // if (max_loops % 100 == 0) {
-    //   printf("max_loops: %d\n", max_loops);
-    // }
+// printf("max_loops: %d\n", max_loops);
+//  if(max_loops == 2) {
+//    setPrintableStatus();
+//    printf("%s\n", printableGameStatus);
+//    printf("DEBUG: max_loops reached\n");
+//  }
+// if (max_loops % 100 == 0) {
+//   printf("max_loops: %d\n", max_loops);
+// }
+#if DEBUG
+    debug_checks();
     move_fighter_units();
+    debug_checks();
     move_bomber_units();
+    debug_checks();
     stage_transport_units();
+    debug_checks();
     move_land_unit_type(TANKS);
+    debug_checks();
     move_land_unit_type(ARTILLERY);
+    debug_checks();
     move_land_unit_type(INFANTRY);
+    debug_checks();
     move_transport_units();
+    debug_checks();
     move_subs();
+    debug_checks();
     move_destroyers_battleships();
+    debug_checks();
     resolve_sea_battles();
+    debug_checks();
     unload_transports();
+    debug_checks();
     resolve_land_battles();
+    debug_checks();
     move_land_unit_type(AA_GUNS);
+    debug_checks();
     land_fighter_units();
+    debug_checks();
     land_bomber_units();
+    debug_checks();
     buy_units();
-    //    end_turn();
+    debug_checks();
     crash_air_units();
+    debug_checks();
     reset_units_fully();
+    debug_checks();
     buy_factory();
+    debug_checks();
     collect_money();
+    debug_checks();
     rotate_turns();
+    debug_checks();
+#else
+      move_fighter_units();
+      move_bomber_units();
+      stage_transport_units();
+      move_land_unit_type(TANKS);
+      move_land_unit_type(ARTILLERY);
+      move_land_unit_type(INFANTRY);
+      move_transport_units();
+      move_subs();
+      move_destroyers_battleships();
+      resolve_sea_battles();
+      unload_transports();
+      resolve_land_battles();
+      move_land_unit_type(AA_GUNS);
+      land_fighter_units();
+      land_bomber_units();
+      buy_units();
+      crash_air_units();
+      reset_units_fully();
+      buy_factory();
+      collect_money();
+      rotate_turns();
+#endif
     score = get_score();
   }
   if (state.player_index % 2 == 1) {
@@ -4256,7 +4313,7 @@ double evaluate_state(GameState* game_state) {
       enemy_score += score;
     }
   }
-  double score = ((double)allied_score / (double)(enemy_score + allied_score));
+  double score = (static_cast<double>(allied_score) / static_cast<double>(enemy_score + allied_score));
   game_state->player_index = starting_player;
   if (starting_player >= PLAYERS_COUNT) {
     return 1 - score;
