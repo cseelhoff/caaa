@@ -1,0 +1,111 @@
+{
+	"current_turn": 0,
+	"seed": 0,
+	"money": [
+		10,
+		20,
+		2,
+		20,
+		2
+	],
+	"land_states": [
+		{
+			"owner_idx": 4,
+			"factory_dmg": 0,
+			"factory_max": 10,
+			"builds_left": 0,
+			"bombard_max": 0,
+			"combat_status": 2,
+			"skipped_moves": [0,1,2],
+			"active_land_units": {
+				"fighters": [0,0,0,0,0],
+				"bombers": [0,0,0,0,0,0,0],
+				"infantry": [0,0],
+				"artillery": [0,0],
+				"tanks": [0,0,0],
+				"aa_guns": [0,0]
+			},
+			"idle_land_units": [
+				{
+					"owner_idx": 4,
+					"fighters": 0,
+					"bombers": 0,
+					"infantry": 0,
+					"artillery": 0,
+					"tanks": 0,
+					"aa_guns": 0
+				},
+				{
+					"owner_idx": 2,
+					"fighters": 0,
+					"bombers": 0,
+					"infantry": 0,
+					"artillery": 0,
+					"tanks": 0,
+					"aa_guns": 0
+				}
+			]
+		},
+		{
+			"land_idx": 0,
+			"owner_idx": 2,
+			"factory_hp": 8,
+			"factory_max": 8,
+			"builds_left": 0
+		},
+		{
+			"owner_idx": 1,
+			"factory_hp": 10,
+			"factory_max": 10,
+			"builds_left": 0
+		},
+		{
+			"owner_idx": 0,
+			"factory_hp": 8,
+			"factory_max": 8,
+			"builds_left": 8
+		},
+		{
+			"owner_idx": 3,
+			"factory_hp": 8,
+			"factory_max": 8,
+			"builds_left": 0
+		}
+	],
+	"sea_states": [
+		{
+			"builds_left": 0,
+			"combat_status": 1,
+			"skipped_moves": [0,1,2],
+			"active_sea_units": {
+				"fighters": [0,0,0,0,0],
+				"trans_empty": [0,0,0,0],
+				"trans_1i": [0,0,0,0,0]
+			},
+			"idle_sea_units": [
+				{
+					"owner_idx": 4,
+					"fighters": 0,
+					"trans_empty": 0,
+					"trans_1i": 0,
+					"trans_1a": 0,
+					"trans_1t": 0,
+					"trans_2i": 0,
+					"trans_1i_1a": 0,
+					"trans_1i_1t": 0,
+					"submarines": 0,
+					"destroyers": 0,
+					"carriers": 0,
+					"cruisers": 0,
+					"battleships": 0,
+					"bs_damaged": 0,
+					"bombers": 0
+				},
+				{
+					"owner_idx": 2,
+					"fighters": 0
+				}
+			]
+		}
+	]
+}

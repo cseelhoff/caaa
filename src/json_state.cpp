@@ -6,7 +6,7 @@
 
 using json = nlohmann::json;
 
-bool load_game_state_from_json(const std::string& filename, GameState& gameState) {
+bool load_game_state_from_json(const std::string& filename, GameStateJson& gameState) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Could not open the file: " << filename << std::endl;
@@ -39,7 +39,7 @@ void from_json(const json& jsonData, BitField& bField) {
 }
 
 // Serialization and deserialization functions for LandState
-void to_json(json& jsonData, const LandState& lState) {
+void to_json(json& jsonData, const LandStateJson& lState) {
     jsonData = json{{"owner_idx", lState.owner_idx},
              {"factory_dmg", lState.factory_dmg},
              {"factory_max", lState.factory_max},
@@ -52,7 +52,7 @@ void to_json(json& jsonData, const LandState& lState) {
              {"aa_guns", lState.aa_guns}};
 }
 
-void from_json(const json& jsonData, LandState& lState) {
+void from_json(const json& jsonData, LandStateJson& lState) {
     lState.owner_idx = jsonData.at("owner_idx").get<uint>();
     lState.factory_dmg = jsonData.value("factory_dmg", 0U);
     lState.factory_max = jsonData.value("factory_max", 0U);
@@ -66,7 +66,7 @@ void from_json(const json& jsonData, LandState& lState) {
 }
 
 // Serialization and deserialization functions for UnitsSea
-void to_json(json& jsonData, const UnitsSea& uSea) {
+void to_json(json& jsonData, const SeaState& uSea) {
     jsonData = json({{"fighters", uSea.fighters},       {"trans_empty", uSea.trans_empty},
              {"trans_1i", uSea.trans_1i},       {"trans_1a", uSea.trans_1a},
              {"trans_1t", uSea.trans_1t},       {"trans_2i", uSea.trans_2i},
@@ -77,7 +77,7 @@ void to_json(json& jsonData, const UnitsSea& uSea) {
              {"bombers", uSea.bombers}});
 }
 
-void from_json(const json& jsonData, UnitsSea& uSea) {
+void from_json(const json& jsonData, SeaState& uSea) {
     uSea.fighters = jsonData.value("fighters", Fighterstates{});
     uSea.trans_empty = jsonData.value("trans_empty", TransEmptystates{});
     uSea.trans_1i = jsonData.value("trans_1i", Trans1istates{});
@@ -96,28 +96,28 @@ void from_json(const json& jsonData, UnitsSea& uSea) {
 }
 
 //Serialization and deserialization functions for GameState
-void to_json(json& jsonData, const GameState& gameState) {
+void to_json(json& jsonData, const GameStateJson& gameState) {
     jsonData = json{
-        {"player_index", gameState.player_index},
+        {"player_index", gameState.current_turn},
         {"money", gameState.money},
         {"builds_left", gameState.builds_left},
-        {"land_state", gameState.land_state},
-        {"units_sea", gameState.units_sea},
-        {"other_land_units", gameState.other_land_units},
-        {"other_sea_units", gameState.other_sea_units},
+        {"land_state", gameState.land_states},
+        {"units_sea", gameState.sea_states},
+        {"other_land_units", gameState.idle_land_units},
+        {"other_sea_units", gameState.idle_sea_units},
         {"combat_status", gameState.combat_status},
         {"skipped_moves", gameState.skipped_moves}
     };
 }
 
-void from_json(const json& jsonData, GameState& gameState) {
-    gameState.player_index = jsonData.value("player_index", 0U);
+void from_json(const json& jsonData, GameStateJson& gameState) {
+    gameState.current_turn = jsonData.value("player_index", 0U);
     gameState.money = jsonData.value("money", PlayersArray{});
     gameState.builds_left = jsonData.value("builds_left", AirArray{});
-    gameState.land_state = jsonData.value("land_state", LandStateArray{});
-    gameState.units_sea = jsonData.value("units_sea", SeaStateArray{});
-    gameState.other_land_units = jsonData.value("other_land_units", OplayerLandUTArray{});
-    gameState.other_sea_units = jsonData.value("other_sea_units", OplayerSeaUTArray{});
+    gameState.land_states = jsonData.value("land_state", LandStateArray{});
+    gameState.sea_states = jsonData.value("units_sea", SeaStateArray{});
+    gameState.idle_land_units = jsonData.value("other_land_units", OplayerLandUTArray{});
+    gameState.idle_sea_units = jsonData.value("other_sea_units", OplayerSeaUTArray{});
     gameState.combat_status = jsonData.value("combat_status", AirArray{});
     gameState.skipped_moves = jsonData.value("skipped_moves", BfAirAirArray{});
 }

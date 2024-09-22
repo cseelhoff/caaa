@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   // write_json_to_file("game_data_0.json", json);
   //cJSON_Delete(json);
   load_game_data("game_data.json");
-  GameState* initial_state = get_game_state_copy();
+  GameStateJson* initial_state = get_game_state_copy();
   // Initialize the game state
 
   MCTSNode* root = mcts_search(initial_state, iterations);

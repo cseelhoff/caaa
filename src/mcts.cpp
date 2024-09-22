@@ -9,19 +9,19 @@
 #include <memory>
 
 // Function prototypes for game-specific logic
-extern GameState* clone_state(GameState* state);
-extern void get_possible_actions(GameState* state, uint* num_actions, ActionsPtr actions);
-extern void apply_action(GameState* state, uint action);
-extern bool is_terminal_state(GameState* state);
-extern double evaluate_state(GameState* state);
-extern double random_play_until_terminal(GameState* state);
+extern GameStateJson* clone_state(GameStateJson* state);
+extern void get_possible_actions(GameStateJson* state, uint* num_actions, ActionsPtr actions);
+extern void apply_action(GameStateJson* state, uint action);
+extern bool is_terminal_state(GameStateJson* state);
+extern double evaluate_state(GameStateJson* state);
+extern double random_play_until_terminal(GameStateJson* state);
 
 constexpr double EXPLORATION_CONSTANT = 1.414;
 //#define EXPLORATION_CONSTANT 2
 
 bool check5 = false;
 
-static std::unique_ptr<MCTSNode> create_node(GameState* state, uint action, MCTSNode* parent) {
+static std::unique_ptr<MCTSNode> create_node(GameStateJson* state, uint action, MCTSNode* parent) {
   auto node = std::make_unique<MCTSNode>();
   node->state = *state; //*clone_state(state);
   node->action = action;
@@ -51,7 +51,7 @@ static MCTSNode* select_best_leaf(MCTSNode* node) {
   return best_child;
 }
 
-MCTSNode* mcts_search(GameState* initial_state, uint iterations) {
+MCTSNode* mcts_search(GameStateJson* initial_state, uint iterations) {
   auto root = create_node(initial_state, 0, nullptr);
   constexpr uint PRINT_INTERVAL = 500;
 
@@ -70,7 +70,7 @@ MCTSNode* mcts_search(GameState* initial_state, uint iterations) {
     // backpropagate
     while (node != nullptr) {
       node->visits++;
-      if (node->parent != nullptr && node->parent->state.player_index % 2 == 0) {
+      if (node->parent != nullptr && node->parent->state.current_turn % 2 == 0) {
         node->value += result;
       } else {
         node->value += 1 - result;
@@ -90,7 +90,7 @@ void expand_node(MCTSNode* node) {
   get_possible_actions(&node->state, &num_actions, actionsPtr);
   node->children.reserve(num_actions);
   for (uint i = 0; i < num_actions; i++) {
-    GameState* new_state = clone_state(&node->state);
+    GameStateJson* new_state = clone_state(&node->state);
     uint next_action = actions[i];
     apply_action(new_state, next_action);
     node->children.push_back(create_node(new_state, next_action, node));
@@ -178,7 +178,7 @@ void print_mcts_tree3(MCTSNode* node, uint depth) {
     return;
   }
   if (node->parent != nullptr) {
-    std::cout << PLAYERS[node->parent->state.player_index].color << "Action: " << node->action
+    std::cout << PLAYERS[node->parent->state.current_turn].color << "Action: " << node->action
               << ", Visits: " << node->visits << ", Value: " << std::fixed << std::setprecision(2)
               << node->value << ", Avg:" << std::fixed << std::setprecision(4)
               << (node->value / node->visits) << "\033[0m" << std::endl;

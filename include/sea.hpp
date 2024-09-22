@@ -3,7 +3,7 @@
 #include <limits>
 #include <sys/types.h>
 
-#define SEAS_COUNT 3
+constexpr uint SEAS_COUNT = 3;
 #define MAX_SEA_TO_LAND_CONNECTIONS 6
 #define MAX_SEA_TO_SEA_CONNECTIONS 7
 #define MAX_INT std::numeric_limits<int>::max()
