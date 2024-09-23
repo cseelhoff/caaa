@@ -5,6 +5,7 @@
 #include <array>
 #include <limits>
 #include <sys/types.h>
+#include <vector>
 
 #define MIN_AIR_HOPS 2
 #define MAX_AIR_HOPS 6
@@ -35,6 +36,7 @@ using SeaS2SArray = std::array<S2SConn, SEAS_COUNT>;
 using SeaS2LArray = std::array<S2LConn, SEAS_COUNT>;
 using FightermovesAirArray = std::array<AirArray, FIGHTER_MOVES_MAX>;
 using FightermovesAirAirArray = std::array<AirAirArray, FIGHTER_MOVES_MAX>;
+using PlayersPlayersVector = std::array<std::vector<uint>, PLAYERS_COUNT>;
 
 extern LandArray LAND_VALUE;
 extern LandAirArray LAND_DIST;
@@ -68,6 +70,8 @@ extern SeaArray SEA_TO_LAND_COUNT;
 extern SeaS2LArray SEA_TO_LAND_CONN;
 extern FightermovesAirAirArray AIRS_X_TO_4_MOVES_AWAY;
 extern FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT;
+extern PlayersPlayersVector ENEMIES;
+extern PlayerArray PLAYER_TEAM;
 
 void initialize_constants();
 
@@ -111,3 +115,4 @@ void initialize_air_to_land_within_x_moves();
 
 void intialize_airs_x_to_4_moves_away();
 void initialize_skip_4air_precals();
+void initialize_enemies();

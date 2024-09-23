@@ -1,22 +1,22 @@
 #pragma once
 #include "game_state_memory.hpp"
 #include "canal.hpp"
-#include "map_cache.hpp"
 #include "land.hpp"
+#include "map_cache.hpp"
 #include "sea.hpp"
 #include "units/fighter.hpp"
 #include <string>
 #include <sys/types.h>
 
-#define STRING_BUFFER_SIZE 64
-#define PRINTABLE_GAME_STATUS_SIZE 4096
-#define RANDOM_NUMBERS_SIZE 65536
+constexpr uint RANDOM_MAX = 65536;
+constexpr uint ACTION_COUNT = std::max<uint>(AIRS_COUNT, SEA_UNIT_TYPES_COUNT + 1);
 
+using Actions = std::array<uint, ACTION_COUNT>;
 using PtrSeaunittypes = std::array<uint*, SEA_UNIT_TYPES_COUNT>;
 using PtrAirunittypes = std::array<uint*, AIR_UNIT_TYPES_COUNT>;
 using PtrLandunittypes = std::array<uint*, LAND_UNIT_TYPES_COUNT>;
 using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
-using RandomNumberArray = std::array<uint, RANDOM_NUMBERS_SIZE>;
+using RandomNumberArray = std::array<uint, RANDOM_MAX>;
 using Playersbuf = std::array<uint, PLAYERS_COUNT_P1>;
 using PlayersbufLandArray = std::array<LandArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaArray = std::array<SeaArray, PLAYERS_COUNT_P1>;
@@ -41,17 +41,7 @@ void apply_skip(uint src_air, uint dst_air);
 void load_game_data(const std::string& filename);
 
 void play_full_turn();
-void refresh_full_cache();
-void refresh_eot_cache();
-void refresh_economy();
-void refresh_land_armies();
-void refresh_sea_navies();
-void refresh_allies();
-void refresh_canals();
-void refresh_enemy_armies();
-void refresh_fleets();
-void refresh_land_path_blocked();
-void refresh_sea_path_blocked();
+
 
 void setPrintableStatus();
 void setPrintableStatusLands();
@@ -113,14 +103,14 @@ void debug_checks();
 void sea_retreat(uint src_sea, uint retreat);
 void set_seed(int16_t seed);
 
-GameStateJson* clone_state(GameStateJson* game_state);
+GameStateMemory* clone_state(GameStateMemory* game_state);
 
-void get_possible_actions(GameStateJson* game_state, int* num_actions, ActionsPtr actions);
-void apply_action(GameStateJson* game_state, uint action);
-bool is_terminal_state(GameStateJson* game_state);
-double evaluate_state(GameStateJson* game_state);
-double random_play_until_terminal(GameStateJson* game_state);
-GameStateJson* get_game_state_copy();
+void get_possible_actions(GameStateMemory* game_state, uint* num_actions, Actions actions);
+void apply_action(GameStateMemory* game_state, uint action);
+bool is_terminal_state(GameStateMemory* game_state);
+double evaluate_state(GameStateMemory* game_state);
+double random_play_until_terminal(GameStateMemory* game_state);
+GameStateMemory* get_game_state_copy();
 
 void load_single_game();
 bool end_turn();

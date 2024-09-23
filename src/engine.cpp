@@ -1,9 +1,10 @@
 #include "array_functions.hpp"
 #include "engine.hpp"
-#include "game_state_json.hpp"
-#include "game_state_memory.hpp"
 #include "json_state.hpp"
+#include "game_cache.hpp"
+#include "game_state_memory.hpp"
 #include "land.hpp"
+#include "map_cache.hpp"
 #include "mcts.hpp"
 #include "player.hpp"
 #include "sea.hpp"
@@ -16,6 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 SeaSeaArray seas_within_1_move_canal = {{{0}}};
 SeaArray seas_within_1_move_count_canal = {0};
@@ -60,8 +62,8 @@ BoolSeaSeaArray is_sub_path_blocked = {{{false}}};
 SeaArray transports_with_large_cargo_space;
 SeaArray transports_with_small_cargo_space;
 
-Playersbuf enemies_0 = {0};
-BoolPlayersbuf is_allied_0 = {false};
+std::vector<uint> enemies_0;
+BoolPlayerArray is_allied_0 = {false};
 uint enemies_count_0 = 0;
 uint canal_state = 0;
 SeaArray allied_carriers = {0};
@@ -92,8 +94,6 @@ void initialize_constants() {
   initialize_random_numbers();
 }
 
-constexpr uint RANDOM_MAX = 65536;
-constexpr uint ACTION_COUNT = std::max<uint>(AIRS_COUNT, SEA_UNIT_TYPES_COUNT + 1);
 void initialize_random_numbers() {
   for (uint i = 0; i < RANDOM_MAX; i++) {
     // NOLINTNEXTLINE(cert-msc50-cpp, concurrency-mt-unsafe, cert-msc30-c)
@@ -150,174 +150,26 @@ void load_game_data(GameStateMemory &memState, const std::string& filename) {
   convert_json_to_memory(jsonState, memState);
   refresh_full_cache();
 }
-void refresh_full_cache() {
+void refresh_full_cache(GameStateMemory& state, GameCache& cache) {
   refresh_economy();
   refresh_land_armies();
   refresh_sea_navies();
   refresh_allies();
   refresh_canals();
-  refresh_enemy_armies();
+  refresh_economy(&state, &cache);
   refresh_fleets();
   refresh_land_path_blocked();
   refresh_sea_path_blocked();
 }
-void refresh_eot_cache() {
+void refresh_eot_cache(GameStateMemory& state, GameCache& cache) {
   refresh_allies();
   refresh_canals();
-  refresh_enemy_armies();
+  refresh_economy(&state, &cache);
   refresh_fleets();
   refresh_land_path_blocked();
   refresh_sea_path_blocked();
 }
-void refresh_economy() {
-  for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    income_per_turn[player_idx] = 0;
-    total_factory_count[player_idx] = 0;
-  }
-}
-void refresh_land_armies() {
-  FILL_2D_ARRAY(current_player_land_unit_types, 0);
-  FILL_2D_ARRAY(total_player_land_units, 0);
-  for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    uint land_owner = *owner_idx[land_idx];
-    if (*factory_max[land_idx] > 0) {
-      factory_locations[land_owner][total_factory_count[land_owner]++] = land_idx;
-    }
-    income_per_turn[land_owner] += LANDS[land_idx].land_value;
-    Landunittypes cp_land_unit_types_land = current_player_land_unit_types[land_idx];
-    PtrLandunittypes land_units_state_land = land_units_state[land_idx];
-    for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-      uint* cp_land_unit_types_land_unit = &cp_land_unit_types_land[unit_idx];
-      uint* land_units_state_land_unit = land_units_state_land.at(unit_idx);
-      uint total_states = STATES_MOVE_LAND[unit_idx];
-      for (uint unit_state_idx = 0; unit_state_idx < total_states; unit_state_idx++) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        *cp_land_unit_types_land_unit += land_units_state_land_unit[unit_state_idx];
-      }
-    }
-    for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-      uint* cur_units_land_player_total = &total_player_land_units[player_idx][land_idx];
-      for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-        *cur_units_land_player_total +=
-            total_player_land_unit_types[player_idx][land_idx][unit_idx];
-      }
-    }
-  }
-}
-void refresh_sea_navies() {
-  FILL_2D_ARRAY(current_player_sea_unit_types, 0);
-  FILL_2D_ARRAY(total_player_sea_units, 0);
-  for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
-      uint total_states = STATES_MOVE_SEA[unit_idx];
-      for (uint unit_state_idx = 0; unit_state_idx < total_states; unit_state_idx++) {
-        current_player_sea_unit_types[sea_idx][unit_idx] +=
-            sea_units_state[sea_idx][unit_idx][unit_state_idx];
-      }
-    }
-    for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-      uint* cur_units_sea_player_total = &total_player_sea_units[player_idx][sea_idx];
-      Seaunittypes total_player_sea_unit_types_player =
-          total_player_sea_unit_types[player_idx][sea_idx];
-      for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT - 1; unit_idx++) {
-        *cur_units_sea_player_total += total_player_sea_unit_types_player[unit_idx];
-      }
-    }
-  }
-}
-void refresh_allies() {
-  enemies_count_0 = 0;
-  for (uint player_idx1 = 0; player_idx1 < PLAYERS_COUNT; player_idx1++) {
-    is_allied_0[player_idx1] =
-        PLAYERS[state.current_turn].is_allied[(state.current_turn + player_idx1) % PLAYERS_COUNT];
-    if (!is_allied_0[player_idx1]) {
-      enemies_0[enemies_count_0++] = player_idx1;
-    }
-  }
-}
 
-void refresh_canals() {
-  canal_state = 0;
-  for (uint canal_idx = 0; canal_idx < CANALS_COUNT; canal_idx++) {
-    if (is_allied_0[*owner_idx[CANALS[canal_idx].lands[0]]] &&
-        is_allied_0[*owner_idx[CANALS[canal_idx].lands[1]]]) {
-      canal_state += 1U << canal_idx;
-    }
-  }
-  using std::begin;
-  using std::copy;
-  using std::end;
-  COPY_FULL_ARRAY(SEA_DIST[canal_state], sea_dist);
-  COPY_FULL_ARRAY(SEA_PATH[canal_state], sea_path);
-  COPY_FULL_ARRAY(SEA_PATH_ALT[canal_state], sea_path_alt);
-  COPY_FULL_ARRAY(SEAS_WITHIN_1_MOVE[canal_state], seas_within_1_move_canal);
-  COPY_FULL_ARRAY(SEAS_WITHIN_2_MOVES[canal_state], seas_within_2_moves_canal);
-  COPY_FULL_ARRAY(SEAS_WITHIN_1_MOVE_COUNT[canal_state], seas_within_1_move_count_canal);
-  COPY_FULL_ARRAY(SEAS_WITHIN_2_MOVES_COUNT[canal_state], seas_within_2_moves_count_canal);
-}
-void refresh_enemy_armies() {
-  FILL_ARRAY(enemy_units_count, 0);
-  for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    for (uint enemy_idx1 = 0; enemy_idx1 < enemies_count_0; enemy_idx1++) {
-      uint ememy_player_idx = enemies_0[enemy_idx1];
-      enemy_units_count[land_idx] += total_player_land_units[ememy_player_idx][land_idx];
-    }
-  }
-}
-void refresh_fleets() {
-  FILL_ARRAY(enemy_destroyers_total, 0);
-  FILL_ARRAY(enemy_blockade_total, 0);
-  for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    uint air_idx = sea_idx + LANDS_COUNT;
-    Seaunittypes sea_units_0 = current_player_sea_unit_types[sea_idx];
-    allied_carriers[sea_idx] = sea_units_0[CARRIERS];
-    for (uint player_idx = 1; player_idx < PLAYERS_COUNT; player_idx++) {
-      Seaunittypes sea_units = total_player_sea_unit_types[player_idx][sea_idx];
-      if (is_allied_0[player_idx]) {
-        allied_carriers[sea_idx] += sea_units[CARRIERS];
-      } else {
-        enemy_units_count[air_idx] += total_player_sea_units[player_idx][sea_idx];
-        enemy_destroyers_total[sea_idx] += sea_units[DESTROYERS];
-        enemy_blockade_total[sea_idx] += sea_units[DESTROYERS] + sea_units[CARRIERS] +
-                                         sea_units[CRUISERS] + sea_units[BATTLESHIPS] +
-                                         sea_units[BS_DAMAGED];
-      }
-    }
-    transports_with_large_cargo_space[sea_idx] = sea_units_0[TRANS_EMPTY] + sea_units_0[TRANS_1I];
-    transports_with_small_cargo_space[sea_idx] = sea_units_0[TRANS_EMPTY] + sea_units_0[TRANS_1I] +
-                                                 sea_units_0[TRANS_1A] + sea_units_0[TRANS_1T];
-  }
-}
-void refresh_land_path_blocked() {
-  for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    uint lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
-    LandArray lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
-    for (uint conn_idx = 0; conn_idx < lands_within_2_moves_count; conn_idx++) {
-      uint dst_land = lands_within_2_moves[conn_idx];
-      uint nextLandMovement = LAND_PATH[src_land][dst_land];
-      uint nextLandMovementAlt = LAND_PATH_ALT[src_land][dst_land];
-      is_land_path_blocked[src_land][dst_land] =
-          (enemy_units_count[nextLandMovement] > 0 || *factory_max[nextLandMovement] > 0) &&
-          (enemy_units_count[nextLandMovementAlt] > 0 || *factory_max[nextLandMovementAlt] > 0);
-    }
-  }
-}
-void refresh_sea_path_blocked() {
-  for (uint src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    //    for (uint dst_sea = 0; dst_sea < SEAS_COUNT; dst_sea++) { // todo this seems excessive
-    uint seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
-    SeaArray seas_within_2_moves = SEAS_WITHIN_2_MOVES[canal_state][src_sea];
-    for (uint conn_idx = 0; conn_idx < seas_within_2_moves_count; conn_idx++) {
-      uint dst_sea = seas_within_2_moves[conn_idx];
-      uint nextSeaMovement = sea_path[src_sea][dst_sea];
-      uint nextSeaMovementAlt = sea_path_alt[src_sea][dst_sea];
-      is_sea_path_blocked[src_sea][dst_sea] =
-          enemy_blockade_total[nextSeaMovement] > 0 && enemy_blockade_total[nextSeaMovementAlt] > 0;
-      is_sub_path_blocked[src_sea][dst_sea] = enemy_destroyers_total[nextSeaMovement] > 0 &&
-                                              enemy_destroyers_total[nextSeaMovementAlt] > 0;
-    }
-  }
-}
 void set_seed(uint new_seed) {
   seed = new_seed;
   random_number_index = new_seed;

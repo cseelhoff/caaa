@@ -1,11 +1,12 @@
 #pragma once
+#include "array_functions.hpp"
+#include "canal.hpp"
 #include <array>
 #include <sys/types.h>
 
-#define LANDS_COUNT 5
-#define MAX_LAND_TO_SEA_CONNECTIONS 4
-#define MAX_LAND_TO_LAND_CONNECTIONS 6
-#define LAND_ALIGNMENT 64
+constexpr uint LANDS_COUNT = 5;
+constexpr uint MAX_LAND_TO_SEA_CONNECTIONS = 4;
+constexpr uint MAX_LAND_TO_LAND_CONNECTIONS = 6 ;
 
 using L2LConn = std::array<uint, MAX_LAND_TO_LAND_CONNECTIONS>;
 using L2SConn = std::array<uint, MAX_LAND_TO_SEA_CONNECTIONS>;
@@ -20,7 +21,7 @@ struct Land {
   uint land_conn_count;
   L2SConn sea_conns;
   L2LConn land_conns;
-} __attribute__((aligned(LAND_ALIGNMENT)));
+} __attribute__((aligned(ALIGNMENT_64)));
 
 using LandStructs = std::array<Land, LANDS_COUNT>;
 

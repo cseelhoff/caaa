@@ -32,8 +32,6 @@ using Destroyerstates = std::array<uint, DESTROYER_STATES>;
 using Carrierstates = std::array<uint, CARRIER_STATES>;
 using Cruiserstates = std::array<uint, CRUISER_STATES>;
 using Battleshipstates = std::array<uint, BATTLESHIP_STATES>;
-using LandUTArray = std::array<Landunittypes, LANDS_COUNT>;
-using SeaUTArray = std::array<Seaunittypes, SEAS_COUNT>;
 using OplayerLandUTArray = std::array<LandUTArray, PLAYERS_COUNT - 1>;
 using OplayerSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT - 1>;
 using BfAirArray = std::array<BitField, AIRS_COUNT>;
@@ -122,7 +120,7 @@ using SeaStateArray = std::array<SeaStateJson, SEAS_COUNT>;
 struct GameStateJson {
   uint current_turn{};
   uint seed{};
-  PlayersArray money{};
+  PlayerArray money{};
   LandStateArray land_states;
   SeaStateArray sea_states;
 } __attribute__((aligned(ALIGNMENT_128)));

@@ -1,5 +1,7 @@
 #include "map_cache.hpp"
 #include "array_functions.hpp"
+#include "game_state_memory.hpp"
+#include "player.hpp"
 
 LandArray LAND_VALUE = {0};
 LandAirArray LAND_DIST = {{{0}}};
@@ -33,8 +35,10 @@ SeaArray SEA_TO_LAND_COUNT = {0};
 SeaS2LArray SEA_TO_LAND_CONN = {{{0}}};
 FightermovesAirAirArray AIRS_X_TO_4_MOVES_AWAY = {{{{{0}}}}};
 FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT = {{{0}}};
+PlayerArray PLAYER_TEAM = {{0}};
 
 void initialize_constants() {
+  initialize_enemies();
   initialize_land_dist();
   land_dist_floyd_warshall();
   initialize_sea_dist();
@@ -45,7 +49,16 @@ void initialize_constants() {
   intialize_airs_x_to_4_moves_away();
   initialize_skip_4air_precals();
 }
-
+void initialize_enemies() {
+  for (uint player = 0; player < PLAYERS_COUNT; player++) {
+    PLAYER_TEAM[player] = PLAYERS[player].team;
+    for (uint enemy = 0; enemy < PLAYERS_COUNT; enemy++) {
+      if (!PLAYERS[player].is_allied[enemy]) {
+        ENEMIES[player].push_back(enemy);
+      }
+    }
+  }
+}
 void initialize_land_dist() {
   FILL_2D_ARRAY(LAND_DIST, MAX_INT)
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
