@@ -44,3 +44,27 @@ public:
 private:
     ArrayType data_;
 };
+template <std::size_t Rows, std::size_t Cols>
+class Bool2DArray {
+public:
+    using ArrayType = std::array<bool, Rows * Cols>;
+
+    [[nodiscard]] bool val(std::size_t row, std::size_t col) const {
+        return data_[row * Cols + col];
+    }
+
+    bool& ref(std::size_t row, std::size_t col) {
+        return data_[row * Cols + col];
+    }
+
+    void fill(const bool& value) {
+        data_.fill(value);
+    }
+
+    std::array<bool, Cols>& arr(std::size_t row) {
+        return &data_[row * Cols];
+    }
+
+private:
+    ArrayType data_;
+};

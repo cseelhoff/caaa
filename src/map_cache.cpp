@@ -10,7 +10,7 @@ AirA2AArray AIR_CONNECTIONS = {{{0}}};
 AirAirArray AIR_DIST = {{{0}}};
 LandAirArray LAND_PATH = {{{MAX_INT}}};
 LandAirArray LAND_PATH_ALT = {{{MAX_INT}}};
-LandLandArray LANDS_WITHIN_2_MOVES = {{{0}}};
+LandLandArray LANDS_WITHIN_2_MOVES;
 LandArray LANDS_WITHIN_2_MOVES_COUNT = {0};
 LandSeaArray LOAD_WITHIN_2_MOVES = {{{0}}};
 LandArray LOAD_WITHIN_2_MOVES_COUNT = {0};

@@ -27,10 +27,6 @@ using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
 using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
 using BoolPlayersbuf = std::array<bool, PLAYERS_COUNT_P1>;
-using BoolSeaArray = std::array<bool, SEAS_COUNT>;
-using BoolSeaSeaArray = std::array<BoolSeaArray, SEAS_COUNT>;
-using BoolLandArray = std::array<bool, LANDS_COUNT>;
-using BoolLandLandArray = std::array<BoolLandArray, LANDS_COUNT>;
 
 void initialize_random_numbers();
 void initialize_land_pointers();

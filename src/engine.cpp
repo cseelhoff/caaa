@@ -19,60 +19,8 @@
 #include <unistd.h>
 #include <vector>
 
-SeaSeaArray seas_within_1_move_canal = {{{0}}};
-SeaArray seas_within_1_move_count_canal = {0};
-SeaSeaArray seas_within_2_moves_canal = {{{0}}};
-SeaArray seas_within_2_moves_count_canal = {0};
-SeaSeaArray sea_dist = {{{0}}};
-SeaSeaArray sea_path = {{{MAX_INT}}};
-SeaSeaArray sea_path_alt = {{{MAX_INT}}};
-
 RandomNumberArray RANDOM_NUMBERS = {0};
 uint random_number_index = 0;
-uint seed = 0;
-
-PtrLandUTArray land_units_state;
-PtrSeaUTArray sea_units_state;
-PtrAirUTArray air_units_state;
-PlayersbufLandUTArray total_player_land_unit_types;
-PlayersbufSeaUTArray total_player_sea_unit_types;
-PtrLandArray owner_idx;
-PtrLandArray factory_max;
-PtrLandArray bombard_max;
-PtrLandArray factory_dmg;                   // no negative
-LandUTArray current_player_land_unit_types; // temp
-SeaUTArray current_player_sea_unit_types;   // temp
-LandUTArray total_land_unit_types_temp;     // temp
-SeaUTArray total_sea_units_temp;            // temp
-Playersbuf income_per_turn = {0};
-Playersbuf total_factory_count = {0};
-PlayersbufLandArray factory_locations = {{{0}}};
-PlayersbufLandArray total_player_land_units = {{{0}}};
-PlayersbufSeaArray total_player_sea_units = {{{0}}};
-AirAirArray hist_skipped_airs = {{{0}}};
-AirAirArray hist_source_territories = {{{0}}};
-AirArray hist_source_territories_count = {0};
-
-// int units_sea_blockade_total[PLAYERS_COUNT][SEAS_COUNT];
-SeaArray enemy_blockade_total = {0};
-SeaArray enemy_destroyers_total = {0};
-BoolLandLandArray is_land_path_blocked = {{{false}}};
-BoolSeaSeaArray is_sea_path_blocked = {{{false}}};
-BoolSeaSeaArray is_sub_path_blocked = {{{false}}};
-SeaArray transports_with_large_cargo_space;
-SeaArray transports_with_small_cargo_space;
-
-std::vector<uint> enemies_0;
-BoolPlayerArray is_allied_0 = {false};
-uint enemies_count_0 = 0;
-uint canal_state = 0;
-SeaArray allied_carriers = {0};
-AirArray enemy_units_count = {0};
-BoolAirArray canFighterLandHere = {false};
-BoolAirArray canFighterLandIn1Move = {false};
-BoolAirArray canBomberLandHere = {false};
-BoolAirArray canBomberLandIn1Move = {false};
-BoolAirArray canBomberLandIn2Moves = {false};
 uint step_id = 0;
 uint answers_remaining = 0;
 bool use_selected_action = false;
@@ -88,6 +36,9 @@ uint unlucky_player_idx = 0;
 //  skip_precals in format: src_air, dst_air: array of src_air's to skip
 AirAirAirArray skip_4air_precals = {{{{{0}}}}};
 AirAirArray skip_4air_precals_count = {{{0}}};
+AirAirArray hist_skipped_airs = {{{0}}};
+AirAirArray hist_source_territories = {{{0}}};
+AirArray hist_source_territories_count = {0};
 
 void initialize_constants() {
   actually_print = PLAYERS[0].is_human;
@@ -148,26 +99,8 @@ void load_game_data(GameStateMemory &memState, const std::string& filename) {
     throw std::runtime_error("Failed to load game state from file: " + filename);
   }
   convert_json_to_memory(jsonState, memState);
-  refresh_full_cache();
-}
-void refresh_full_cache(GameStateMemory& state, GameCache& cache) {
-  refresh_economy();
-  refresh_land_armies();
-  refresh_sea_navies();
-  refresh_allies();
-  refresh_canals();
-  refresh_economy(&state, &cache);
-  refresh_fleets();
-  refresh_land_path_blocked();
-  refresh_sea_path_blocked();
-}
-void refresh_eot_cache(GameStateMemory& state, GameCache& cache) {
-  refresh_allies();
-  refresh_canals();
-  refresh_economy(&state, &cache);
-  refresh_fleets();
-  refresh_land_path_blocked();
-  refresh_sea_path_blocked();
+  GameCache cache;
+  refresh_full_cache(memState, cache);
 }
 
 void set_seed(uint new_seed) {
@@ -796,7 +729,7 @@ void add_valid_land_moves(uint src_land, uint moves_remaining, uint unit_type) {
       if (state.skipped_moves[src_land][dst_land].bit) {
         continue;
       }
-      if (is_non_combat_unit && !is_allied_0[*owner_idx[dst_land]]) {
+      if (is_non_combat_unit && !PLAYERS[state.current_turn].is_allied[*owner_idx[dst_land]]) {
         continue;
       }
       valid_moves[valid_moves_count++] = dst_land;
@@ -977,7 +910,7 @@ void pre_move_fighter_units() {
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     uint land_owner = *owner_idx[land_idx];
     // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] = (is_allied_0[land_owner] && state.combat_status[land_idx] == 0);
+    canFighterLandHere[land_idx] = (PLAYERS[state.current_turn].is_allied[land_owner] && state.combat_status[land_idx] == 0);
     // check for possiblity to build carrier under fighter
     if (land_owner == state.current_turn && *factory_max[land_idx] > 0) {
       uint land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
@@ -1065,7 +998,7 @@ bool move_fighter_units() {
       }
       uint airDistance = AIR_DIST[src_air][dst_air];
       if (dst_air < LANDS_COUNT) {
-        if (!is_allied_0[*owner_idx[dst_air]]) {
+        if (!PLAYERS[state.current_turn].is_allied[*owner_idx[dst_air]]) {
 #ifdef DEBUG
           if (actually_print) {
             printf("Fighter moving to enemy territory. Automatically flagging for combat\n");
@@ -1117,7 +1050,7 @@ bool move_bomber_units() {
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     // is allied owned and not recently conquered?
     canBomberLandHere[land_idx] =
-        (is_allied_0[*owner_idx[land_idx]] && state.combat_status[land_idx] == 0);
+        (PLAYERS[state.current_turn].is_allied[*owner_idx[land_idx]] && state.combat_status[land_idx] == 0);
   }
   //  refresh_canBomberLandIn1Move
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
