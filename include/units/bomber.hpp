@@ -1,9 +1,13 @@
 #pragma once
-#define BOMBER_NAME "bombers"
-#define BOMBER_ATTACK 4
-#define BOMBER_DEFENSE 1
-#define BOMBER_MOVES_MAX 6
-#define BOMBER_COST 14
-#define BOMBER_RAID_STRENGTH 1
-#define BOMBER_LAND_STATES BOMBER_MOVES_MAX + 1
-#define BOMBER_SEA_STATES BOMBER_MOVES_MAX - 1
+
+#include <string_view>
+#include <sys/types.h>
+
+constexpr std::string_view BOMBER_NAME = "bombers";
+constexpr uint BOMBER_ATTACK = 4;
+constexpr uint BOMBER_DEFENSE = 1;
+constexpr uint BOMBER_MOVES_MAX = 6;
+constexpr uint BOMBER_COST = 14;
+constexpr uint BOMBER_RAID_STRENGTH = 1;
+constexpr uint BOMBER_LAND_STATES = BOMBER_MOVES_MAX + 1;
+constexpr uint BOMBER_SEA_STATES = BOMBER_MOVES_MAX - 1;

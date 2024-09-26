@@ -1,7 +1,7 @@
 #pragma once
 #pragma once
 #include "land.hpp"
-#include "game_state_memory.hpp"
+#include "game_state.hpp"
 #include "player.hpp"
 #include "sea.hpp"
 #include "units/units.hpp"
@@ -125,7 +125,7 @@ struct GameStateJson {
   SeaStateArray sea_states;
 } __attribute__((aligned(ALIGNMENT_128)));
 
-void convert_json_to_memory(GameStateJson jsonState, GameStateMemory memState);
+void convert_json_to_memory(GameStateJson jsonState, GameState memState);
 
 // Serialization and deserialization functions for GameState
 bool load_game_state_from_json(const std::string& filename, GameStateJson& gameState);

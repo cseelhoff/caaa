@@ -1,9 +1,13 @@
 #pragma once
-#define CRUISER_NAME "cruisers"
-#define CRUISER_ATTACK 3
-#define CRUISER_DEFENSE 3
-#define CRUISER_MOVES_MAX 2
-#define CRUISER_COST 10
-#define CRUISER_DONE_MOVING 1
-#define CRUISER_UNMOVED 2
-#define CRUISER_STATES 3
+
+#include <string_view>
+#include <sys/types.h>
+
+constexpr std::string_view CRUISER_NAME = "cruisers";
+constexpr uint CRUISER_ATTACK = 3;
+constexpr uint CRUISER_DEFENSE = 3;
+constexpr uint CRUISER_MOVES_MAX = 2;
+constexpr uint CRUISER_COST = 10;
+constexpr uint CRUISER_DONE_MOVING = 1;
+constexpr uint CRUISER_UNMOVED = 2;
+constexpr uint CRUISER_STATES = 3;

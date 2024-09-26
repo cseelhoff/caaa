@@ -14,6 +14,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include <sys/types.h>
 
 enum SeaUnitTypesEnum {
@@ -51,23 +52,23 @@ enum AirUnitTypeEnum {
     AIR_UNIT_TYPES_COUNT
 };
 
-constexpr int COST_UNIT_SEA_COUNT = 7;
-constexpr int BLOCKADE_UNIT_TYPES_COUNT = 5;
-constexpr int DEFENDER_LAND_UNIT_TYPES_COUNT = 6;
-constexpr int ATTACKER_LAND_UNIT_TYPES_COUNT_1 = 3;
-constexpr int ATTACKER_LAND_UNIT_TYPES_COUNT_2 = 2;
-constexpr int DEFENDER_SEA_UNIT_TYPES_COUNT = 13;
-constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_1 = 2;
-constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_2 = 2;
-constexpr int ATTACKER_SEA_UNIT_TYPES_COUNT_3 = 8;
-#define MAX_INT std::numeric_limits<int>::max()
+constexpr uint COST_UNIT_SEA_COUNT = 7;
+constexpr uint BLOCKADE_UNIT_TYPES_COUNT = 5;
+constexpr uint DEFENDER_LAND_UNIT_TYPES_COUNT = 6;
+constexpr uint ATTACKER_LAND_UNIT_TYPES_COUNT_1 = 3;
+constexpr uint ATTACKER_LAND_UNIT_TYPES_COUNT_2 = 2;
+constexpr uint DEFENDER_SEA_UNIT_TYPES_COUNT = 13;
+constexpr uint ATTACKER_SEA_UNIT_TYPES_COUNT_1 = 2;
+constexpr uint ATTACKER_SEA_UNIT_TYPES_COUNT_2 = 2;
+constexpr uint ATTACKER_SEA_UNIT_TYPES_COUNT_3 = 8;
+constexpr uint MAX_INT = std::numeric_limits<int>::max();
 
 // Define type aliases for the arrays
 using Landunittypes = std::array<uint, LAND_UNIT_TYPES_COUNT>;
 using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
 using LandUTSeaUT = std::array<Seaunittypes, LAND_UNIT_TYPES_COUNT>;
-using LandUnitNames = std::array<const char*, LAND_UNIT_TYPES_COUNT>;
-using SeaUnitNames = std::array<const char*, SEA_UNIT_TYPES_COUNT>;
+using LandUnitNames = std::array<std::string_view, LAND_UNIT_TYPES_COUNT>;
+using SeaUnitNames = std::array<std::string_view, SEA_UNIT_TYPES_COUNT>;
 using BuyableSeaUnits = std::array<uint, COST_UNIT_SEA_COUNT>;
 using BlockadeUnitTypes = std::array<uint, BLOCKADE_UNIT_TYPES_COUNT>;
 using OrderOfLandAttackers1 = std::array<uint, ATTACKER_LAND_UNIT_TYPES_COUNT_1>;

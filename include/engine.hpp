@@ -1,107 +1,75 @@
 #pragma once
-#include "game_state_memory.hpp"
 #include "canal.hpp"
+#include "game_state.hpp"
 #include "land.hpp"
 #include "map_cache.hpp"
 #include "sea.hpp"
 #include "units/fighter.hpp"
 #include <string>
 #include <sys/types.h>
+#include <vector>
 
-using LandUTArray = std::array<Landunittypes, LANDS_COUNT>;
-using SeaUTArray = std::array<Seaunittypes, SEAS_COUNT>;
-using Actions = std::array<uint, ACTION_COUNT>;
-using PtrSeaunittypes = std::array<uint*, SEA_UNIT_TYPES_COUNT>;
-using PtrAirunittypes = std::array<uint*, AIR_UNIT_TYPES_COUNT>;
-using PtrLandunittypes = std::array<uint*, LAND_UNIT_TYPES_COUNT>;
-using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
-using Playersbuf = std::array<uint, PLAYERS_COUNT_P1>;
-using PlayersbufLandArray = std::array<LandArray, PLAYERS_COUNT_P1>;
-using PlayersbufSeaArray = std::array<SeaArray, PLAYERS_COUNT_P1>;
-using PtrLandUTArray = std::array<PtrLandunittypes, LANDS_COUNT>;
-using PtrSeaUTArray = std::array<PtrSeaunittypes, SEAS_COUNT>;
-using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;
-using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
-using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
-using BoolPlayersbuf = std::array<bool, PLAYERS_COUNT_P1>;
+void cause_breakpoint();
+void load_game_data(GameState& state, const std::string& filename);
+void play_full_turn(GameState& state);
 
-void initialize_random_numbers();
-void initialize_land_pointers();
-void initialize_sea_pointers();
+bool move_fighter_units(GameState& state);
+void pre_move_fighter_units(GameState& state);
+void add_valid_fighter_moves(GameState& state, uint src_air);
+void update_move_history_4air(GameState& state, uint src_air, uint dst_air);
+bool move_bomber_units(GameState& state);
+bool stage_transport_units(GameState& state);
+bool move_land_unit_type(GameState& state, uint unit_type);
+bool move_transport_units(GameState& state);
+bool move_subs(GameState& state);
+bool move_destroyers_battleships(GameState& state);
+bool resolve_sea_battles(GameState& state);
+bool unload_transports(GameState& state);
+bool resolve_land_battles(GameState& state);
+bool land_fighter_units(GameState& state);
+bool land_bomber_units(GameState& state);
+bool buy_units(GameState& state);
+void crash_air_units(GameState& state);
+void reset_units_fully(GameState& state);
+void buy_factory(GameState& state);
+void collect_money(GameState& state);
+void rotate_turns(GameState& state);
 
-void apply_skip(uint src_air, uint dst_air);
-
-void load_game_data(const std::string& filename, GameStateMemory& game_state);
-
-void play_full_turn();
-
-uint getUserInput(Actions& valid_moves, uint valid_moves_count);
-uint getAIInput(Actions& valid_moves, uint valid_moves_count);
-
-void build_landMove2Destination();
-void build_landMove1Destination();
-void build_landMove1DestinationAlt();
-void build_airMove2Destination();
-void build_airMove3Destination();
-void build_airMove4Destination();
-void build_airMove5Destination();
-void build_airMove6Destination();
-
-uint get_user_purchase_input(uint src_air);
-uint get_user_move_input(uint unit_type, uint src_air);
-void update_move_history(uint user_input, uint src_air);
-bool load_transport(uint unit_type, uint src_land, uint dst_sea, uint land_unit_state);
-void add_valid_land_moves(uint src_land, uint moves_remaining, uint unit_type);
-void add_valid_sea_moves(uint src_sea, uint moves_remaining);
-void add_valid_sub_moves(uint src_sea, uint moves_remaining);
-bool stage_transport_units();
-void pre_move_fighter_units();
-bool move_fighter_units();
-bool move_bomber_units();
-void conquer_land(uint dst_land);
-bool move_land_unit_type(uint unit_type);
-bool move_transport_units();
-void skip_empty_transports();
-bool move_subs();
-bool move_destroyers_battleships();
-void carry_allied_fighters(uint src_sea, uint dst_sea);
-bool resolve_sea_battles();
-uint ask_to_retreat();
-void remove_land_defenders(uint src_land, uint hits);
-void remove_land_attackers(uint src_land, uint hits);
-void remove_sea_defenders(uint src_sea, uint hits, bool defender_submerged);
-void remove_sea_attackers(uint src_sea, uint hits);
-bool unload_transports();
-bool resolve_land_battles();
-void add_valid_unload_moves(uint src_sea);
-void add_valid_fighter_moves(uint src_air, uint remaining_moves);
-void add_valid_fighter_landing(uint src_air, uint remaining_moves);
-void add_valid_bomber_moves(uint src_air, uint remaining_moves);
-bool land_fighter_units();
-void add_valid_bomber_landing(uint src_air, uint movement_remaining);
-bool land_bomber_units();
-bool buy_units();
-void crash_air_units();
-void reset_units_fully();
-void buy_factory();
-void collect_money();
-void rotate_turns();
-double get_score();
-void debug_checks();
-void sea_retreat(uint src_sea, uint retreat);
-void set_seed(int16_t seed);
-
-GameStateMemory* clone_state(GameStateMemory* game_state);
-
-void get_possible_actions(GameStateMemory* game_state, uint* num_actions, Actions actions);
-void apply_action(GameStateMemory* game_state, uint action);
-bool is_terminal_state(GameStateMemory* game_state);
-double evaluate_state(GameStateMemory* game_state);
-double random_play_until_terminal(GameStateMemory* game_state);
-GameStateMemory* get_game_state_copy();
-
-void load_single_game();
-bool end_turn();
-
-uint get_attacker_hits(uint attacker_damage);
-uint get_defender_hits(uint defender_damage);
+void apply_skip(GameState& state, uint src_air, uint dst_air);
+uint getUserInput(GameState& state, std::vector<uint>& valid_moves);
+uint getAIInput(GameState& state, std::vector<uint>& valid_moves);
+uint get_user_purchase_input(GameState& state, uint src_air);
+uint get_user_move_input(GameState& state, uint unit_type, uint src_air);
+void update_move_history(GameState& state, uint user_input, uint src_air);
+bool load_transport(GameState& state, uint unit_type, uint src_land, uint dst_sea,
+                    uint land_unit_state);
+void add_valid_land_moves(GameState& state, uint src_land, uint moves_remaining, uint unit_type);
+void add_valid_sea_moves(GameState& state, uint src_sea, uint moves_remaining);
+void add_valid_sub_moves(GameState& state, uint src_sea, uint moves_remaining);
+void conquer_land(GameState& state, uint dst_land);
+void skip_empty_transports(GameState& state);
+void carry_allied_fighters(GameState& state, uint src_sea, uint dst_sea);
+uint ask_to_retreat(GameState& state);
+void remove_land_defenders(GameState& state, uint src_land, uint hits);
+void remove_land_attackers(GameState& state, uint src_land, uint hits);
+void remove_sea_defenders(GameState& state, uint src_sea, uint hits, bool defender_submerged);
+void remove_sea_attackers(GameState& state, uint src_sea, uint hits);
+void add_valid_unload_moves(GameState& state, uint src_sea);
+void add_valid_fighter_landing(GameState& state, uint src_air, uint remaining_moves);
+void add_valid_bomber_moves(GameState& state, uint src_air, uint remaining_moves);
+void add_valid_bomber_landing(GameState& state, uint src_air, uint movement_remaining);
+double get_score(GameState& state);
+void debug_checks(GameState& state);
+void sea_retreat(GameState& state, uint src_sea, uint retreat);
+void set_seed(GameState& state, uint seed);
+std::vector<uint> get_possible_actions(GameState* state);
+void apply_action(GameState* state, uint action);
+bool is_terminal_state(GameState* state);
+double evaluate_state(GameState* state);
+double random_play_until_terminal(GameState* state);
+GameState* clone_state(GameState* state);
+GameState* get_game_state_copy(GameState& state);
+void load_single_game(GameState& state, const std::string& filename);
+bool end_turn(GameState& state);
+uint get_attacker_hits(GameState& state, uint attacker_damage);
+uint get_defender_hits(GameState& state, uint defender_damage);

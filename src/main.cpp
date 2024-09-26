@@ -1,5 +1,5 @@
 #include "engine.hpp"
-#include "game_state_memory.hpp"
+#include "game_state.hpp"
 #include "json_state.hpp"
 #include "mcts.hpp"
 #include <iostream>
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   //json = serialize_game_data_to_json(&state);
   // write_json_to_file("game_data_0.json", json);
   //cJSON_Delete(json);
-  GameStateMemory game_state;
+  GameState game_state;
   load_game_data("game_data.json", game_state);
   initialize_map_constants();
   //GameStateJson* initial_state = get_game_state_copy();
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 int main2() {
   std::cout << "Starting CAAA" << std::endl;
   initialize_random_numbers();
-  GameStateMemory game_state;
+  GameState game_state;
   load_game_data("debug_data.json", game_state);
   load_single_game();  
   return 0;

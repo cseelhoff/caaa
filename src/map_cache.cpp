@@ -1,6 +1,6 @@
 #include "map_cache.hpp"
 #include "array_functions.hpp"
-#include "game_state_memory.hpp"
+#include "game_state.hpp"
 #include "player.hpp"
 
 LandArray LAND_VALUE = {0};

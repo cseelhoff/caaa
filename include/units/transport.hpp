@@ -1,14 +1,14 @@
 #pragma once
 #include <string>
 #include <sys/types.h>
-constexpr std::string_view TRANSPORT_NAME = "transempty";
 constexpr uint TRANSPORT_ATTACK = 0;
 constexpr uint TRANSPORT_DEFENSE = 0;
 constexpr uint TRANSPORT_MOVES_MAX = 2;
 constexpr uint TRANSPORT_COST = 8;
 constexpr uint TRANSPORT_CARRY_LAND = 5;
 
-constexpr uint TRANSEMPTY_UNLOADING_STATES = 0;
+constexpr std::string_view TRANSPORT_NAME = "transempty";
+constexpr uint TRANSEMPTY_UNLOADING_STATES = 1;
 constexpr uint TRANSEMPTY_STAGING_STATES = 1;
 constexpr uint TRANSEMPTY_STATES = TRANSPORT_MOVES_MAX + TRANSEMPTY_UNLOADING_STATES + TRANSEMPTY_STAGING_STATES + 1;
 constexpr uint TRANSEMPTY_DONE_MOVING = 0;

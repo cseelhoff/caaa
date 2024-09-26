@@ -1,5 +1,5 @@
 #pragma once
-#include "game_state_memory.hpp"
+#include "game_state.hpp"
 #include <array>
 #include <sys/types.h>
 constexpr uint RANDOM_MAX = 65536;

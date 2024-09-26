@@ -1,8 +1,12 @@
 #pragma once
-#define ARTILLERY_NAME "artillery"
-#define ARTILLERY_ATTACK 2
-#define ARTILLERY_DEFENSE 2
-#define ARTILLERY_MOVES_MAX 1
-#define ARTILLERY_COST 4
-#define ARTILLERY_WEIGHT 3
-#define ARTILLERY_STATES ARTILLERY_MOVES_MAX + 1
+
+#include <string_view>
+#include <sys/types.h>
+
+constexpr std::string_view ARTILLERY_NAME = "artillery";
+constexpr uint ARTILLERY_ATTACK = 2;
+constexpr uint ARTILLERY_DEFENSE = 2;
+constexpr uint ARTILLERY_MOVES_MAX = 1;
+constexpr uint ARTILLERY_COST = 4;
+constexpr uint ARTILLERY_WEIGHT = 3;
+constexpr uint ARTILLERY_STATES = ARTILLERY_MOVES_MAX + 1;

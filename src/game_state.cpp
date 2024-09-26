@@ -1,7 +1,6 @@
-#include "game_cache.hpp"
+#include "game_state.hpp"
 #include "array_functions.hpp"
 #include "engine.hpp"
-#include "game_state_memory.hpp"
 #include "land.hpp"
 #include "map_cache.hpp"
 #include "player.hpp"
@@ -13,27 +12,27 @@
 #include <sys/types.h>
 #include <tuple>
 
-void refresh_full_cache(GameStateMemory& state, GameCache& cache) {
-  refresh_economy(state, cache);
-  refresh_land_armies(state, cache);
-  refresh_sea_navies(state, cache);
-  refresh_allies(state, cache);
-  refresh_canals(state, cache);
-  refresh_economy(state, cache);
-  refresh_fleets(state, cache);
-  refresh_land_path_blocked(state, cache);
-  refresh_sea_path_blocked(cache);
+void refresh_full_cache(GameState& state) {
+  refresh_economy(state);
+  refresh_land_armies(state);
+  refresh_sea_navies(state);
+  refresh_allies(state);
+  refresh_canals(state);
+  refresh_economy(state);
+  refresh_fleets(state);
+  refresh_land_path_blocked(state);
+  refresh_sea_path_blocked(state.cache);
 }
-void refresh_eot_cache(GameStateMemory& state, GameCache& cache) {
-  refresh_allies(state, cache);
-  refresh_canals(state, cache);
-  refresh_economy(state, cache);
-  refresh_fleets(state, cache);
-  refresh_land_path_blocked(state, cache);
-  refresh_sea_path_blocked(cache);
+void refresh_eot_cache(GameState& state) {
+  refresh_allies(state);
+  refresh_canals(state);
+  refresh_economy(state);
+  refresh_fleets(state);
+  refresh_land_path_blocked(state);
+  refresh_sea_path_blocked(state.cache);
 }
 
-void refresh_economy(GameStateMemory& state, GameCache& cache) {
+void refresh_economy(GameState& state, GameCache& cache) {
   cache.income_per_turn.fill(0);
   cache.total_factory_count.fill(0);
   cache.team_units_count.fill(0);
@@ -60,7 +59,7 @@ void refresh_units(std::vector<ArrayType> idle_unit_arrays, GameCache& cache, ui
   }
 }
 
-void refresh_land_units(GameStateMemory& state, GameCache& cache, uint player_idx) {
+void refresh_land_units(GameState& state, GameCache& cache, uint player_idx) {
   std::vector<LandArray> idle_unit_arrays = {
       state.idle_land_fighters.arr(player_idx), state.idle_land_bombers.arr(player_idx),
       state.idle_land_infantry.arr(player_idx), state.idle_land_artillery.arr(player_idx),
@@ -68,7 +67,7 @@ void refresh_land_units(GameStateMemory& state, GameCache& cache, uint player_id
   refresh_units(idle_unit_arrays, cache, player_idx, LANDS_COUNT, 0);
 }
 
-void refresh_sea_units(GameStateMemory& state, GameCache& cache, uint player_idx) {
+void refresh_sea_units(GameState& state, GameCache& cache, uint player_idx) {
   std::vector<SeaArray> idle_unit_arrays = {
       state.idle_sea_fighters.arr(player_idx),    state.idle_sea_transempty.arr(player_idx),
       state.idle_sea_trans1i.arr(player_idx),     state.idle_sea_trans1a.arr(player_idx),
@@ -81,14 +80,14 @@ void refresh_sea_units(GameStateMemory& state, GameCache& cache, uint player_idx
   refresh_units(idle_unit_arrays, cache, player_idx, SEAS_COUNT, LANDS_COUNT);
 }
 
-void refresh_total_player_units(GameStateMemory& state, GameCache& cache) {
+void refresh_total_player_units(GameState& state, GameCache& cache) {
   cache.total_player_units.fill(0);
   for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
     refresh_land_units(state, cache, player_idx);
     refresh_sea_units(state, cache, player_idx);
   }
 }
-void refresh_canals(GameStateMemory& state, GameCache& cache) {
+void refresh_canals(GameState& state, GameCache& cache) {
   cache.canal_state = 0;
   uint current_turn = state.current_turn;
   for (uint canal_idx = 0; canal_idx < CANALS_COUNT; canal_idx++) {
@@ -99,18 +98,18 @@ void refresh_canals(GameStateMemory& state, GameCache& cache) {
   }
 }
 
-void refresh_transports_with_cargo_space(GameStateMemory& state, GameCache& cache, uint player_idx,
+void refresh_transports_with_cargo_space(GameState& state, GameCache& cache, uint player_idx,
                                          uint sea_idx) {
-    cache.transports_with_large_cargo_space[sea_idx] =
-        state.idle_sea_transempty.val(player_idx, sea_idx) +
-        state.idle_sea_trans1i.val(player_idx, sea_idx);
-    cache.transports_with_small_cargo_space[sea_idx] =
-        cache.transports_with_large_cargo_space[sea_idx] +
-        state.idle_sea_trans1a.val(player_idx, sea_idx) +
-        state.idle_sea_trans1t.val(player_idx, sea_idx);
-                                         }
+  cache.transports_with_large_cargo_space[sea_idx] =
+      state.idle_sea_transempty.val(player_idx, sea_idx) +
+      state.idle_sea_trans1i.val(player_idx, sea_idx);
+  cache.transports_with_small_cargo_space[sea_idx] =
+      cache.transports_with_large_cargo_space[sea_idx] +
+      state.idle_sea_trans1a.val(player_idx, sea_idx) +
+      state.idle_sea_trans1t.val(player_idx, sea_idx);
+}
 
-void refresh_fleets(GameStateMemory& state, GameCache& cache) {
+void refresh_fleets(GameState& state, GameCache& cache) {
   FILL_ARRAY(cache.allied_carriers, 0);
   FILL_ARRAY(cache.enemy_units_count, 0);
   FILL_ARRAY(cache.enemy_destroyers_total, 0);
@@ -137,7 +136,7 @@ void refresh_fleets(GameStateMemory& state, GameCache& cache) {
     refresh_transports_with_cargo_space(state, cache, current_turn, sea_idx);
   }
 }
-void refresh_land_path_blocked(GameStateMemory& state, GameCache& cache) {
+void refresh_land_path_blocked(GameState& state, GameCache& cache) {
   cache.land_path_blocked.fill(false);
   LandArray& factory_max = state.factory_max;
   AirArray& enemy_units_count = cache.enemy_units_count;
@@ -182,11 +181,11 @@ void refresh_sea_path_blocked(GameCache& cache) {
 
 constexpr uint UNIT_NAME_WIDTH = 14;
 
-std::string get_printable_status(GameStateMemory& state, GameCache& cache) {
+std::string get_printable_status(GameState& state) {
   std::ostringstream oss;
   oss << "---\n";
-  oss << get_printable_status_lands(state, cache);
-  oss << get_printable_status_seas(state, cache) << "\n";
+  oss << get_printable_status_lands(state);
+  oss << get_printable_status_seas(state) << "\n";
   oss << PLAYERS[state.current_turn].color;
   oss << PLAYERS[state.current_turn].name;
   oss << "\033[0m"
@@ -194,16 +193,14 @@ std::string get_printable_status(GameStateMemory& state, GameCache& cache) {
   return oss.str();
 }
 
-void append_land_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint land_idx,
-                      GameStateMemory& state) {
+void append_land_unit(GameState& state, std::ostringstream& oss, uint player_idx, uint unit_idx,
+                      uint land_idx) {
 
   uint unit_count = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
   if (unit_count > 0) {
-    oss << PLAYERS[player_idx].color;
-    oss << PLAYERS[player_idx].name;
-    oss << " ";
-    oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_LAND[unit_idx];
-    oss << std::right << std::setw(3) << unit_count;
+    oss << PLAYERS[player_idx].color << PLAYERS[player_idx].name << " " << std::left
+        << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_LAND[unit_idx] << std::right << std::setw(3)
+        << unit_count;
     std::vector<uint> units_here = get_active_land_units(state).at(unit_idx)->at(land_idx);
     for (const uint unit_here : units_here) {
       oss << std::right << std::setw(3) << unit_here;
@@ -212,21 +209,20 @@ void append_land_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, u
   }
 }
 
-void get_printable_active_land_units(std::ostringstream& oss, GameStateMemory& state,
-                                     GameCache& cache) {
+void get_printable_active_land_units(GameState& state, std::ostringstream& oss) {
   uint player_idx = state.current_turn;
   const char* my_color = PLAYERS[player_idx].color;
   oss << my_color;
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-    if (cache.total_player_units.val(player_idx, land_idx) > 0) {
+    if (state.cache.total_player_units.val(player_idx, land_idx) > 0) {
       for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-        append_land_unit(oss, player_idx, unit_idx, land_idx, state);
+        append_land_unit(state, oss, player_idx, unit_idx, land_idx);
       }
     }
   }
 }
 
-std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache) {
+std::string get_printable_status_lands(GameState& state) {
   std::ostringstream oss;
   uint current_player_idx = state.current_turn;
   LandArray& land_owners = state.land_owners;
@@ -242,11 +238,11 @@ std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache)
     oss << "/" << factory_max[land_idx];
     oss << "/" << LANDS[land_idx].land_value;
     oss << " Combat: " << state.combat_status.at(land_idx);
-    get_printable_active_land_units(oss, state, cache);
+    get_printable_active_land_units(state, oss);
     oss << "\033[0m";
     for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       if (current_player_idx == player_idx ||
-          cache.total_player_units.val(player_idx, land_idx) == 0) {
+          state.cache.total_player_units.val(player_idx, land_idx) == 0) {
         continue;
       }
       oss << PLAYERS[player_idx].color;
@@ -267,7 +263,7 @@ std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache)
 }
 
 void append_sea_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint sea_idx,
-                     GameStateMemory& state) {
+                     GameState& state) {
 
   uint unit_count = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
   if (unit_count > 0) {
@@ -284,8 +280,7 @@ void append_sea_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, ui
   }
 }
 
-void get_printable_active_sea_units(std::ostringstream& oss, GameStateMemory& state,
-                                    GameCache& cache) {
+void get_printable_active_sea_units(std::ostringstream& oss, GameState& state, GameCache& cache) {
   uint player_idx = state.current_turn;
   const char* my_color = PLAYERS[player_idx].color;
   oss << my_color;
@@ -299,7 +294,7 @@ void get_printable_active_sea_units(std::ostringstream& oss, GameStateMemory& st
   }
 }
 
-std::string get_printable_status_seas(GameStateMemory& state, GameCache& cache) {
+std::string get_printable_status_seas(GameState& state, GameCache& cache) {
   std::ostringstream oss;
   uint current_player_idx = state.current_turn;
   oss << "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n";
