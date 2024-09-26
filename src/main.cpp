@@ -2,9 +2,9 @@
 #include "game_state_memory.hpp"
 #include "json_state.hpp"
 #include "mcts.hpp"
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #define BASE_10 10
 #define DEFAULT_ITERATIONS 1000000000

@@ -114,13 +114,13 @@ void play_full_turn() {
 #endif
 void cause_breakpoint() { std::cout << "\nbreakpoint\n"; }
 
-void debug_checks() {
+void debug_checks(GameStateMemory& state, GameCache& cache) {
   step_id++;
   // if (step_id == 1999998819) {
   //   actually_print = true;
   // }
   if (actually_print) {
-    std::cout << "  loops: " << max_loops << "  step_id: " << step_id << "  seed: " << seed
+    std::cout << "  loops: " << max_loops << "  step_id: " << step_id
               << "  answers_remaining: " << answers_remaining
               << "  select_action: " << use_selected_action << std::endl;
   }

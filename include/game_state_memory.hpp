@@ -103,8 +103,13 @@ constexpr std::array<const void*, SEA_UNIT_TYPES_COUNT> get_idle_sea_units(const
 }
 
 constexpr std::array<const void*, LAND_UNIT_TYPES_COUNT> get_active_land_units(const GameStateMemory& state) {
-  return {&state.active_land_fighters, &state.active_land_bombers, &state.active_land_infantry,
-          &state.active_land_artillery, &state.active_land_tanks, &state.active_land_aaguns};
+  auto aaa =
+      std::array<const void*, LAND_UNIT_TYPES_COUNT>{
+          &state.active_land_fighters,  &state.active_land_bombers, &state.active_land_infantry,
+          &state.active_land_artillery, &state.active_land_tanks,   &state.active_land_aaguns};
+  std::initializer_list<const std::array<unsigned int, LANDS_COUNT * BOMBER_LAND_STATES>*> bbb = {
+      static_cast<const std::array<uint, LANDS_COUNT * BOMBER_LAND_STATES>*>(aaa[0]),
+      static_cast<const std::array<uint, LANDS_COUNT * BOMBER_LAND_STATES>*>(aaa[1])};
 }
 
 constexpr std::array<const void*, SEA_UNIT_TYPES_COUNT - 1> get_active_sea_units(const GameStateMemory& state) {
