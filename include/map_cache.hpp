@@ -37,6 +37,7 @@ using SeaS2LArray = std::array<S2LConn, SEAS_COUNT>;
 using FightermovesAirArray = std::array<AirArray, FIGHTER_MOVES_MAX>;
 using FightermovesAirAirArray = std::array<AirAirArray, FIGHTER_MOVES_MAX>;
 using PlayersPlayersVector = std::array<std::vector<uint>, PLAYERS_COUNT>;
+using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
 
 extern LandArray LAND_VALUE;
 extern LandAirArray LAND_DIST;

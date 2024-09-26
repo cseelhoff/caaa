@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
         iterations = static_cast<uint>(std::stoul(args[1]));
     }
   std::cout << "Starting CAAA" << std::endl;
-  initialize_constants();
+  initialize_random_numbers();
   //json = serialize_game_data_to_json(&state);
   // write_json_to_file("game_data_0.json", json);
   //cJSON_Delete(json);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 }
 int main2() {
   std::cout << "Starting CAAA" << std::endl;
-  initialize_constants();
+  initialize_random_numbers();
   load_game_data("debug_data.json");
   refresh_full_cache();
   load_single_game();  

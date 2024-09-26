@@ -36,6 +36,8 @@ SeaS2LArray SEA_TO_LAND_CONN = {{{0}}};
 FightermovesAirAirArray AIRS_X_TO_4_MOVES_AWAY = {{{{{0}}}}};
 FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT = {{{0}}};
 PlayerArray PLAYER_TEAM = {{0}};
+AirAirAirArray SKIP_4AIR_PRECALS = {{{{{0}}}}};
+AirAirArray SKIP_4AIR_PRECALS_COUNT = {{{0}}};
 
 void initialize_constants() {
   initialize_enemies();
@@ -385,6 +387,45 @@ void intialize_airs_x_to_4_moves_away() {
         if (dist >= moves) {
           AIRS_X_TO_4_MOVES_AWAY[moves - 1][dst_air]
                                 [AIRS_X_TO_4_MOVES_AWAY_COUNT[moves - 1][dst_air_idx]++] = src_air;
+        }
+      }
+    }
+  }
+}
+
+// Notes on how allowed moves from history are calculated:
+// Basically when Terr A with moves remaining X is skipped (from Terr C to Terr B)
+//   in favor of Terr B with moves remaining Y,
+//   we need to make sure that Terr A is always skipped if moves remaining is <= X and
+//   Terr B moves remain are >= Y
+// Said another way, if Distance[C][B] == 4, then get all terrs with distance 4,5,6 from B
+//   for each terr D, loop through newly skipped terrs in ArrayX (ArrayX = Distance[C][A...])
+//   if Distance[D][A] >= Distance[C][A] then SkippedMove[iterated_Terr][skipped_Terr] = true
+void initialize_skip_4air_precals() {
+  for (uint src_air = 0; src_air < AIRS_COUNT; src_air++) {
+    AirArray dist_src_air = AIR_DIST[src_air];
+    // get a list of all valid actions (possible destinations)
+    AirArray air_within_4_moves = AIR_WITHIN_X_MOVES[4 - 1][src_air];
+    uint air_within_4_moves_count = AIR_WITHIN_X_MOVES_COUNT[4 - 1][src_air];
+    for (uint selected_idx = 0; selected_idx < air_within_4_moves_count; selected_idx++) {
+      uint dst_air = air_within_4_moves[selected_idx];
+      uint dist = dist_src_air[dst_air];
+      AirArray airs_x_to_4_moves_away = AIRS_X_TO_4_MOVES_AWAY[dist - 1][dst_air];
+      uint airs_x_to_4_moves_away_count = AIRS_X_TO_4_MOVES_AWAY_COUNT[dist - 1][dst_air];
+      for (uint air_idx = 0; air_idx < airs_x_to_4_moves_away_count; air_idx++) {
+        uint other_src_air = airs_x_to_4_moves_away[air_idx];
+        // moves start with low number indexes
+        if (other_src_air <= src_air) {
+          continue;
+        }
+        AirArray other_src_air_dist = AIR_DIST[other_src_air];
+        for (uint skipped_idx = selected_idx + 1; skipped_idx < air_within_4_moves_count;
+             skipped_idx++) {
+          uint skipped_air = air_within_4_moves[skipped_idx];
+          if (other_src_air_dist[skipped_air] >= dist_src_air[skipped_air]) {
+            SKIP_4AIR_PRECALS[src_air][dst_air][SKIP_4AIR_PRECALS_COUNT[src_air][dst_air]++] =
+                other_src_air;
+          }
         }
       }
     }

@@ -59,16 +59,16 @@ void refresh_land_units(GameStateMemory& state, GameCache& cache, uint player_id
   std::vector<LandArray> idle_unit_arrays = {
       state.idle_land_fighters.arr(player_idx), state.idle_land_bombers.arr(player_idx),
       state.idle_land_infantry.arr(player_idx), state.idle_land_artillery.arr(player_idx),
-      state.idle_land_tanks.arr(player_idx),    state.idle_land_aa_guns.arr(player_idx)};
+      state.idle_land_tanks.arr(player_idx),    state.idle_land_aaguns.arr(player_idx)};
   refresh_units(idle_unit_arrays, cache, player_idx, LANDS_COUNT, 0);
 }
 
 void refresh_sea_units(GameStateMemory& state, GameCache& cache, uint player_idx) {
   std::vector<SeaArray> idle_unit_arrays = {
-      state.idle_sea_fighters.arr(player_idx),    state.idle_sea_trans_empty.arr(player_idx),
-      state.idle_sea_trans_1i.arr(player_idx),    state.idle_sea_trans_1a.arr(player_idx),
-      state.idle_sea_trans_1t.arr(player_idx),    state.idle_sea_trans_2i.arr(player_idx),
-      state.idle_sea_trans_1i_1a.arr(player_idx), state.idle_sea_trans_1i_1t.arr(player_idx),
+      state.idle_sea_fighters.arr(player_idx),    state.idle_sea_transempty.arr(player_idx),
+      state.idle_sea_trans1i.arr(player_idx),    state.idle_sea_trans1a.arr(player_idx),
+      state.idle_sea_trans1t.arr(player_idx),    state.idle_sea_trans2i.arr(player_idx),
+      state.idle_sea_trans1i1a.arr(player_idx), state.idle_sea_trans1i1t.arr(player_idx),
       state.idle_sea_submarines.arr(player_idx),  state.idle_sea_destroyers.arr(player_idx),
       state.idle_sea_carriers.arr(player_idx),    state.idle_sea_cruisers.arr(player_idx),
       state.idle_sea_battleships.arr(player_idx), state.idle_sea_bs_damaged.arr(player_idx),
@@ -119,12 +119,12 @@ void refresh_fleets(GameStateMemory& state, GameCache& cache) {
       }
     }
     cache.transports_with_large_cargo_space[sea_idx] =
-        state.idle_sea_trans_empty.val(current_turn, sea_idx) +
-        state.idle_sea_trans_1i.val(current_turn, sea_idx);
+        state.idle_sea_transempty.val(current_turn, sea_idx) +
+        state.idle_sea_trans1i.val(current_turn, sea_idx);
     cache.transports_with_small_cargo_space[sea_idx] =
         cache.transports_with_large_cargo_space[sea_idx] +
-        state.idle_sea_trans_1a.val(current_turn, sea_idx) +
-        state.idle_sea_trans_1t.val(current_turn, sea_idx);
+        state.idle_sea_trans1a.val(current_turn, sea_idx) +
+        state.idle_sea_trans1t.val(current_turn, sea_idx);
   }
 }
 void refresh_land_path_blocked(GameStateMemory& state, GameCache& cache) {

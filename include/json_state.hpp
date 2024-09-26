@@ -20,12 +20,12 @@ using Artillerystates = std::array<uint, ARTILLERY_STATES>;
 using Tankstates = std::array<uint, TANK_STATES>;
 using AAgunstates = std::array<uint, AA_GUN_STATES>;
 using Bomberseastates = std::array<uint, BOMBER_SEA_STATES>;
-using TransEmptystates = std::array<uint, TRANS_EMPTY_STATES>;
+using TransEmptystates = std::array<uint, TRANSEMPTY_STATES>;
 using Trans1istates = std::array<uint, TRANS_1I_STATES>;
 using Trans1astates = std::array<uint, TRANS_1A_STATES>;
 using Trans1tstates = std::array<uint, TRANS_1T_STATES>;
 using Trans2istates = std::array<uint, TRANS_2I_STATES>;
-using Trans1i1astates = std::array<uint, TRANS_1I_1A_STATES>;
+using Trans1i1astates = std::array<uint, TRANS1I1A_STATES>;
 using Trans1i1tstates = std::array<uint, TRANS_1I_1T_STATES>;
 using Submarinestates = std::array<uint, SUB_STATES>;
 using Destroyerstates = std::array<uint, DESTROYER_STATES>;
@@ -43,7 +43,7 @@ struct ActiveLandUnits {
   Infantrystates infantry;
   Artillerystates artillery;
   Tankstates tanks;
-  AAgunstates aa_guns;
+  AAgunstates aaguns;
 } __attribute__((aligned(ALIGNMENT_128)));
 
 struct IdleLandUnits {
@@ -53,7 +53,7 @@ struct IdleLandUnits {
   uint infantry;
   uint artillery;
   uint tanks;
-  uint aa_guns;
+  uint aaguns;
 } __attribute__((aligned(ALIGNMENT_32)));
 
 struct LandStateJson {
@@ -70,13 +70,13 @@ struct LandStateJson {
 
 struct ActiveSeaUnits {
   Fighterstates fighters;
-  TransEmptystates trans_empty; // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
-  Trans1istates trans_1i;// 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov, 4 = needs staging
-  Trans1astates trans_1a;
-  Trans1tstates trans_1t;
-  Trans2istates trans_2i;// 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
-  Trans1i1astates trans_1i_1a;
-  Trans1i1tstates trans_1i_1t;
+  TransEmptystates transempty; // 0 = done moving, 1 = 1 mov left, 2 = 2 mov left, 3 = needs staging
+  Trans1istates trans1i;// 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov, 4 = needs staging
+  Trans1astates trans1a;
+  Trans1tstates trans1t;
+  Trans2istates trans2i;// 0 = done moving, 1=0mov can unload, 2 = 1 mov left, 3 = 2 mov left
+  Trans1i1astates trans1i1a;
+  Trans1i1tstates trans1i1t;
   Submarinestates submarines;
   Destroyerstates destroyers;
   Carrierstates carriers;
@@ -89,13 +89,13 @@ struct ActiveSeaUnits {
 struct IdleSeaUnits {
   uint owner_idx;
   uint fighters;
-  uint trans_empty;
-  uint trans_1i;
-  uint trans_1a;
-  uint trans_1t;
-  uint trans_2i;
-  uint trans_1i_1a;
-  uint trans_1i_1t;
+  uint transempty;
+  uint trans1i;
+  uint trans1a;
+  uint trans1t;
+  uint trans2i;
+  uint trans1i1a;
+  uint trans1i1t;
   uint submarines;
   uint destroyers;
   uint carriers;

@@ -3,6 +3,7 @@
 #include "engine.hpp"
 #include "game_state_memory.hpp"
 #include "land.hpp"
+#include "units/units.hpp"
 #include <array>
 
 using TeamAirArray = Uint2DArray<TEAMS_COUNT, AIRS_COUNT>;

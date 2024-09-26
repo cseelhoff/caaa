@@ -49,7 +49,7 @@ void to_json(json& jsonData, const LandStateJson& lState) {
              {"infantry", lState.infantry},
              {"artillery", lState.artillery},
              {"tanks", lState.tanks},
-             {"aa_guns", lState.aa_guns}};
+             {"aaguns", lState.aaguns}};
 }
 
 void from_json(const json& jsonData, LandStateJson& lState) {
@@ -62,15 +62,15 @@ void from_json(const json& jsonData, LandStateJson& lState) {
     lState.infantry = jsonData.value("infantry", Infantrystates{0}); // Default array of zeros
     lState.artillery = jsonData.value("artillery", Artillerystates{0}); // Default array of zeros
     lState.tanks = jsonData.value("tanks", Tankstates{0}); // Default array of zeros
-    lState.aa_guns = jsonData.value("aa_guns", AAgunstates{0}); // Default array of zeros
+    lState.aaguns = jsonData.value("aaguns", AAgunstates{0}); // Default array of zeros
 }
 
 // Serialization and deserialization functions for UnitsSea
 void to_json(json& jsonData, const SeaState& uSea) {
-    jsonData = json({{"fighters", uSea.fighters},       {"trans_empty", uSea.trans_empty},
-             {"trans_1i", uSea.trans_1i},       {"trans_1a", uSea.trans_1a},
-             {"trans_1t", uSea.trans_1t},       {"trans_2i", uSea.trans_2i},
-             {"trans_1i_1a", uSea.trans_1i_1a}, {"trans_1i_1t", uSea.trans_1i_1t},
+    jsonData = json({{"fighters", uSea.fighters},       {"transempty", uSea.transempty},
+             {"trans1i", uSea.trans1i},       {"trans1a", uSea.trans1a},
+             {"trans1t", uSea.trans1t},       {"trans2i", uSea.trans2i},
+             {"trans1i1a", uSea.trans1i1a}, {"trans1i1t", uSea.trans1i1t},
              {"submarines", uSea.submarines},   {"destroyers", uSea.destroyers},
              {"carriers", uSea.carriers},       {"cruisers", uSea.cruisers},
              {"battleships", uSea.battleships}, {"bs_damaged", uSea.bs_damaged},
@@ -79,13 +79,13 @@ void to_json(json& jsonData, const SeaState& uSea) {
 
 void from_json(const json& jsonData, SeaState& uSea) {
     uSea.fighters = jsonData.value("fighters", Fighterstates{});
-    uSea.trans_empty = jsonData.value("trans_empty", TransEmptystates{});
-    uSea.trans_1i = jsonData.value("trans_1i", Trans1istates{});
-    uSea.trans_1a = jsonData.value("trans_1a", Trans1astates{});
-    uSea.trans_1t = jsonData.value("trans_1t", Trans1tstates{});
-    uSea.trans_2i = jsonData.value("trans_2i", Trans2istates{});
-    uSea.trans_1i_1a = jsonData.value("trans_1i_1a", Trans1i1astates{});
-    uSea.trans_1i_1t = jsonData.value("trans_1i_1t", Trans1i1tstates{});
+    uSea.transempty = jsonData.value("transempty", TransEmptystates{});
+    uSea.trans1i = jsonData.value("trans1i", Trans1istates{});
+    uSea.trans1a = jsonData.value("trans1a", Trans1astates{});
+    uSea.trans1t = jsonData.value("trans1t", Trans1tstates{});
+    uSea.trans2i = jsonData.value("trans2i", Trans2istates{});
+    uSea.trans1i1a = jsonData.value("trans1i1a", Trans1i1astates{});
+    uSea.trans1i1t = jsonData.value("trans1i1t", Trans1i1tstates{});
     uSea.submarines = jsonData.value("submarines", Submarinestates{});
     uSea.destroyers = jsonData.value("destroyers", Destroyerstates{});
     uSea.carriers = jsonData.value("carriers", Carrierstates{});

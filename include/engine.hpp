@@ -8,15 +8,11 @@
 #include <string>
 #include <sys/types.h>
 
-constexpr uint RANDOM_MAX = 65536;
-constexpr uint ACTION_COUNT = std::max<uint>(AIRS_COUNT, SEA_UNIT_TYPES_COUNT + 1);
-
 using Actions = std::array<uint, ACTION_COUNT>;
 using PtrSeaunittypes = std::array<uint*, SEA_UNIT_TYPES_COUNT>;
 using PtrAirunittypes = std::array<uint*, AIR_UNIT_TYPES_COUNT>;
 using PtrLandunittypes = std::array<uint*, LAND_UNIT_TYPES_COUNT>;
 using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
-using RandomNumberArray = std::array<uint, RANDOM_MAX>;
 using Playersbuf = std::array<uint, PLAYERS_COUNT_P1>;
 using PlayersbufLandArray = std::array<LandArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaArray = std::array<SeaArray, PLAYERS_COUNT_P1>;
@@ -25,7 +21,6 @@ using PtrSeaUTArray = std::array<PtrSeaunittypes, SEAS_COUNT>;
 using PtrAirUTArray = std::array<PtrAirunittypes, AIRS_COUNT>;
 using PlayersbufLandUTArray = std::array<LandUTArray, PLAYERS_COUNT_P1>;
 using PlayersbufSeaUTArray = std::array<SeaUTArray, PLAYERS_COUNT_P1>;
-using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
 using BoolPlayersbuf = std::array<bool, PLAYERS_COUNT_P1>;
 
 void initialize_random_numbers();
