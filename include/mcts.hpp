@@ -16,7 +16,7 @@ struct MCTSNode {
     uint visits;
     double value;
 } __attribute__((aligned(ALIGNMENT)));
-MCTSNode* mcts_search(GameStateMemory* initial_state, uint iterations);
+MCTSNode* mcts_search(GameStateMemory& game_state, uint iterations);
 uint select_best_action(MCTSNode* root);
 constexpr uint MAX_ACTIONS = 1000;
 using Action_Sequence = std::array<uint, MAX_ACTIONS>;

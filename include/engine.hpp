@@ -29,7 +29,7 @@ void initialize_sea_pointers();
 
 void apply_skip(uint src_air, uint dst_air);
 
-void load_game_data(const std::string& filename);
+void load_game_data(const std::string& filename, GameStateMemory& game_state);
 
 void play_full_turn();
 

@@ -1,23 +1,32 @@
 #pragma once
 
-#include "game_state_memory.hpp"
+//#include "game_state_memory.hpp"
 #include "canal.hpp"
+#include "land.hpp"
+#include "player.hpp"
+#include "sea.hpp"
+#include "units/units.hpp"
 #include <array>
 #include <limits>
 #include <sys/types.h>
 #include <vector>
 
-#define MIN_AIR_HOPS 2
-#define MAX_AIR_HOPS 6
-#define MIN_SEA_HOPS 1
-#define MAX_SEA_HOPS 2
-#define MIN_LAND_HOPS 1
-#define MAX_LAND_HOPS 2
-#define AIR_MOVE_SIZE 1 + MAX_AIR_HOPS - MIN_AIR_HOPS
-#define SEA_MOVE_SIZE 1 + MAX_SEA_HOPS - MIN_SEA_HOPS
-#define LAND_MOVE_SIZE 1 + MAX_LAND_HOPS - MIN_LAND_HOPS
-#define PLAYERS_COUNT_P1 PLAYERS_COUNT + 1
+constexpr uint MIN_AIR_HOPS =2;
+constexpr uint MAX_AIR_HOPS= 6;
+constexpr uint MIN_SEA_HOPS= 1;
+constexpr uint MAX_SEA_HOPS =2;
+constexpr uint MIN_LAND_HOPS =1;
+constexpr uint MAX_LAND_HOPS= 2;
+constexpr uint AIR_MOVE_SIZE =1 + MAX_AIR_HOPS - MIN_AIR_HOPS;
+constexpr uint SEA_MOVE_SIZE =1 + MAX_SEA_HOPS - MIN_SEA_HOPS;
+constexpr uint LAND_MOVE_SIZE = 1 + MAX_LAND_HOPS - MIN_LAND_HOPS;
+constexpr uint PLAYERS_COUNT_P1 =PLAYERS_COUNT + 1;
+constexpr uint AIRS_COUNT = LANDS_COUNT + SEAS_COUNT;
+constexpr uint MAX_AIR_TO_AIR_CONNECTIONS = 7;
+constexpr uint ACTION_COUNT = std::max<uint>(AIRS_COUNT, SEA_UNIT_TYPES_COUNT + 1);
 
+using A2AConn = std::array<uint, MAX_AIR_TO_AIR_CONNECTIONS>;
+using AirArray = std::array<uint, AIRS_COUNT>;
 using LandAirArray = std::array<AirArray, LANDS_COUNT>;
 using AirA2AArray = std::array<A2AConn, AIRS_COUNT>;
 using AirAirArray = std::array<AirArray, AIRS_COUNT>;
@@ -38,6 +47,7 @@ using FightermovesAirArray = std::array<AirArray, FIGHTER_MOVES_MAX>;
 using FightermovesAirAirArray = std::array<AirAirArray, FIGHTER_MOVES_MAX>;
 using PlayersPlayersVector = std::array<std::vector<uint>, PLAYERS_COUNT>;
 using AirAirAirArray = std::array<AirAirArray, AIRS_COUNT>;
+using PlayerArray = std::array<uint, PLAYERS_COUNT>;
 
 extern LandArray LAND_VALUE;
 extern LandAirArray LAND_DIST;
@@ -74,7 +84,7 @@ extern FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT;
 extern PlayersPlayersVector ENEMIES;
 extern PlayerArray PLAYER_TEAM;
 
-void initialize_constants();
+void initialize_map_constants();
 
 void initialize_land_dist();
 void initialize_l2l_connections(uint src_land);

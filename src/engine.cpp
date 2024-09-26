@@ -32,7 +32,7 @@ uint max_loops = 0;
 bool actually_print = PLAYERS[0].is_human;
 uint unlucky_player_idx = 0;
 
-void load_game_data(GameStateMemory& memState, const std::string& filename) {
+void load_game_data(const std::string& filename, GameStateMemory& memState) {
   memset(&memState, 0, sizeof(memState));
   GameStateJson jsonState;
   bool result = load_game_state_from_json(filename, jsonState);
@@ -40,8 +40,8 @@ void load_game_data(GameStateMemory& memState, const std::string& filename) {
     throw std::runtime_error("Failed to load game state from file: " + filename);
   }
   convert_json_to_memory(jsonState, memState);
-  GameCache cache;
-  refresh_full_cache(memState, cache);
+  // GameCache cache;
+  // refresh_full_cache(memState, cache);
 }
 
 void set_seed(uint new_seed) { random_number_index = new_seed; }
@@ -3488,7 +3488,7 @@ PYBIND11_MODULE(engine, handle) {
   // handle.def("get_possible_actions", &get_possible_actions);
   handle.def("apply_action", &apply_action);
   handle.def("is_terminal_state", &is_terminal_state);
-  handle.def("initialize_constants", &initialize_constants);
+  handle.def("initialize_constants", &initialize_map_constants);
   handle.def("get_game_state_copy", &get_game_state_copy);
   handle.def("evaluate_state", &evaluate_state);
   handle.def("load_game_state_from_json", &load_game_state_from_json);

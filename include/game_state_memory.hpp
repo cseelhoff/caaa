@@ -1,6 +1,7 @@
 #pragma once
 #include "array_functions.hpp"
 #include "land.hpp"
+#include "map_cache.hpp"
 #include "player.hpp"
 #include "sea.hpp"
 #include "units/units.hpp"
@@ -8,13 +9,6 @@
 #include <cmath>
 #include <string>
 
-constexpr uint AIRS_COUNT = LANDS_COUNT + SEAS_COUNT;
-constexpr uint MAX_AIR_TO_AIR_CONNECTIONS = 7;
-constexpr uint ACTION_COUNT = std::max<uint>(AIRS_COUNT, SEA_UNIT_TYPES_COUNT + 1);
-
-using AirArray = std::array<uint, AIRS_COUNT>;
-using PlayerArray = std::array<uint, PLAYERS_COUNT>;
-using A2AConn = std::array<uint, MAX_AIR_TO_AIR_CONNECTIONS>;
 using BoolAirArray = std::array<bool, AIRS_COUNT>;
 using ActiveLandFighters = Uint2DArray<LANDS_COUNT, FIGHTER_STATES>;
 using ActiveLandBombers = Uint2DArray<LANDS_COUNT, BOMBER_LAND_STATES>;

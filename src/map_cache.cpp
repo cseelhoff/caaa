@@ -39,7 +39,7 @@ PlayerArray PLAYER_TEAM = {{0}};
 AirAirAirArray SKIP_4AIR_PRECALS = {{{{{0}}}}};
 AirAirArray SKIP_4AIR_PRECALS_COUNT = {{{0}}};
 
-void initialize_constants() {
+void initialize_map_constants() {
   initialize_enemies();
   initialize_land_dist();
   land_dist_floyd_warshall();
