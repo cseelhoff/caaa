@@ -8,6 +8,8 @@
 #include <string>
 #include <sys/types.h>
 
+using LandUTArray = std::array<Landunittypes, LANDS_COUNT>;
+using SeaUTArray = std::array<Seaunittypes, SEAS_COUNT>;
 using Actions = std::array<uint, ACTION_COUNT>;
 using PtrSeaunittypes = std::array<uint*, SEA_UNIT_TYPES_COUNT>;
 using PtrAirunittypes = std::array<uint*, AIR_UNIT_TYPES_COUNT>;

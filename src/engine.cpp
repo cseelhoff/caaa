@@ -111,7 +111,7 @@ void play_full_turn() {
 #endif
 void cause_breakpoint() { std::cout << "\nbreakpoint\n"; }
 
-void debug_checks(GameStateMemory& state, GameCache& cache) {
+void debug_checks(GameStateMemory& state) {
   step_id++;
   uint player_idx = state.current_turn;
   // if (step_id == 1999998819) {
@@ -124,11 +124,10 @@ void debug_checks(GameStateMemory& state, GameCache& cache) {
   }
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-      uint states_move_land = STATES_MOVE_LAND[unit_idx];
       uint temp_unit_type_total = 0;
-      for (uint cur_unit_state = 0; cur_unit_state < states_move_land; cur_unit_state++) {
-        temp_unit_type_total += get_active_land_units2(state).at(unit_idx)->at(
-            land_idx * states_move_land + cur_unit_state);
+      std::vector<uint> units_here = get_active_land_units(state).at(unit_idx)->at(land_idx);
+      for (const uint unit_here : units_here) {
+        temp_unit_type_total += unit_here;
       }
       uint idle_land_units = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
       if (temp_unit_type_total != idle_land_units) {
@@ -140,11 +139,10 @@ void debug_checks(GameStateMemory& state, GameCache& cache) {
   }
   for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
-      uint states_move_sea = STATES_MOVE_SEA[unit_idx];
       uint temp_unit_type_total = 0;
-      for (uint cur_unit_state = 0; cur_unit_state < STATES_MOVE_SEA[unit_idx]; cur_unit_state++) {
-        temp_unit_type_total += get_active_sea_units2(state).at(unit_idx)->at(
-            sea_idx * states_move_sea + cur_unit_state);
+      std::vector<uint> units_here = get_active_sea_units(state).at(unit_idx)->at(sea_idx);
+      for (const uint unit_here : units_here) {
+        temp_unit_type_total += unit_here;
       }
       uint idle_land_units = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
       if (temp_unit_type_total != idle_land_units) {
@@ -356,94 +354,82 @@ void apply_skip(GameStateMemory& state, uint src_air, uint dst_air) {
 
 void clear_move_history(GameStateMemory& state){FILL_2D_ARRAY(state.skipped_moves, false)}
 
-uint get_user_purchase_input(GameStateMemory& state, GameCache& cache, uint src_air) {
+uint get_user_purchase_input(GameStateMemory& state, uint src_air, Actions& valid_moves,
+                             uint valid_moves_count) {
   if (PLAYERS[state.current_turn].is_human) {
     std::ostringstream oss;
-    oss << get_printable_status(state, cache) << "\n";
     oss << "Purchasing at ";
     if (src_air < LANDS_COUNT) {
-      oss << LANDS[src_air].name;
-      oss << " " << valid_moves[0] << "=Finished ";
+      oss << LANDS[src_air].name << " " << valid_moves[0] << "=Finished ";
       for (uint i = 1; i < valid_moves_count; i++) {
         oss << valid_moves[i] << "=" << NAMES_UNIT_LAND[valid_moves[i]] << " ";
       }
     } else {
-      oss << SEAS[src_air - LANDS_COUNT].name;
-      oss << " " << valid_moves[0] << "=Finished ";
+      oss << SEAS[src_air - LANDS_COUNT].name << " " << valid_moves[0] << "=Finished ";
       for (uint i = 1; i < valid_moves_count; i++) {
         oss << valid_moves[i] << "=" << NAMES_UNIT_SEA[valid_moves[i]] << " ";
       }
     }
     std::cout << oss.str();
-    return getUserInput();
+    return getUserInput(valid_moves, valid_moves_count);
   }
-  return getAIInput();
+  return getAIInput(valid_moves, valid_moves_count, answers_remaining, selected_action);
 }
 
 uint get_user_move_input(GameStateMemory& state, uint unit_type, uint src_air) {
   if (PLAYERS[state.current_turn].is_human) {
-    setPrintableStatus();
     std::ostringstream oss;
-    oss << printableGameStatus;
     oss << "Moving ";
     if (src_air < LANDS_COUNT) {
-      oss << NAMES_UNIT_LAND[unit_type];
-      oss << " From: ";
-      oss << LANDS[src_air].name;
+      oss << NAMES_UNIT_LAND[unit_type] << " From: " << LANDS[src_air].name;
     } else {
-      oss << NAMES_UNIT_SEA[unit_type];
-      oss << " From: ";
-      oss << SEAS[src_air - LANDS_COUNT].name;
+      oss << NAMES_UNIT_SEA[unit_type] << " From: " << SEAS[src_air - LANDS_COUNT].name;
     }
     oss << " Valid Moves: ";
     for (uint i = 0; i < valid_moves_count; i++) {
       oss << valid_moves[i] << " ";
     }
-    printableGameStatus = oss.str();
-    printf("%s\n", printableGameStatus.c_str());
-    return getUserInput();
+    return getUserInput(valid_moves, valid_moves_count);
   }
-  return getAIInput();
+  return getAIInput(valid_moves, valid_moves_count, answers_remaining, selected_action);
 }
-bool load_transport(uint unit_type, uint src_land, uint dst_sea, uint land_unit_state) {
+
+bool load_transport(GameStateMemory& state, GameCache& cache, uint land_unit_type, uint src_land, uint dst_sea,
+                    uint land_unit_state) {
+  uint player_idx = state.current_turn;
 #ifdef DEBUG
   if (actually_print) {
-    printf("load_transport: unit_type=%d src_land=%d dst_sea=%d land_unit_state=%d\n", unit_type,
-           src_land, dst_sea, land_unit_state);
+    std::cout << "load_transport: unit_type=" << land_unit_type << " src_land=" << src_land
+              << " dst_sea=" << dst_sea << " land_unit_state=" << land_unit_state << std::endl;
   }
 #endif
-  Seaunittypes load_unit_type = LOAD_UNIT_TYPE[unit_type];
-  PtrSeaunittypes units_sea_ptr_dst_sea = sea_units_state[dst_sea];
-  uint starting_type = (UNIT_WEIGHTS[unit_type] > 2) ? TRANS_1I : TRANS_1T;
-  for (uint trans_type1 = 0; trans_type1 < TRANS_1T; trans_type1++) {
+  Seaunittypes new_trans_type_array = NEW_TRANS_TYPE_AFTER_LOAD[land_unit_type];
+  uint starting_type = (UNIT_WEIGHTS[land_unit_type] > 2) ? TRANS1I : TRANS1T;
+  for (uint trans_type1 = 0; trans_type1 < TRANS1T; trans_type1++) {
     uint trans_type = starting_type - trans_type1;
     if (trans_type < TRANSEMPTY) {
       break;
     }
-    uint* units_sea_ptr_dst_sea_trans_type = units_sea_ptr_dst_sea[trans_type];
+    std::vector<uint> units_sea_ptr_dst_sea_trans_type =
+        get_active_sea_units(state).at(trans_type)->at(dst_sea);
     uint states_unloading = STATES_UNLOADING[trans_type];
     for (uint trans_state1 = 0; trans_state1 < states_unloading; trans_state1++) {
       uint trans_state = STATES_MOVE_SEA[trans_type] - STATES_STAGING[trans_type] - trans_state1;
       if (units_sea_ptr_dst_sea_trans_type[trans_state] > 0) {
-        uint new_trans_type = load_unit_type[trans_type];
-        units_sea_ptr_dst_sea[trans_type][trans_state]--;
+        units_sea_ptr_dst_sea_trans_type[trans_state]--;
+        get_idle_sea_units(state).at(trans_type)->ref(player_idx, dst_sea)--;
+        uint new_trans_type = new_trans_type_array[trans_type];
         if (trans_type == TRANSEMPTY && trans_state == TRANSEMPTY_UNLOADING_STATES) {
-          trans_state = STATES_UNLOADING[new_trans_type]; // empty transports doesn't have an
-                                                          // "unloading" state
+          // empty transports doesn't have an "unloading" state
+          trans_state = STATES_UNLOADING[new_trans_type_array[trans_type]];
         }
-        units_sea_ptr_dst_sea[new_trans_type][trans_state]++;
-        current_player_sea_unit_types[dst_sea][trans_type]--;
-        current_player_sea_unit_types[dst_sea][new_trans_type]++;
-        total_player_land_units[0][src_land]--;
-        current_player_land_unit_types[src_land][unit_type]--;
-        land_units_state[src_land][unit_type][land_unit_state]--;
-        transports_with_large_cargo_space[dst_sea] =
-            current_player_sea_unit_types[dst_sea][TRANSEMPTY] +
-            current_player_sea_unit_types[dst_sea][TRANS_1I];
-        transports_with_small_cargo_space[dst_sea] =
-            transports_with_large_cargo_space[dst_sea] +
-            current_player_sea_unit_types[dst_sea][TRANS_1A] +
-            current_player_sea_unit_types[dst_sea][TRANS_1T];
+        get_active_sea_units(state).at(new_trans_type)->at(dst_sea)[trans_state]++;
+        get_idle_sea_units(state).at(new_trans_type)->ref(player_idx, dst_sea)++;
+        cache.total_player_units.ref(player_idx, src_land)--;
+        cache.team_units_count.ref(player_idx, src_land)--;
+        get_idle_land_units(state).at(src_land)->ref(player_idx, land_unit_type)--;
+        get_active_land_units(state).at(land_unit_type)->at(src_land)[land_unit_state]--;
+        refresh_transports_with_cargo_space(state, cache, player_idx, dst_sea);
 #ifdef DEBUG
         debug_checks();
 #endif
@@ -602,7 +588,7 @@ bool stage_transport_units() {
   // loop through transports with "3" moves remaining (that aren't full),
   // start at sea 0 to n
   // todo: optimize with cache - only loop through regions with transports
-  for (uint unit_type = TRANSEMPTY; unit_type <= TRANS_1T; unit_type++) {
+  for (uint unit_type = TRANSEMPTY; unit_type <= TRANS1T; unit_type++) {
     uint staging_state = STATES_MOVE_SEA[unit_type] - 1;
     uint done_staging = staging_state - 1;
     for (uint src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
@@ -654,7 +640,7 @@ bool stage_transport_units() {
         current_player_sea_unit_types[src_sea][unit_type]--;
         total_player_sea_units[0][src_sea]--;
         transports_with_small_cargo_space[src_sea]--;
-        if (unit_type <= TRANS_1I) {
+        if (unit_type <= TRANS1I) {
           transports_with_large_cargo_space[src_sea]--;
           transports_with_large_cargo_space[dst_sea]++;
         }
@@ -1110,7 +1096,7 @@ bool move_transport_units() {
     printf("DEBUG: move_transport_units\n");
   }
 #endif
-  for (uint unit_type = TRANS_1I; unit_type <= TRANS_1I_1T;
+  for (uint unit_type = TRANS1I; unit_type <= TRANS1I1T;
        unit_type++) { // there should be no TRANSEMPTY
     uint max_state = STATES_MOVE_SEA[unit_type] - STATES_STAGING[unit_type];
     // uint done_moving = 1;//STATES_UNLOADING[unit_type];
@@ -1166,10 +1152,10 @@ bool move_transport_units() {
           (*total_ships)--;
           current_player_sea_unit_types[src_sea][unit_type]--;
           total_player_sea_units[0][src_sea]--;
-          if (unit_type <= TRANS_1T) {
+          if (unit_type <= TRANS1T) {
             transports_with_small_cargo_space[dst_sea]++;
             transports_with_small_cargo_space[src_sea]--;
-            if (unit_type <= TRANS_1I) {
+            if (unit_type <= TRANS1I) {
               transports_with_large_cargo_space[dst_sea]++;
               transports_with_large_cargo_space[src_sea]--;
             }
@@ -1504,7 +1490,7 @@ bool resolve_sea_battles() {
           total_player_sea_units[0][src_sea] -= total_player_sea_unit_types[0][src_sea][TRANSEMPTY];
           total_player_sea_unit_types[0][src_sea][TRANSEMPTY] = 0;
           sea_units_state[src_sea][TRANSEMPTY][0] = 0;
-          for (uint trans_unit_type = TRANS_1I; trans_unit_type <= TRANS_1I_1T; trans_unit_type++) {
+          for (uint trans_unit_type = TRANS1I; trans_unit_type <= TRANS1I1T; trans_unit_type++) {
             total_player_sea_units[0][src_sea] -=
                 total_player_sea_unit_types[0][src_sea][trans_unit_type];
             total_player_sea_unit_types[0][src_sea][trans_unit_type] = 0;
@@ -2015,9 +2001,9 @@ void remove_sea_attackers(uint src_sea, uint hits) {
       if (*total_units < hits) {
         hits -= *total_units;
         total_player_sea_units[0][src_sea] -= *total_units;
-        if (unit_type <= TRANS_1T) {
+        if (unit_type <= TRANS1T) {
           transports_with_small_cargo_space[src_sea] -= *total_units;
-          if (unit_type <= TRANS_1I) {
+          if (unit_type <= TRANS1I) {
             transports_with_large_cargo_space[src_sea] -= *total_units;
           }
         }
@@ -2027,9 +2013,9 @@ void remove_sea_attackers(uint src_sea, uint hits) {
         *total_units -= hits;
         current_player_sea_unit_types[src_sea][unit_type] -= hits;
         total_player_sea_units[0][src_sea] -= hits;
-        if (unit_type <= TRANS_1T) {
+        if (unit_type <= TRANS1T) {
           transports_with_small_cargo_space[src_sea] -= hits;
-          if (unit_type <= TRANS_1I) {
+          if (unit_type <= TRANS1I) {
             transports_with_large_cargo_space[src_sea] -= hits;
           }
         }
@@ -2045,7 +2031,7 @@ void remove_sea_attackers(uint src_sea, uint hits) {
 
 bool unload_transports() {
   bool units_to_process = false;
-  for (uint unit_type = TRANS_1I; unit_type <= TRANS_1I_1T; unit_type++) {
+  for (uint unit_type = TRANS1I; unit_type <= TRANS1I1T; unit_type++) {
     uint unloading_state = STATES_UNLOADING[unit_type];
     uint unload_cargo1 = UNLOAD_CARGO1[unit_type];
     uint unload_cargo2 = UNLOAD_CARGO2[unit_type];
@@ -2093,7 +2079,7 @@ bool unload_transports() {
         current_player_sea_unit_types[src_sea][TRANSEMPTY]++;
         current_player_sea_unit_types[src_sea][unit_type]--;
         *total_units -= 1;
-        if (unit_type > TRANS_1T) {
+        if (unit_type > TRANS1T) {
           (*bombard_max[dst_air])++;
           land_units_state[dst_air][unload_cargo2][0]++;
           current_player_land_unit_types[dst_air][unload_cargo2]++;
@@ -3039,12 +3025,12 @@ void rotate_turns() {
       Seaunittypes sea1 = current_player_sea_unit_types[dst_sea];
       sea0->fighters[FIGHTER_STATES - 1] = sea1[FIGHTERS];
       sea0->transempty[TRANSEMPTY_STATES - 1] = sea1[TRANSEMPTY];
-      sea0->trans1i[TRANS_1I_STATES - 1] = sea1[TRANS_1I];
-      sea0->trans1a[TRANS_1A_STATES - 1] = sea1[TRANS_1A];
-      sea0->trans1t[TRANS_1T_STATES - 1] = sea1[TRANS_1T];
-      sea0->trans2i[TRANS_2I_STATES - 1] = sea1[TRANS_2I];
+      sea0->trans1i[TRANS1I_STATES - 1] = sea1[TRANS1I];
+      sea0->trans1a[TRANS1A_STATES - 1] = sea1[TRANS1A];
+      sea0->trans1t[TRANS1T_STATES - 1] = sea1[TRANS1T];
+      sea0->trans2i[TRANS2I_STATES - 1] = sea1[TRANS2I];
       sea0->trans1i1a[TRANS1I1A_STATES - 1] = sea1[TRANS1I1A];
-      sea0->trans1i1t[TRANS_1I_1T_STATES - 1] = sea1[TRANS_1I_1T];
+      sea0->trans1i1t[TRANS1I1T_STATES - 1] = sea1[TRANS1I1T];
       sea0->submarines[SUB_STATES - 1] = sea1[SUBMARINES];
       sea0->destroyers[DESTROYER_STATES - 1] = sea1[DESTROYERS];
       sea0->carriers[CARRIER_STATES - 1] = sea1[CARRIERS];

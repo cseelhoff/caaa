@@ -1,6 +1,5 @@
 #pragma once
 #include "array_functions.hpp"
-#include "engine.hpp"
 #include "game_state_memory.hpp"
 #include "land.hpp"
 #include "units/units.hpp"
@@ -46,3 +45,9 @@ void refresh_canals(GameStateMemory& state, GameCache& cache);
 void refresh_fleets(GameStateMemory& state, GameCache& cache);
 void refresh_land_path_blocked(GameStateMemory& state, GameCache& cache);
 void refresh_sea_path_blocked(GameCache& cache);
+void refresh_transports_with_cargo_space(GameStateMemory& state, GameCache& cache, uint player_idx,
+                                         uint sea_idx);
+
+std::string get_printable_status(const GameStateMemory& state, const GameCache& cache);
+std::string get_printable_status_lands(const GameStateMemory& state, const GameCache& cache);
+std::string get_printable_status_seas(const GameStateMemory& state, const GameCache& cache);

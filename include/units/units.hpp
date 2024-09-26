@@ -19,12 +19,12 @@
 enum SeaUnitTypesEnum {
   FIGHTERS,
   TRANSEMPTY,
-  TRANS_1I,
-  TRANS_1A,
-  TRANS_1T,
-  TRANS_2I,
+  TRANS1I,
+  TRANS1A,
+  TRANS1T,
+  TRANS2I,
   TRANS1I1A,
-  TRANS_1I_1T,
+  TRANS1I1T,
   SUBMARINES,
   DESTROYERS,
   CARRIERS,
@@ -94,7 +94,7 @@ extern const Seaunittypes COST_UNIT_SEA;
 extern const BuyableSeaUnits BUY_UNIT_SEA;
 extern const Seaunittypes STATES_STAGING;
 extern const Seaunittypes STATES_UNLOADING;
-extern const LandUTSeaUT LOAD_UNIT_TYPE;
+extern const LandUTSeaUT NEW_TRANS_TYPE_AFTER_LOAD;
 extern const Seaunittypes UNLOAD_CARGO1;
 extern const Seaunittypes UNLOAD_CARGO2;
 extern const Seaunittypes UNMOVED_SEA;

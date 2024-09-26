@@ -7,6 +7,11 @@
 #include "player.hpp"
 #include "sea.hpp"
 #include "units/units.hpp"
+#include <array>
+#include <iomanip>
+#include <sstream>
+#include <sys/types.h>
+#include <tuple>
 
 void refresh_full_cache(GameStateMemory& state, GameCache& cache) {
   refresh_economy(state, cache);
@@ -66,9 +71,9 @@ void refresh_land_units(GameStateMemory& state, GameCache& cache, uint player_id
 void refresh_sea_units(GameStateMemory& state, GameCache& cache, uint player_idx) {
   std::vector<SeaArray> idle_unit_arrays = {
       state.idle_sea_fighters.arr(player_idx),    state.idle_sea_transempty.arr(player_idx),
-      state.idle_sea_trans1i.arr(player_idx),    state.idle_sea_trans1a.arr(player_idx),
-      state.idle_sea_trans1t.arr(player_idx),    state.idle_sea_trans2i.arr(player_idx),
-      state.idle_sea_trans1i1a.arr(player_idx), state.idle_sea_trans1i1t.arr(player_idx),
+      state.idle_sea_trans1i.arr(player_idx),     state.idle_sea_trans1a.arr(player_idx),
+      state.idle_sea_trans1t.arr(player_idx),     state.idle_sea_trans2i.arr(player_idx),
+      state.idle_sea_trans1i1a.arr(player_idx),   state.idle_sea_trans1i1t.arr(player_idx),
       state.idle_sea_submarines.arr(player_idx),  state.idle_sea_destroyers.arr(player_idx),
       state.idle_sea_carriers.arr(player_idx),    state.idle_sea_cruisers.arr(player_idx),
       state.idle_sea_battleships.arr(player_idx), state.idle_sea_bs_damaged.arr(player_idx),
@@ -94,6 +99,17 @@ void refresh_canals(GameStateMemory& state, GameCache& cache) {
   }
 }
 
+void refresh_transports_with_cargo_space(GameStateMemory& state, GameCache& cache, uint player_idx,
+                                         uint sea_idx) {
+    cache.transports_with_large_cargo_space[sea_idx] =
+        state.idle_sea_transempty.val(player_idx, sea_idx) +
+        state.idle_sea_trans1i.val(player_idx, sea_idx);
+    cache.transports_with_small_cargo_space[sea_idx] =
+        cache.transports_with_large_cargo_space[sea_idx] +
+        state.idle_sea_trans1a.val(player_idx, sea_idx) +
+        state.idle_sea_trans1t.val(player_idx, sea_idx);
+                                         }
+
 void refresh_fleets(GameStateMemory& state, GameCache& cache) {
   FILL_ARRAY(cache.allied_carriers, 0);
   FILL_ARRAY(cache.enemy_units_count, 0);
@@ -118,13 +134,7 @@ void refresh_fleets(GameStateMemory& state, GameCache& cache) {
                                                state.idle_sea_bs_damaged.val(player_idx, sea_idx);
       }
     }
-    cache.transports_with_large_cargo_space[sea_idx] =
-        state.idle_sea_transempty.val(current_turn, sea_idx) +
-        state.idle_sea_trans1i.val(current_turn, sea_idx);
-    cache.transports_with_small_cargo_space[sea_idx] =
-        cache.transports_with_large_cargo_space[sea_idx] +
-        state.idle_sea_trans1a.val(current_turn, sea_idx) +
-        state.idle_sea_trans1t.val(current_turn, sea_idx);
+    refresh_transports_with_cargo_space(state, cache, current_turn, sea_idx);
   }
 }
 void refresh_land_path_blocked(GameStateMemory& state, GameCache& cache) {
@@ -133,7 +143,7 @@ void refresh_land_path_blocked(GameStateMemory& state, GameCache& cache) {
   AirArray& enemy_units_count = cache.enemy_units_count;
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
     uint lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
-    LandArray lands_within_2_moves = LANDS_WITHIN_2_MOVES.arr(src_land);
+    LandArray lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];
     BoolLandArray land_path_blocked = cache.land_path_blocked.arr(src_land);
     for (uint conn_idx = 0; conn_idx < lands_within_2_moves_count; conn_idx++) {
       uint dst_land = lands_within_2_moves[conn_idx];
@@ -162,10 +172,161 @@ void refresh_sea_path_blocked(GameCache& cache) {
       uint dst_sea = seas_within_2_moves[conn_idx];
       uint nextSeaMovement = seaPathArray[dst_sea];
       uint nextSeaMovementAlt = seaPathArrayAlt[dst_sea];
-      sea_path_blocked[dst_sea] = enemy_blockade_total[nextSeaMovement] > 0 &&
-                                  enemy_blockade_total[nextSeaMovementAlt] > 0;
+      sea_path_blocked[dst_sea] =
+          enemy_blockade_total[nextSeaMovement] > 0 && enemy_blockade_total[nextSeaMovementAlt] > 0;
       sub_path_blocked[dst_sea] = enemy_destroyers_total[nextSeaMovement] > 0 &&
                                   enemy_destroyers_total[nextSeaMovementAlt] > 0;
     }
   }
+}
+
+constexpr uint UNIT_NAME_WIDTH = 14;
+
+std::string get_printable_status(GameStateMemory& state, GameCache& cache) {
+  std::ostringstream oss;
+  oss << "---\n";
+  oss << get_printable_status_lands(state, cache);
+  oss << get_printable_status_seas(state, cache) << "\n";
+  oss << PLAYERS[state.current_turn].color;
+  oss << PLAYERS[state.current_turn].name;
+  oss << "\033[0m"
+      << ": " << state.money[0] << " IPC\n";
+  return oss.str();
+}
+
+void append_land_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint land_idx,
+                      GameStateMemory& state) {
+
+  uint unit_count = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
+  if (unit_count > 0) {
+    oss << PLAYERS[player_idx].color;
+    oss << PLAYERS[player_idx].name;
+    oss << " ";
+    oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_LAND[unit_idx];
+    oss << std::right << std::setw(3) << unit_count;
+    std::vector<uint> units_here = get_active_land_units(state).at(unit_idx)->at(land_idx);
+    for (const uint unit_here : units_here) {
+      oss << std::right << std::setw(3) << unit_here;
+    }
+    oss << "\n";
+  }
+}
+
+void get_printable_active_land_units(std::ostringstream& oss, GameStateMemory& state,
+                                     GameCache& cache) {
+  uint player_idx = state.current_turn;
+  const char* my_color = PLAYERS[player_idx].color;
+  oss << my_color;
+  for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    if (cache.total_player_units.val(player_idx, land_idx) > 0) {
+      for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+        append_land_unit(oss, player_idx, unit_idx, land_idx, state);
+      }
+    }
+  }
+}
+
+std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache) {
+  std::ostringstream oss;
+  uint current_player_idx = state.current_turn;
+  LandArray& land_owners = state.land_owners;
+  LandArray& factory_dmg = state.factory_dmg;
+  LandArray& factory_max = state.factory_max;
+  oss << "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n";
+  for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+    uint land_owner = land_owners[land_idx];
+    oss << PLAYERS[land_owner].color << land_idx << " ";
+    oss << LANDS[land_idx].name << ": " << PLAYERS[land_owner].name;
+    oss << " " << state.builds_left.at(land_idx);
+    oss << "/" << factory_dmg[land_idx];
+    oss << "/" << factory_max[land_idx];
+    oss << "/" << LANDS[land_idx].land_value;
+    oss << " Combat: " << state.combat_status.at(land_idx);
+    get_printable_active_land_units(oss, state, cache);
+    oss << "\033[0m";
+    for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+      if (current_player_idx == player_idx ||
+          cache.total_player_units.val(player_idx, land_idx) == 0) {
+        continue;
+      }
+      oss << PLAYERS[player_idx].color;
+      for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+        uint unit_count = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
+        // uint unit_count = state.idle_land_fighters.val(player_idx, land_idx);
+        if (unit_count > 0) {
+          oss << PLAYERS[player_idx].name << " ";
+          oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_LAND[unit_idx];
+          oss << std::right << std::setw(3) << unit_count << "\n";
+        }
+      }
+      oss << "\033[0m";
+    }
+  }
+  oss << "\n";
+  return oss.str();
+}
+
+void append_sea_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint sea_idx,
+                     GameStateMemory& state) {
+
+  uint unit_count = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
+  if (unit_count > 0) {
+    oss << PLAYERS[player_idx].color;
+    oss << PLAYERS[player_idx].name;
+    oss << " ";
+    oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_SEA[unit_idx];
+    oss << std::right << std::setw(3) << unit_count;
+    std::vector<uint> units_here = get_active_sea_units(state).at(unit_idx)->at(sea_idx);
+    for (const uint unit_here : units_here) {
+      oss << std::right << std::setw(3) << unit_here;
+    }
+    oss << "\n";
+  }
+}
+
+void get_printable_active_sea_units(std::ostringstream& oss, GameStateMemory& state,
+                                    GameCache& cache) {
+  uint player_idx = state.current_turn;
+  const char* my_color = PLAYERS[player_idx].color;
+  oss << my_color;
+  for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    uint air_idx = LANDS_COUNT + sea_idx;
+    if (cache.total_player_units.val(player_idx, air_idx) > 0) {
+      for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
+        append_sea_unit(oss, player_idx, unit_idx, sea_idx, state);
+      }
+    }
+  }
+}
+
+std::string get_printable_status_seas(GameStateMemory& state, GameCache& cache) {
+  std::ostringstream oss;
+  uint current_player_idx = state.current_turn;
+  oss << "                 |Tot| 0| 1| 2| 3| 4| 5| 6|\n";
+  for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+    uint air_idx = LANDS_COUNT + sea_idx;
+    oss << air_idx << " " << SEAS[sea_idx].name;
+    oss << " Combat: " << state.combat_status.at(air_idx);
+    oss << PLAYERS[state.current_turn].color;
+    get_printable_active_sea_units(oss, state, cache);
+    oss << "\033[0m";
+    for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+      if (current_player_idx == player_idx ||
+          cache.total_player_units.val(player_idx, air_idx) == 0) {
+        continue;
+      }
+      oss << PLAYERS[player_idx].color;
+      for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT - 1; unit_idx++) {
+        uint unit_count = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
+        if (unit_count > 0) {
+          oss << PLAYERS[player_idx].name << " ";
+          oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_SEA[unit_idx];
+          oss << std::right << std::setw(3) << unit_count << "\n";
+        }
+      }
+      oss << "\033[0m";
+    }
+  }
+  oss << "\n";
+  return oss.str();
 }
