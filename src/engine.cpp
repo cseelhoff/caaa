@@ -116,6 +116,7 @@ void cause_breakpoint() { std::cout << "\nbreakpoint\n"; }
 
 void debug_checks(GameStateMemory& state, GameCache& cache) {
   step_id++;
+  uint player_idx = state.current_turn;
   // if (step_id == 1999998819) {
   //   actually_print = true;
   // }
@@ -126,14 +127,16 @@ void debug_checks(GameStateMemory& state, GameCache& cache) {
   }
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+      uint states_move_land = STATES_MOVE_LAND[unit_idx];
       uint temp_unit_type_total = 0;
-      for (uint cur_unit_state = 0; cur_unit_state < STATES_MOVE_LAND[unit_idx]; cur_unit_state++) {
-        temp_unit_type_total += land_units_state[land_idx][unit_idx][cur_unit_state];
+      for (uint cur_unit_state = 0; cur_unit_state < states_move_land; cur_unit_state++) {
+        temp_unit_type_total += get_active_land_units2(state).at(unit_idx)->at(
+            land_idx * states_move_land + cur_unit_state);
       }
-      if (temp_unit_type_total != current_player_land_unit_types[land_idx][unit_idx]) {
+      uint idle_land_units = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
+      if (temp_unit_type_total != idle_land_units) {
         std::cout << "temp_unit_type_total " << temp_unit_type_total
-                  << " != current_player_land_unit_types[land_idx][unit_idx] "
-                  << current_player_land_unit_types[land_idx][unit_idx] << std::endl;
+                  << " != idle_land_units " << idle_land_units << std::endl;
         cause_breakpoint();
       }
     }
@@ -1506,8 +1509,7 @@ bool resolve_sea_battles() {
       // untargetable battle
       if (!targets_exist) {
         if (enemy_units_count[src_air] > 0) {
-          total_player_sea_units[0][src_sea] -=
-              total_player_sea_unit_types[0][src_sea][TRANSEMPTY];
+          total_player_sea_units[0][src_sea] -= total_player_sea_unit_types[0][src_sea][TRANSEMPTY];
           total_player_sea_unit_types[0][src_sea][TRANSEMPTY] = 0;
           sea_units_state[src_sea][TRANSEMPTY][0] = 0;
           for (uint trans_unit_type = TRANS_1I; trans_unit_type <= TRANS_1I_1T; trans_unit_type++) {

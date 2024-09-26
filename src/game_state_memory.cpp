@@ -26,16 +26,14 @@ std::string get_printable_status(GameStateMemory& state) {
 void append_land_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint land_idx,
                       GameStateMemory& state) {
 
-  uint unit_count = static_cast<const PlayerLandArray*>(get_idle_land_units(state).at(unit_idx))
-                        ->val(player_idx, land_idx);
+  uint unit_count = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
   if (unit_count > 0) {
     oss << PLAYERS[player_idx].color;
     oss << PLAYERS[player_idx].name;
     oss << " ";
     oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_LAND[unit_idx];
     oss << std::right << std::setw(3) << unit_count;
-    const auto* units_here = static_cast<const std::array<uint, LANDS_COUNT * BOMBER_LAND_STATES>*>(
-        get_active_land_units(state).at(unit_idx));
+    const auto* units_here = get_active_land_units2(state).at(unit_idx);
     for (uint cur_state = 0; cur_state < STATES_MOVE_LAND[unit_idx]; cur_state++) {
       oss << std::right << std::setw(3)
           << units_here->at(land_idx * STATES_MOVE_LAND[unit_idx] + cur_state);
@@ -93,9 +91,7 @@ std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache)
       }
       oss << PLAYERS[player_idx].color;
       for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-        uint unit_count =
-            static_cast<const PlayerLandArray*>(get_idle_land_units(state).at(unit_idx))
-                ->val(player_idx, land_idx);
+        uint unit_count =get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
         // uint unit_count = state.idle_land_fighters.val(player_idx, land_idx);
         if (unit_count > 0) {
           oss << PLAYERS[player_idx].name << " ";
@@ -113,16 +109,14 @@ std::string get_printable_status_lands(GameStateMemory& state, GameCache& cache)
 void append_sea_unit(std::ostringstream& oss, uint player_idx, uint unit_idx, uint sea_idx,
                      GameStateMemory& state) {
 
-  uint unit_count = static_cast<const PlayerSeaArray*>(get_idle_sea_units(state).at(unit_idx))
-                        ->val(player_idx, sea_idx);
+  uint unit_count = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
   if (unit_count > 0) {
     oss << PLAYERS[player_idx].color;
     oss << PLAYERS[player_idx].name;
     oss << " ";
     oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_SEA[unit_idx];
     oss << std::right << std::setw(3) << unit_count;
-    const auto* units_here = static_cast<const std::array<uint, SEAS_COUNT * BOMBER_SEA_STATES>*>(
-        get_active_sea_units(state).at(unit_idx));
+    const auto* units_here = get_active_sea_units2(state).at(unit_idx);
     for (uint cur_state = 0; cur_state < STATES_MOVE_SEA[unit_idx]; cur_state++) {
       oss << std::right << std::setw(3)
           << units_here->at(sea_idx * STATES_MOVE_SEA[unit_idx] + cur_state);
@@ -162,11 +156,9 @@ std::string get_printable_status_seas(GameStateMemory& state, GameCache& cache) 
           cache.total_player_units.val(player_idx, air_idx) == 0) {
         continue;
       }
-      oss << PLAYERS[(state.current_turn + player_idx) % PLAYERS_COUNT].color;
+      oss << PLAYERS[player_idx].color;
       for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT - 1; unit_idx++) {
-        uint unit_count =
-            static_cast<const PlayerSeaArray*>(get_idle_sea_units(state).at(unit_idx))
-                ->val(player_idx, sea_idx);
+        uint unit_count = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
         if (unit_count > 0) {
           oss << PLAYERS[player_idx].name << " ";
           oss << std::left << std::setw(UNIT_NAME_WIDTH) << NAMES_UNIT_SEA[unit_idx];
