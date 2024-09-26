@@ -33,13 +33,8 @@ void load_game_data(const std::string& filename, GameStateMemory& game_state);
 
 void play_full_turn();
 
-
-void setPrintableStatus();
-void setPrintableStatusLands();
-void setPrintableStatusSeas();
-
-uint getUserInput();
-uint getAIInput();
+uint getUserInput(Actions& valid_moves, uint valid_moves_count);
+uint getAIInput(Actions& valid_moves, uint valid_moves_count);
 
 void build_landMove2Destination();
 void build_landMove1Destination();

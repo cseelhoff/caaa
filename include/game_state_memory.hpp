@@ -1,5 +1,6 @@
 #pragma once
 #include "array_functions.hpp"
+#include "game_cache.hpp"
 #include "land.hpp"
 #include "map_cache.hpp"
 #include "player.hpp"
@@ -10,6 +11,7 @@
 #include <string>
 
 using BoolAirArray = std::array<bool, AIRS_COUNT>;
+using BoolAirAirArray = std::array<BoolAirArray, AIRS_COUNT>;
 using ActiveLandFighters = Uint2DArray<LANDS_COUNT, FIGHTER_STATES>;
 using ActiveLandBombers = Uint2DArray<LANDS_COUNT, BOMBER_LAND_STATES>;
 using ActiveLandInfantry = Uint2DArray<LANDS_COUNT, INFANTRY_STATES>;
@@ -46,7 +48,7 @@ struct GameStateMemory {
   LandArray bombard_max{};
   AirArray builds_left{};
   AirArray combat_status{};
-  BoolAirArray skipped_moves{};
+  BoolAirAirArray skipped_moves{};
   ActiveLandFighters active_land_fighters{};
   ActiveLandBombers active_land_bombers{};
   ActiveLandInfantry active_land_infantry{};
@@ -153,6 +155,6 @@ std::array<MaxActiveSeaUnits, SEA_UNIT_TYPES_COUNT> get_active_sea_units2(const 
       reinterpret_cast<MaxActiveSeaUnits>(&state.active_sea_bombers)};
 }
 
-std::string get_printable_status(const GameStateMemory& state);
-std::string get_printable_status_lands(const GameStateMemory& state);
-std::string get_printable_status_seas(const GameStateMemory& state);
+std::string get_printable_status(const GameStateMemory& state, const GameCache& cache);
+std::string get_printable_status_lands(const GameStateMemory& state, const GameCache& cache);
+std::string get_printable_status_seas(const GameStateMemory& state, const GameCache& cache);

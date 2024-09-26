@@ -23,7 +23,6 @@
 uint random_number_index = 0;
 uint step_id = 0;
 uint answers_remaining = 0;
-bool use_selected_action = false;
 
 Actions valid_moves = {0};
 uint valid_moves_count = 0;
@@ -47,9 +46,8 @@ void load_game_data(const std::string& filename, GameStateMemory& memState) {
 void set_seed(uint new_seed) { random_number_index = new_seed; }
 
 #ifdef DEBUG
-void play_full_turn() {
+void play_full_turn(GameStateMemory& state, GameCache& cache) {
   move_fighter_units();
-  setPrintableStatus();
   move_bomber_units();
   debug_checks();
   stage_transport_units();
@@ -89,7 +87,6 @@ void play_full_turn() {
 #else
 void play_full_turn() {
   move_fighter_units();
-  setPrintableStatus();
   move_bomber_units();
   stage_transport_units();
   move_land_unit_type(TANKS);
@@ -123,7 +120,7 @@ void debug_checks(GameStateMemory& state, GameCache& cache) {
   if (actually_print) {
     std::cout << "  loops: " << max_loops << "  step_id: " << step_id
               << "  answers_remaining: " << answers_remaining
-              << "  select_action: " << use_selected_action << std::endl;
+              << "  select_action: " << selected_action << std::endl;
   }
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
@@ -135,137 +132,140 @@ void debug_checks(GameStateMemory& state, GameCache& cache) {
       }
       uint idle_land_units = get_idle_land_units(state).at(unit_idx)->val(player_idx, land_idx);
       if (temp_unit_type_total != idle_land_units) {
-        std::cout << "temp_unit_type_total " << temp_unit_type_total
-                  << " != idle_land_units " << idle_land_units << std::endl;
+        std::cout << "temp_unit_type_total " << temp_unit_type_total << " != idle_land_units "
+                  << idle_land_units << std::endl;
         cause_breakpoint();
       }
     }
   }
   for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
+      uint states_move_sea = STATES_MOVE_SEA[unit_idx];
       uint temp_unit_type_total = 0;
       for (uint cur_unit_state = 0; cur_unit_state < STATES_MOVE_SEA[unit_idx]; cur_unit_state++) {
-        temp_unit_type_total += sea_units_state[sea_idx][unit_idx][cur_unit_state];
+        temp_unit_type_total += get_active_sea_units2(state).at(unit_idx)->at(
+            sea_idx * states_move_sea + cur_unit_state);
       }
-      if (temp_unit_type_total != current_player_sea_unit_types[sea_idx][unit_idx]) {
-        std::cout << "temp_unit_type_total " << temp_unit_type_total
-                  << " != current_player_sea_unit_types[" << sea_idx << "][" << unit_idx << "] "
-                  << current_player_sea_unit_types[sea_idx][unit_idx] << std::endl;
+      uint idle_land_units = get_idle_sea_units(state).at(unit_idx)->val(player_idx, sea_idx);
+      if (temp_unit_type_total != idle_land_units) {
+        std::cout << "temp_unit_type_total " << temp_unit_type_total << " != idle_land_units["
+                  << sea_idx << "][" << unit_idx << "] " << idle_land_units << std::endl;
         cause_breakpoint();
       }
     }
   }
-  constexpr uint MAX_TOTAL_UNITS = 9000;
-  for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
-    for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
-      uint total = 0;
-      uint total_data = 0;
-      for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-        if (player_idx == 0 || unit_idx < LAND_UNIT_TYPES_COUNT) {
-          total += total_player_land_unit_types[player_idx][land_idx][unit_idx];
-        }
-        if (player_idx == 0) {
-          total_data += current_player_land_unit_types[land_idx][unit_idx];
-        } else {
-          if (unit_idx < LAND_UNIT_TYPES_COUNT) {
-            total_data += state.idle_land_units.at(player_idx - 1)[land_idx][unit_idx];
-          }
-        }
-      }
-      if (total != total_player_land_units[player_idx][land_idx] || total != total_data) {
-        std::cout << "total " << total << " != total_player_land_units[player_idx][land_idx] "
-                  << total_player_land_units[player_idx][land_idx] << " != total_data "
-                  << total_data;
-        cause_breakpoint();
-      }
-      if (total_player_land_units[player_idx][land_idx] < 0 ||
-          total_player_land_units[player_idx][land_idx] > MAX_TOTAL_UNITS) {
-        std::cout << "units_land_player_total[player_idx][land_idx] < 0" << std::endl;
-        cause_breakpoint();
-      }
-      if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > MAX_TOTAL_UNITS) {
-        std::cout << "enemy_units_count[land_idx] < 0" << std::endl;
-        cause_breakpoint();
-      }
-      total = 0;
-      for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
-        if (total_player_land_unit_types[player_idx][land_idx][unit_idx] < 0 ||
-            total_player_land_unit_types[player_idx][land_idx][unit_idx] > MAX_TOTAL_UNITS) {
-          std::cout << "total_player_land_unit_types[player_idx][land_idx][unit_idx] < 0";
-          cause_breakpoint();
-        }
-        total += total_player_land_unit_types[player_idx][land_idx][unit_idx];
-      }
-      if (total != total_player_land_units[player_idx][land_idx]) {
-        std::cout << "total " << total << " != total_player_land_units[player_idx][land_idx] "
-                  << total_player_land_units[player_idx][land_idx] << std::endl;
-        cause_breakpoint();
-      }
-      uint enemy_total = 0;
-      for (uint enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-        uint enemy_player_idx = enemies_0[enemy_idx];
-        enemy_total += total_player_land_units[enemy_player_idx][land_idx];
-      }
-      if (enemy_total != enemy_units_count[land_idx]) {
-        std::cout << "enemy_total " << enemy_total << " != enemy_units_count[land_idx] "
-                  << enemy_units_count[land_idx] << std::endl;
-        cause_breakpoint();
-      }
-    }
-    for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-      if (total_player_sea_units[player_idx][sea_idx] < 0 ||
-          total_player_sea_units[player_idx][sea_idx] > MAX_TOTAL_UNITS) {
-        std::cout << "units_sea_player_total[player_idx][sea_idx] < 0" << std::endl;
-        cause_breakpoint();
-      }
-      for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
-        if (total_player_sea_unit_types[player_idx][sea_idx][unit_idx] < 0 ||
-            total_player_sea_unit_types[player_idx][sea_idx][unit_idx] > MAX_TOTAL_UNITS) {
-          std::cout << "total_player_sea_unit_types[player_idx][sea_idx][unit_idx] < 0";
-          cause_breakpoint();
-        }
-      }
-      if (enemy_units_count[sea_idx + LANDS_COUNT] < 0 ||
-          enemy_units_count[sea_idx + LANDS_COUNT] > MAX_TOTAL_UNITS) {
-        std::cout << "enemy_units_count[land_idx] < 0";
-        cause_breakpoint();
-      }
-      uint total = 0;
-      uint total_data = 0;
-      for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
-        if (player_idx == 0 || unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
-          total += total_player_sea_unit_types[player_idx][sea_idx][unit_idx];
-        }
-        if (player_idx == 0) {
-          total_data += current_player_sea_unit_types[sea_idx][unit_idx];
-        } else {
-          if (unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
-            total_data += state.idle_sea_units.at(player_idx - 1)[sea_idx][unit_idx];
-          }
-        }
-      }
-      if (total != total_player_sea_units[player_idx][sea_idx] || total != total_data) {
-        std::cout << "total " << total << " != total_player_sea_units[player_idx " << player_idx
-                  << "][sea_idx " << sea_idx << "] " << total_player_sea_units[player_idx][sea_idx]
-                  << " != total_data " << total_data;
-        cause_breakpoint();
-      }
-      uint enemy_total = 0;
-      for (uint enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
-        uint enemy_player_idx = enemies_0[enemy_idx];
-        enemy_total += total_player_sea_units[enemy_player_idx][sea_idx];
-      }
-      if (enemy_total != enemy_units_count[sea_idx + LANDS_COUNT]) {
-        std::cout << "enemy_total " << enemy_total
-                  << " != enemy_units_count[sea_idx + LANDS_COUNT] "
-                  << enemy_units_count[sea_idx + LANDS_COUNT];
-        cause_breakpoint();
-      }
-    }
-  }
+  // constexpr uint MAX_TOTAL_UNITS = 9000;
+  // for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
+  //   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
+  //     uint total = 0;
+  //     uint total_data = 0;
+  //     for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+  //       if (player_idx == 0 || unit_idx < LAND_UNIT_TYPES_COUNT) {
+  //         total += total_player_land_unit_types[player_idx][land_idx][unit_idx];
+  //       }
+  //       if (player_idx == 0) {
+  //         total_data += current_player_land_unit_types[land_idx][unit_idx];
+  //       } else {
+  //         if (unit_idx < LAND_UNIT_TYPES_COUNT) {
+  //           total_data += state.idle_land_units.at(player_idx - 1)[land_idx][unit_idx];
+  //         }
+  //       }
+  //     }
+  //     if (total != total_player_land_units[player_idx][land_idx] || total != total_data) {
+  //       std::cout << "total " << total << " != total_player_land_units[player_idx][land_idx] "
+  //                 << total_player_land_units[player_idx][land_idx] << " != total_data "
+  //                 << total_data;
+  //       cause_breakpoint();
+  //     }
+  //     if (total_player_land_units[player_idx][land_idx] < 0 ||
+  //         total_player_land_units[player_idx][land_idx] > MAX_TOTAL_UNITS) {
+  //       std::cout << "units_land_player_total[player_idx][land_idx] < 0" << std::endl;
+  //       cause_breakpoint();
+  //     }
+  //     if (enemy_units_count[land_idx] < 0 || enemy_units_count[land_idx] > MAX_TOTAL_UNITS) {
+  //       std::cout << "enemy_units_count[land_idx] < 0" << std::endl;
+  //       cause_breakpoint();
+  //     }
+  //     total = 0;
+  //     for (uint unit_idx = 0; unit_idx < LAND_UNIT_TYPES_COUNT; unit_idx++) {
+  //       if (total_player_land_unit_types[player_idx][land_idx][unit_idx] < 0 ||
+  //           total_player_land_unit_types[player_idx][land_idx][unit_idx] > MAX_TOTAL_UNITS) {
+  //         std::cout << "total_player_land_unit_types[player_idx][land_idx][unit_idx] < 0";
+  //         cause_breakpoint();
+  //       }
+  //       total += total_player_land_unit_types[player_idx][land_idx][unit_idx];
+  //     }
+  //     if (total != total_player_land_units[player_idx][land_idx]) {
+  //       std::cout << "total " << total << " != total_player_land_units[player_idx][land_idx] "
+  //                 << total_player_land_units[player_idx][land_idx] << std::endl;
+  //       cause_breakpoint();
+  //     }
+  //     uint enemy_total = 0;
+  //     for (uint enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
+  //       uint enemy_player_idx = enemies_0[enemy_idx];
+  //       enemy_total += total_player_land_units[enemy_player_idx][land_idx];
+  //     }
+  //     if (enemy_total != enemy_units_count[land_idx]) {
+  //       std::cout << "enemy_total " << enemy_total << " != enemy_units_count[land_idx] "
+  //                 << enemy_units_count[land_idx] << std::endl;
+  //       cause_breakpoint();
+  //     }
+  //   }
+  //   for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
+  //     if (total_player_sea_units[player_idx][sea_idx] < 0 ||
+  //         total_player_sea_units[player_idx][sea_idx] > MAX_TOTAL_UNITS) {
+  //       std::cout << "units_sea_player_total[player_idx][sea_idx] < 0" << std::endl;
+  //       cause_breakpoint();
+  //     }
+  //     for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
+  //       if (total_player_sea_unit_types[player_idx][sea_idx][unit_idx] < 0 ||
+  //           total_player_sea_unit_types[player_idx][sea_idx][unit_idx] > MAX_TOTAL_UNITS) {
+  //         std::cout << "total_player_sea_unit_types[player_idx][sea_idx][unit_idx] < 0";
+  //         cause_breakpoint();
+  //       }
+  //     }
+  //     if (enemy_units_count[sea_idx + LANDS_COUNT] < 0 ||
+  //         enemy_units_count[sea_idx + LANDS_COUNT] > MAX_TOTAL_UNITS) {
+  //       std::cout << "enemy_units_count[land_idx] < 0";
+  //       cause_breakpoint();
+  //     }
+  //     uint total = 0;
+  //     uint total_data = 0;
+  //     for (uint unit_idx = 0; unit_idx < SEA_UNIT_TYPES_COUNT; unit_idx++) {
+  //       if (player_idx == 0 || unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
+  //         total += total_player_sea_unit_types[player_idx][sea_idx][unit_idx];
+  //       }
+  //       if (player_idx == 0) {
+  //         total_data += current_player_sea_unit_types[sea_idx][unit_idx];
+  //       } else {
+  //         if (unit_idx < SEA_UNIT_TYPES_COUNT - 1) {
+  //           total_data += state.idle_sea_units.at(player_idx - 1)[sea_idx][unit_idx];
+  //         }
+  //       }
+  //     }
+  //     if (total != total_player_sea_units[player_idx][sea_idx] || total != total_data) {
+  //       std::cout << "total " << total << " != total_player_sea_units[player_idx " << player_idx
+  //                 << "][sea_idx " << sea_idx << "] " <<
+  //                 total_player_sea_units[player_idx][sea_idx]
+  //                 << " != total_data " << total_data;
+  //       cause_breakpoint();
+  //     }
+  //     uint enemy_total = 0;
+  //     for (uint enemy_idx = 0; enemy_idx < enemies_count_0; enemy_idx++) {
+  //       uint enemy_player_idx = enemies_0[enemy_idx];
+  //       enemy_total += total_player_sea_units[enemy_player_idx][sea_idx];
+  //     }
+  //     if (enemy_total != enemy_units_count[sea_idx + LANDS_COUNT]) {
+  //       std::cout << "enemy_total " << enemy_total
+  //                 << " != enemy_units_count[sea_idx + LANDS_COUNT] "
+  //                 << enemy_units_count[sea_idx + LANDS_COUNT];
+  //       cause_breakpoint();
+  //     }
+  //   }
+  // }
 }
 
-uint getUserInput() {
+uint getUserInput(Actions& valid_moves, uint valid_moves_count) {
   std::string buffer; // Buffer to hold input string
   uint user_input = 0;
   while (true) {
@@ -294,9 +294,10 @@ uint getUserInput() {
   }
 }
 #ifdef DEBUG
-uint getAIInput() {
+uint getAIInput(Actions& valid_moves, uint valid_moves_count, uint& answers_remaining,
+                uint selected_action) {
   answers_remaining--;
-  if (use_selected_action) {
+  if (selected_action < ACTION_COUNT) {
     // printf("selecting action %d\n", selected_action);
     bool found = false;
     for (uint i = 0; i < valid_moves_count; i++) {
@@ -319,14 +320,14 @@ uint getAIInput() {
 #else
 uint getAIInput() {
   answers_remaining--;
-  if (use_selected_action) {
+  if (selected_action < ACTION_COUNT) {
     return selected_action;
   }
   return valid_moves[RANDOM_NUMBERS[random_number_index++] % valid_moves_count];
 }
 #endif
 
-void update_move_history_4air(uint src_air, uint dst_air) {
+void update_move_history_4air(GameStateMemory& state, uint src_air, uint dst_air) {
   // get a list of newly skipped valid_actions
   while (true) {
     uint valid_action = valid_moves[valid_moves_count];
@@ -339,33 +340,26 @@ void update_move_history_4air(uint src_air, uint dst_air) {
       cause_breakpoint();
     }
 #endif
-    state.skipped_moves[src_air][valid_action].bit = true;
+    state.skipped_moves[src_air][valid_action] = true;
     apply_skip(src_air, valid_action);
     valid_moves_count--;
   }
 }
 
-void apply_skip(uint src_air, uint dst_air) {
+void apply_skip(GameStateMemory& state, uint src_air, uint dst_air) {
   for (uint i = 0; i < AIRS_COUNT; i++) {
-    if (state.skipped_moves[dst_air][i].bit) {
-      state.skipped_moves[src_air][i].bit = true;
+    if (state.skipped_moves[dst_air][i]) {
+      state.skipped_moves[src_air][i] = true;
     }
   }
 }
 
-void clear_move_history() {
-  for (BfAirArray move : state.skipped_moves) {
-    for (BitField bit : move) {
-      bit.bit = false;
-    }
-  } // FILL_2D_ARRAY(state.skipped_moves, 0);
-}
+void clear_move_history(GameStateMemory& state){FILL_2D_ARRAY(state.skipped_moves, false)}
 
-uint get_user_purchase_input(uint src_air) {
+uint get_user_purchase_input(GameStateMemory& state, GameCache& cache, uint src_air) {
   if (PLAYERS[state.current_turn].is_human) {
     std::ostringstream oss;
-    setPrintableStatus();
-    oss << printableGameStatus;
+    oss << get_printable_status(state, cache) << "\n";
     oss << "Purchasing at ";
     if (src_air < LANDS_COUNT) {
       oss << LANDS[src_air].name;
@@ -380,14 +374,13 @@ uint get_user_purchase_input(uint src_air) {
         oss << valid_moves[i] << "=" << NAMES_UNIT_SEA[valid_moves[i]] << " ";
       }
     }
-    printableGameStatus = oss.str();
-    printf("%s\n", printableGameStatus.c_str());
+    std::cout << oss.str();
     return getUserInput();
   }
   return getAIInput();
 }
 
-uint get_user_move_input(uint unit_type, uint src_air) {
+uint get_user_move_input(GameStateMemory& state, uint unit_type, uint src_air) {
   if (PLAYERS[state.current_turn].is_human) {
     setPrintableStatus();
     std::ostringstream oss;
@@ -634,7 +627,7 @@ bool stage_transport_units() {
           std::ostringstream oss;
           oss << "stage_transport_units: unit_type=" << unit_type << " src_air=" << src_air
               << " dst_air=" << dst_air << "\n";
-          setPrintableStatus();
+          oss << get_printable_status(state, cache);
           oss << printableGameStatus << "\n";
           std::string output = oss.str();
           printf("%s", output.c_str());
@@ -678,9 +671,8 @@ void pre_move_fighter_units() {
   FILL_ARRAY(canFighterLandHere, 0);
 #ifdef DEBUG
   if (actually_print) {
-    setPrintableStatus();
     std::ostringstream oss;
-    oss << printableGameStatus << "\n";
+    oss << get_printable_status(state, cache) << "\n";
     std::string output = oss.str();
     std::cout << output;
   }
@@ -3239,7 +3231,6 @@ void apply_action(GameStateJson* game_state, uint action) {
   unlucky_player_idx = 0;
   answers_remaining = 1;
   selected_action = action;
-  use_selected_action = true;
   random_number_index = 0;
   // clear_move_history();
   //  RANDOM_NUMBERS[random_number_index] = action;
@@ -3298,7 +3289,7 @@ double random_play_until_terminal(GameStateJson* game_state) {
   state = *game_state;
   refresh_full_cache();
   answers_remaining = 100000;
-  use_selected_action = false;
+  selected_action = ACTION_COUNT;
   double score = get_score();
   max_loops = 1000;
   random_number_index = static_cast<uint>(rand() % RANDOM_NUMBERS_SIZE);
@@ -3435,7 +3426,7 @@ double evaluate_state(GameStateJson* game_state) {
 void load_single_game() {
   random_number_index = 34282;
   answers_remaining = 100000;
-  use_selected_action = false;
+  selected_action = ACTION_COUNT;
   double score = get_score();
   actually_print = true;
   max_loops = 1000;

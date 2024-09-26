@@ -11,11 +11,11 @@
 
 constexpr uint UNIT_NAME_WIDTH = 14;
 
-std::string get_printable_status(GameStateMemory& state) {
+std::string get_printable_status(GameStateMemory& state, GameCache& cache) {
   std::ostringstream oss;
   oss << "---\n";
-  oss << get_printable_status_lands(state);
-  oss << get_printable_status_seas(state) << "\n";
+  oss << get_printable_status_lands(state, cache);
+  oss << get_printable_status_seas(state, cache) << "\n";
   oss << PLAYERS[state.current_turn].color;
   oss << PLAYERS[state.current_turn].name;
   oss << "\033[0m"
