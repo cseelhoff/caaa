@@ -54,6 +54,14 @@ struct GameCache {
   bool actually_print;
 } __attribute__((aligned(ALIGNMENT_128)));
 
+enum CombatStatus : uint {
+  NO_COMBAT = 0,
+  MID_COMBAT = 1,
+  PRE_COMBAT = 2,
+};
+
+using CombatStatusArray = std::array<CombatStatus, AIRS_COUNT>;
+
 struct GameState {
   uint current_turn{};
   uint seed{};
@@ -63,7 +71,7 @@ struct GameState {
   LandArray factory_max{};
   LandArray bombard_max{};
   AirArray builds_left{};
-  AirArray combat_status{};
+  CombatStatusArray combat_status{};
   BoolAirAirArray skipped_moves{};
   LandVector active_land_fighters{};
   LandVector active_land_bombers{};
