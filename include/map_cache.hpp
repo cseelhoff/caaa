@@ -83,6 +83,7 @@ extern FightermovesAirAirArray AIRS_X_TO_4_MOVES_AWAY;
 extern FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT;
 extern PlayersPlayersVector ENEMIES;
 extern PlayerArray PLAYER_TEAM;
+extern PlayerArray ENEMY_TEAM;
 
 void initialize_map_constants();
 

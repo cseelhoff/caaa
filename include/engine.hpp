@@ -17,6 +17,8 @@ bool move_fighter_units(GameState& state);
 void pre_move_fighter_units(GameState& state);
 void add_valid_fighter_moves(GameState& state, uint src_air);
 void update_move_history_4air(GameState& state, uint src_air, uint dst_air);
+void clear_move_history(GameState& state);
+void apply_skip(GameState& state, uint src_air, uint dst_air);
 bool move_bomber_units(GameState& state);
 bool stage_transport_units(GameState& state);
 bool move_land_unit_type(GameState& state, uint unit_type);

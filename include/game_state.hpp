@@ -30,7 +30,6 @@ struct GameCache {
   PlayerArray total_factory_count;
   PlayerLandArray factory_locations;
   PlayerAirArray total_player_units;
-  AirArray enemy_units_count;
   SeaArray enemy_destroyers_total;
   SeaArray enemy_blockade_total;
   SeaArray allied_carriers;
@@ -152,11 +151,18 @@ constexpr std::array<SeaVector*, SEA_UNIT_TYPES_COUNT> get_active_sea_units(Game
           &state.active_sea_battleships, &state.active_sea_bs_damaged, &state.active_sea_bombers};
 }
 
-constexpr auto& get_active_fighter_units(GameState& state, uint air_idx) {
+constexpr std::vector<uint>& get_active_fighter_units(GameState& state, uint air_idx) {
   if (air_idx < LANDS_COUNT) {
     return state.active_land_fighters.at(air_idx);
   }
   return state.active_sea_fighters.at(air_idx - LANDS_COUNT);
+}
+
+constexpr std::vector<uint>& get_active_bomber_units(GameState& state, uint air_idx) {
+  if (air_idx < LANDS_COUNT) {
+    return state.active_land_bombers.at(air_idx);
+  }
+  return state.active_sea_bombers.at(air_idx - LANDS_COUNT);
 }
 
 void refresh_economy(GameState& state);

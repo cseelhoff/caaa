@@ -111,7 +111,6 @@ void refresh_transports_with_cargo_space(GameState& state, GameCache& cache, uin
 
 void refresh_fleets(GameState& state, GameCache& cache) {
   FILL_ARRAY(cache.allied_carriers, 0);
-  FILL_ARRAY(cache.enemy_units_count, 0);
   FILL_ARRAY(cache.enemy_destroyers_total, 0);
   FILL_ARRAY(cache.enemy_blockade_total, 0);
   FILL_ARRAY(cache.transports_with_large_cargo_space, 0);
@@ -119,12 +118,10 @@ void refresh_fleets(GameState& state, GameCache& cache) {
   uint current_turn = state.current_turn;
   const Player current_player = PLAYERS[current_turn];
   for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
-    uint air_idx = sea_idx + LANDS_COUNT;
     for (uint player_idx = 0; player_idx < PLAYERS_COUNT; player_idx++) {
       if (current_player.is_allied[player_idx]) {
         cache.allied_carriers[sea_idx] += state.idle_sea_carriers.val(player_idx, sea_idx);
       } else {
-        cache.enemy_units_count[air_idx] += cache.total_player_units.val(player_idx, air_idx);
         cache.enemy_destroyers_total[sea_idx] += state.idle_sea_destroyers.val(player_idx, sea_idx);
         cache.enemy_blockade_total[sea_idx] += state.idle_sea_destroyers.val(player_idx, sea_idx) +
                                                state.idle_sea_carriers.val(player_idx, sea_idx) +
@@ -139,7 +136,7 @@ void refresh_fleets(GameState& state, GameCache& cache) {
 void refresh_land_path_blocked(GameState& state, GameCache& cache) {
   cache.land_path_blocked.fill(false);
   LandArray& factory_max = state.factory_max;
-  AirArray& enemy_units_count = cache.enemy_units_count;
+  AirArray& enemy_units_count = cache.team_units_count.arr(ENEMY_TEAM[state.current_turn]);
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
     uint lands_within_2_moves_count = LANDS_WITHIN_2_MOVES_COUNT[src_land];
     LandArray lands_within_2_moves = LANDS_WITHIN_2_MOVES[src_land];

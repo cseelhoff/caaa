@@ -54,6 +54,7 @@ void initialize_map_constants() {
 void initialize_enemies() {
   for (uint player = 0; player < PLAYERS_COUNT; player++) {
     PLAYER_TEAM[player] = PLAYERS[player].team;
+    ENEMY_TEAM[player] = 1 - PLAYER_TEAM[player];
     for (uint enemy = 0; enemy < PLAYERS_COUNT; enemy++) {
       if (!PLAYERS[player].is_allied[enemy]) {
         ENEMIES[player].push_back(enemy);
