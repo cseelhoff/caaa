@@ -5,6 +5,7 @@
 #include "map_cache.hpp"
 #include "sea.hpp"
 #include "units/fighter.hpp"
+#include "units/units.hpp"
 #include <string>
 #include <sys/types.h>
 #include <vector>
@@ -12,14 +13,17 @@
 void cause_breakpoint();
 void load_game_data(GameState& state, const std::string& filename);
 void play_full_turn(GameState& state);
-
-bool move_fighter_units(GameState& state);
+bool move_air_units(GameState& state, AirUnitTypeEnum unit_type);
+void pre_move_air_units(GameState& state, AirUnitTypeEnum unit_type);
 void pre_move_fighter_units(GameState& state);
+void add_valid_air_moves(GameState& state, uint src_air, AirUnitTypeEnum unit_type);
 void add_valid_fighter_moves(GameState& state, uint src_air);
 void update_move_history_4air(GameState& state, uint src_air, uint dst_air);
 void clear_move_history(GameState& state);
 void apply_skip(GameState& state, uint src_air, uint dst_air);
 bool move_bomber_units(GameState& state);
+void pre_move_bomber_units(GameState& state);
+void add_valid_bomber_moves(GameState& state, uint src_air);
 bool stage_transport_units(GameState& state);
 bool move_land_unit_type(GameState& state, uint unit_type);
 bool move_transport_units(GameState& state);

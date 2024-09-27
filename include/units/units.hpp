@@ -66,6 +66,7 @@ constexpr uint MAX_INT = std::numeric_limits<int>::max();
 // Define type aliases for the arrays
 using Landunittypes = std::array<uint, LAND_UNIT_TYPES_COUNT>;
 using Seaunittypes = std::array<uint, SEA_UNIT_TYPES_COUNT>;
+using Airunittypes = std::array<uint, AIR_UNIT_TYPES_COUNT>;
 using LandUTSeaUT = std::array<Seaunittypes, LAND_UNIT_TYPES_COUNT>;
 using LandUnitNames = std::array<std::string_view, LAND_UNIT_TYPES_COUNT>;
 using SeaUnitNames = std::array<std::string_view, SEA_UNIT_TYPES_COUNT>;
@@ -108,3 +109,4 @@ extern const OrderOfSeaDefenders ORDER_OF_SEA_DEFENDERS;
 extern const OrderOfSeaAttackers1 ORDER_OF_SEA_ATTACKERS_1;
 extern const OrderOfSeaAttackers2 ORDER_OF_SEA_ATTACKERS_2;
 extern const OrderOfSeaAttackers3 ORDER_OF_SEA_ATTACKERS_3;
+extern const Airunittypes MAX_MOVE_AIR;

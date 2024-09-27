@@ -113,6 +113,7 @@ struct GameState {
   PlayerSeaArray idle_sea_cruisers{};
   PlayerSeaArray idle_sea_battleships{};
   PlayerSeaArray idle_sea_bs_damaged{};
+  PlayerSeaArray idle_sea_bombers{};
   GameCache cache{};
 } __attribute__((aligned(ALIGNMENT_128)));
 
@@ -122,13 +123,12 @@ get_idle_land_units(GameState& state) {
           &state.idle_land_artillery, &state.idle_land_tanks,   &state.idle_land_aaguns};
 }
 
-constexpr std::array<PlayerSeaArray*, SEA_UNIT_TYPES_COUNT - 1>
-get_idle_sea_units(GameState& state) {
+constexpr std::array<PlayerSeaArray*, SEA_UNIT_TYPES_COUNT> get_idle_sea_units(GameState& state) {
   return {&state.idle_sea_fighters,    &state.idle_sea_transempty, &state.idle_sea_trans1i,
           &state.idle_sea_trans1a,     &state.idle_sea_trans1t,    &state.idle_sea_trans2i,
           &state.idle_sea_trans1i1a,   &state.idle_sea_trans1i1t,  &state.idle_sea_submarines,
           &state.idle_sea_destroyers,  &state.idle_sea_carriers,   &state.idle_sea_cruisers,
-          &state.idle_sea_battleships, &state.idle_sea_bs_damaged};
+          &state.idle_sea_battleships, &state.idle_sea_bs_damaged, &state.idle_sea_bombers};
 }
 
 constexpr uint& get_idle_fighter_units(GameState& state, uint player_idx, uint air_idx) {
@@ -136,6 +136,20 @@ constexpr uint& get_idle_fighter_units(GameState& state, uint player_idx, uint a
     return state.idle_land_fighters.ref(player_idx, air_idx);
   }
   return state.idle_sea_fighters.ref(player_idx, air_idx - LANDS_COUNT);
+}
+
+constexpr uint& get_idle_bomber_units(GameState& state, uint player_idx, uint air_idx) {
+  if (air_idx < LANDS_COUNT) {
+    return state.idle_land_bombers.ref(player_idx, air_idx);
+  }
+  return state.idle_sea_bombers.ref(player_idx, air_idx - LANDS_COUNT);
+}
+
+constexpr uint& get_idle_air_units(GameState& state, uint player_idx, uint air_idx, AirUnitTypeEnum unit_type) {
+  if (unit_type == FIGHTERS_AIR) {
+    return get_idle_fighter_units(state, player_idx, air_idx);
+  }
+  return get_idle_bomber_units(state, player_idx, air_idx);
 }
 
 constexpr std::array<LandVector*, LAND_UNIT_TYPES_COUNT> get_active_land_units(GameState& state) {
@@ -165,6 +179,14 @@ constexpr std::vector<uint>& get_active_bomber_units(GameState& state, uint air_
   return state.active_sea_bombers.at(air_idx - LANDS_COUNT);
 }
 
+constexpr std::vector<uint>& get_active_air_units(GameState& state, uint air_idx,
+                                                  AirUnitTypeEnum unit_type) {
+  if (unit_type == FIGHTERS_AIR) {
+    return get_active_fighter_units(state, air_idx);
+  }
+  return get_active_bomber_units(state, air_idx);
+}
+
 void refresh_economy(GameState& state);
 void refresh_full_cache(GameState& state);
 void refresh_eot_cache(GameState& state);
@@ -175,8 +197,7 @@ void refresh_canals(GameState& state);
 void refresh_fleets(GameState& state);
 void refresh_land_path_blocked(GameState& state);
 void refresh_sea_path_blocked(GameCache& cache);
-void refresh_transports_with_cargo_space(GameState& state, uint player_idx,
-                                         uint sea_idx);
+void refresh_transports_with_cargo_space(GameState& state, uint player_idx, uint sea_idx);
 
 std::string get_printable_status(const GameState& state);
 std::string get_printable_status_lands(const GameState& state);

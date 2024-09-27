@@ -36,8 +36,8 @@ void load_game_data(GameState& state, const std::string& filename) {
 
 #ifdef DEBUG
 void play_full_turn(GameState& state) {
-  move_fighter_units(state);
-  move_bomber_units(state);
+  move_air_units(state, FIGHTERS_AIR);
+  move_air_units(state, BOMBERS_AIR);
   debug_checks(state);
   stage_transport_units(state);
   debug_checks(state);
@@ -97,17 +97,11 @@ void play_full_turn() {
 }
 #endif
 
-bool move_fighter_units(GameState& state) {
-#ifdef DEBUG
-  if (state.cache.actually_print) {
-    printf("move_fighter_units\n");
-  }
-#endif
+bool move_air_units(GameState& state, AirUnitTypeEnum unit_type) {
   const uint player_idx = state.current_turn;
   const uint team_idx = PLAYER_TEAM[player_idx];
   const uint enemy_team_idx = ENEMY_TEAM[player_idx];
-  const Player& player = PLAYERS[player_idx];
-  const LandArray& land_owners = state.land_owners;
+  const uint max_move_air = MAX_MOVE_AIR[unit_type];
   const uint& answers_remaining = state.cache.answers_remaining;
   std::vector<uint>& valid_moves = state.cache.valid_moves;
   AirArray& total_player_units_player = state.cache.total_player_units.arr(player_idx);
@@ -116,67 +110,49 @@ bool move_fighter_units(GameState& state) {
   AirArray& team_units_count_enemy = team_units_count.arr(enemy_team_idx);
   CombatStatusArray& combat_status = state.combat_status;
   bool units_to_process = false;
-  for (uint src_air = 0; src_air < AIRS_COUNT; src_air++) {
-    std::vector<uint>& active_fighters = get_active_fighter_units(state, src_air);
-    uint& unmoved_fighters = active_fighters.at(FIGHTER_MOVES_MAX);
-    //&air_units_state[src_air][FIGHTERS][FIGHTER_MOVES_MAX];
-    if (unmoved_fighters == 0) {
+  uint src_air_count = unit_type == FIGHTERS_AIR ? AIRS_COUNT : LANDS_COUNT;
+  for (uint src_air = 0; src_air < src_air_count; src_air++) {
+    std::vector<uint>& air_units = get_active_air_units(state, src_air, unit_type);
+    uint& unmoved_air_units = air_units.at(max_move_air);
+    if (unmoved_air_units == 0) {
       continue;
     }
     if (!units_to_process) {
       units_to_process = true;
-      pre_move_fighter_units(state);
+      pre_move_air_units(state, unit_type);
     }
     valid_moves.assign(1, src_air);
-    add_valid_fighter_moves(state, src_air);
-    while (unmoved_fighters > 0) {
+    add_valid_air_moves(state, src_air, unit_type);
+    while (unmoved_air_units > 0) {
       units_to_process = true;
       uint dst_air = valid_moves[0];
       if (valid_moves.size() > 1) {
         if (answers_remaining == 0)
           return true;
-        dst_air = get_user_move_input(state, FIGHTERS, src_air);
+        dst_air = get_user_move_input(state, unit_type, src_air);
       }
-#ifdef DEBUG
-      if (state.cache.actually_print) {
-        std::ostringstream oss;
-        oss << get_printable_status(state) << "\n"
-            << "DEBUG: player: " << PLAYERS[state.current_turn].name << " moving fighters "
-            << FIGHTERS << ", src_air: " << src_air << ", dst_air: " << dst_air << "\n";
-        std::cout << oss.str();
+      if (unit_type == FIGHTERS_AIR) { // todo bombers
+        update_move_history_4air(state, src_air, dst_air);
       }
-#endif
-      // update_move_history(dst_air, src_air);
-      update_move_history_4air(state, src_air, dst_air);
       if (src_air == dst_air) {
-        // air_units_state[src_air][FIGHTERS][0] += *total_fighters;
-        active_fighters.at(0) += unmoved_fighters;
-        unmoved_fighters = 0;
+        air_units.at(0) += unmoved_air_units;
+        unmoved_air_units = 0;
         continue;
       }
       uint airDistance = AIR_DIST[src_air][dst_air];
-      if (dst_air < LANDS_COUNT) {
-        if (!player.is_allied[land_owners[dst_air]]) {
-          combat_status[dst_air] = CombatStatus::PRE_COMBAT;
-          // assuming enemy units are present based on valid moves
-        } else {
-          airDistance = FIGHTER_MOVES_MAX; // use up all moves if this is a friendly rebase
-        }
+      if (team_units_count_enemy.at(dst_air) > 0) {
+        combat_status[dst_air] = CombatStatus::PRE_COMBAT;
       } else {
-        combat_status[dst_air] =
-            team_units_count_enemy.at(dst_air) > 0
-                ? CombatStatus::PRE_COMBAT
-                : CombatStatus::NO_COMBAT;
+        airDistance = max_move_air;
       }
-      get_active_fighter_units(state, dst_air).at(FIGHTER_MOVES_MAX - airDistance)++;
-      get_idle_fighter_units(state, player_idx, dst_air)++;
+      get_active_air_units(state, dst_air, unit_type).at(max_move_air - airDistance)++;
+      get_idle_air_units(state, player_idx, dst_air, unit_type)++;
       total_player_units_player.at(dst_air)++;
       team_units_count_team.at(dst_air)++;
-      unmoved_fighters--;
-      get_idle_fighter_units(state, player_idx, src_air)--;
+      unmoved_air_units--;
+      get_idle_air_units(state, player_idx, src_air, unit_type)--;
       total_player_units_player.at(src_air)--;
       team_units_count_team.at(src_air)--;
-
     }
   }
   if (units_to_process) {
@@ -184,7 +160,20 @@ bool move_fighter_units(GameState& state) {
   }
   return false;
 }
-
+void pre_move_air_units(GameState& state, AirUnitTypeEnum unit_type) {
+  if (unit_type == FIGHTERS_AIR) {
+    pre_move_fighter_units(state);
+  } else {
+    pre_move_bomber_units(state);
+  }
+}
+void add_valid_air_moves(GameState& state, uint src_air, AirUnitTypeEnum unit_type) {
+  if (unit_type == FIGHTERS_AIR) {
+    add_valid_fighter_moves(state, src_air);
+  } else {
+    add_valid_bomber_moves(state, src_air);
+  }
+}
 void pre_move_fighter_units(GameState& state) {
   BoolAirArray& canFighterLandHere = state.cache.canFighterLandHere;
   const SeaArray& allied_carriers = state.cache.allied_carriers;
@@ -208,8 +197,8 @@ void pre_move_fighter_units(GameState& state) {
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     uint land_owner = land_owners[land_idx];
     // is allied owned and not recently conquered?
-    canFighterLandHere[land_idx] = (player.is_allied[land_owner] &&
-                                    combat_status[land_idx] == CombatStatus::NO_COMBAT);
+    canFighterLandHere[land_idx] =
+        (player.is_allied[land_owner] && combat_status[land_idx] == CombatStatus::NO_COMBAT);
     // check for possiblity to build carrier under fighter
     if (land_owner == state.current_turn && factory_max[land_idx] > 0) {
       uint land_to_sea_count = LAND_TO_SEA_COUNT[land_idx];
@@ -223,8 +212,8 @@ void pre_move_fighter_units(GameState& state) {
     if (allied_carriers[sea_idx] > 0) {
       canFighterLandHere[sea_idx + LANDS_COUNT] = true;
       // if player owns these carriers, then landing area is 2 spaces away
-      //if (sea_units_state[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
-      if(get_active_sea_units(state).at(CARRIERS)->at(sea_idx)[CARRIER_MOVES_MAX] > 0) {
+      // if (sea_units_state[sea_idx][CARRIERS][CARRIER_MOVES_MAX] > 0) {
+      if (get_active_sea_units(state).at(CARRIERS)->at(sea_idx)[CARRIER_MOVES_MAX] > 0) {
         S2SConn sea_to_sea_conn = SEA_TO_SEA_CONN[sea_idx];
         uint sea_to_sea_count = SEA_TO_SEA_COUNT[sea_idx];
         for (uint conn_idx = 0; conn_idx < sea_to_sea_count; conn_idx++) {
@@ -264,8 +253,9 @@ void add_valid_fighter_moves(GameState& state, uint src_air) {
     uint air_dist = AIR_DIST[src_air][dst_air];
     if (air_dist <= 2 || canFighterLandHere[dst_air] ||
         (air_dist == 3 && canFighterLandIn1Move[dst_air])) {
-          
-      if (!canFighterLandHere[dst_air] && state.cache.team_units_count.val(enemy_team_idx, dst_air) == 0) // waste of a move
+
+      if (!canFighterLandHere[dst_air] &&
+          state.cache.team_units_count.val(enemy_team_idx, dst_air) == 0) // waste of a move
         continue;
       // add_valid_air_move_if_history_allows_X(dst_air, src_air, air_dist);
       if (!state.skipped_moves[src_air][dst_air]) {
@@ -295,7 +285,7 @@ void update_move_history_4air(GameState& state, uint src_air, uint dst_air) {
   }
 }
 
-void clear_move_history(GameState& state){FILL_2D_ARRAY(state.skipped_moves, false)}
+void clear_move_history(GameState& state) { FILL_2D_ARRAY(state.skipped_moves, false) }
 
 void apply_skip(GameState& state, uint src_air, uint dst_air) {
   for (uint i = 0; i < AIRS_COUNT; i++) {
@@ -305,23 +295,24 @@ void apply_skip(GameState& state, uint src_air, uint dst_air) {
   }
 }
 
-bool move_bomber_units(GameState& state) {
-  auto& canBomberLandHere = state.cache.canBomberLandHere;
-  auto& canBomberLandIn1Move = state.cache.canBomberLandIn1Move;
-  auto& canBomberLandIn2Moves = state.cache.canBomberLandIn2Moves;
+
+void pre_move_bomber_units(GameState& state) {
+  BoolAirArray& canBomberLandHere = state.cache.canBomberLandHere;
   const LandArray& land_owners = state.land_owners;
+  const Player current_player = PLAYERS[state.current_turn];
+  const CombatStatusArray& combat_status = state.combat_status;
   // check if any bombers have full moves remaining
-  bool units_to_process = false;
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     // is allied owned and not recently conquered?
-    canBomberLandHere[land_idx] = (PLAYERS[state.current_turn].is_allied[land_owners[land_idx]] &&
-                                   state.combat_status[land_idx] == CombatStatus::NO_COMBAT);
+    canBomberLandHere[land_idx] = (current_player.is_allied[land_owners[land_idx]] &&
+                                   combat_status[land_idx] == CombatStatus::NO_COMBAT);
   }
   //  refresh_canBomberLandIn1Move
+  BoolAirArray& canBomberLandIn1Move = state.cache.canBomberLandIn1Move;
   for (uint land_idx = 0; land_idx < LANDS_COUNT; land_idx++) {
     canBomberLandIn1Move[land_idx] = false;
-    uint land_conn_count = LANDS[land_idx].land_conn_count;
-    L2LConn connected_land_index = LANDS[land_idx].land_conns;
+    const uint land_conn_count = LANDS[land_idx].land_conn_count;
+    const L2LConn connected_land_index = LANDS[land_idx].land_conns;
     for (uint conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
       if (canBomberLandHere[connected_land_index[conn_idx]]) {
         canBomberLandIn1Move[land_idx] = true;
@@ -331,8 +322,8 @@ bool move_bomber_units(GameState& state) {
   }
   for (uint sea_idx = 0; sea_idx < SEAS_COUNT; sea_idx++) {
     canBomberLandIn1Move[LANDS_COUNT + sea_idx] = false;
-    uint land_conn_count = SEAS[sea_idx].land_conn_count;
-    S2LConn connected_land_index = SEAS[sea_idx].land_conns;
+    const uint land_conn_count = SEAS[sea_idx].land_conn_count;
+    const S2LConn connected_land_index = SEAS[sea_idx].land_conns;
     for (uint conn_idx = 0; conn_idx < land_conn_count; conn_idx++) {
       if (canBomberLandHere[connected_land_index[conn_idx]]) {
         canBomberLandIn1Move[LANDS_COUNT + sea_idx] = true;
@@ -340,11 +331,12 @@ bool move_bomber_units(GameState& state) {
       }
     }
   }
+  BoolAirArray& canBomberLandIn2Moves = state.cache.canBomberLandIn2Moves;
   // refresh_canBomberLandIn2Moves
   for (uint air_idx = 0; air_idx < AIRS_COUNT; air_idx++) {
     canBomberLandIn2Moves[air_idx] = false;
-    uint air_conn_count = AIR_CONN_COUNT[air_idx];
-    A2AConn air_conn = AIR_CONNECTIONS[air_idx];
+    const uint air_conn_count = AIR_CONN_COUNT[air_idx];
+    const A2AConn air_conn = AIR_CONNECTIONS[air_idx];
     for (uint conn_idx = 0; conn_idx < air_conn_count; conn_idx++) {
       if (canBomberLandIn1Move[air_conn[conn_idx]]) {
         canBomberLandIn2Moves[air_idx] = true;
@@ -352,75 +344,28 @@ bool move_bomber_units(GameState& state) {
       }
     }
   }
-  for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
-    uint& total_bombers = get_active_bomber_units(state, src_land).at(BOMBER_MOVES_MAX);
-    //uint* total_bombers = &land_units_state[src_land][BOMBERS_LAND_AIR][BOMBER_MOVES_MAX];
-    if (total_bombers == 0) {
-      continue;
-    }
-    units_to_process = true;
-    valid_moves[0] = src_land;
-    valid_moves_count = 1;
-    add_valid_bomber_moves(src_land, BOMBER_MOVES_MAX);
-    while (total_bombers > 0) {
-      units_to_process = true;
-      uint dst_air = valid_moves[0];
-      if (valid_moves_count == 1) {
-        if (answers_remaining == 0)
-          return true;
-        dst_air = get_user_move_input(BOMBERS_LAND_AIR, src_land);
+}
+
+void add_valid_bomber_moves(GameState& state, uint src_air) {
+  AirArray near_air = AIR_WITHIN_X_MOVES[BOMBER_MOVES_MAX - 1][src_air];
+  uint near_air_count = AIR_WITHIN_X_MOVES_COUNT[BOMBER_MOVES_MAX - 1][src_air];
+  for (uint i = 0; i < near_air_count; i++) {
+    uint dst_air = near_air[i];
+    uint air_dist = AIR_DIST[src_air][dst_air];
+    if (air_dist <= 3 || canBomberLandHere[dst_air] ||
+        (air_dist == 4 && canBomberLandIn2Moves[dst_air]) ||
+        (air_dist == 5 && canBomberLandIn1Move[dst_air])) {
+      if (!canBomberLandHere[dst_air] && enemy_units_count[dst_air] == 0) {
+        if (dst_air >= LANDS_COUNT || *factory_max[dst_air] == 0 ||
+            *factory_dmg[dst_air] == *factory_max[dst_air] * 2) // waste of a move
+          continue;
       }
-#ifdef DEBUG
-      if (state.cache.actually_print) {
-        printf("DEBUG: player: %s bombers fighters %d, src_air: %d, dst_air: %d\n",
-               PLAYERS[state.current_turn].name, BOMBERS_LAND_AIR, src_land, dst_air);
+      // add_valid_air_move_if_history_allows_X(dst_air, src_air, air_dist);
+      if (!state.skipped_moves[src_air][dst_air].bit) {
+        valid_moves[valid_moves_count++] = dst_air;
       }
-#endif
-      // update_move_history(dst_air, src_land);
-      if (src_land == dst_air) {
-        land_units_state[src_land][BOMBERS_LAND_AIR][0] += *total_bombers;
-        total_bombers = 0;
-        continue;
-      }
-      if (dst_air < LANDS_COUNT) {
-        if (!is_allied_0[*owner_idx[dst_air]]) {
-#ifdef DEBUG
-          if (state.cache.actually_print) {
-            printf("Bomber moving to enemy territory. Automatically flagging for combat\n");
-          }
-#endif
-          state.combat_status[dst_air] = CombatStatus::PRE_COMBAT;
-          // assuming enemy units are present based on valid moves
-        }
-      } else {
-#ifdef DEBUG
-        if (state.cache.actually_print) {
-          printf("Bomber moving to sea. Possibly flagging for combat\n");
-        }
-#endif
-        state.combat_status[dst_air] =
-            enemy_units_count[dst_air] > 0 : CombatStatus::PRE_COMBAT : CombatStatus::NO_COMBAT;
-      }
-      uint airDistance = AIR_DIST[src_land][dst_air];
-      if (dst_air < LANDS_COUNT) {
-        land_units_state[dst_air][BOMBERS_LAND_AIR][BOMBER_MOVES_MAX - airDistance]++;
-        total_player_land_unit_types[0][dst_air][BOMBERS_LAND_AIR]++;
-        total_player_land_units[0][dst_air]++;
-      } else {
-        uint dst_sea = dst_air - LANDS_COUNT;
-        sea_units_state[dst_sea][BOMBERS_SEA][BOMBER_MOVES_MAX - 1 - airDistance]++;
-        current_player_sea_unit_types[dst_sea][BOMBERS_SEA]++;
-        total_player_sea_units[0][dst_sea]++;
-      }
-      current_player_land_unit_types[src_land][BOMBERS_LAND_AIR]--;
-      total_player_land_units[0][src_land]--;
-      *total_bombers -= 1;
     }
   }
-  if (units_to_process) {
-    clear_move_history();
-  }
-  return false;
 }
 
 uint getUserInput(Actions& valid_moves, uint valid_moves_count) {
@@ -2290,28 +2235,6 @@ void add_valid_fighter_landing(uint src_air, uint remaining_moves) {
   }
 }
 
-void add_valid_bomber_moves(uint src_air, uint remaining_moves) {
-  AirArray near_air = AIR_WITHIN_X_MOVES[remaining_moves - 1][src_air];
-  uint near_air_count = AIR_WITHIN_X_MOVES_COUNT[remaining_moves - 1][src_air];
-  for (uint i = 0; i < near_air_count; i++) {
-    uint dst_air = near_air[i];
-    uint air_dist = AIR_DIST[src_air][dst_air];
-    if (air_dist <= 3 || canBomberLandHere[dst_air] ||
-        (air_dist == 4 && canBomberLandIn2Moves[dst_air]) ||
-        (air_dist == 5 && canBomberLandIn1Move[dst_air])) {
-      if (!canBomberLandHere[dst_air] && enemy_units_count[dst_air] == 0) {
-        if (dst_air >= LANDS_COUNT || *factory_max[dst_air] == 0 ||
-            *factory_dmg[dst_air] == *factory_max[dst_air] * 2) // waste of a move
-          continue;
-      }
-      // add_valid_air_move_if_history_allows_X(dst_air, src_air, air_dist);
-      if (!state.skipped_moves[src_air][dst_air].bit) {
-        valid_moves[valid_moves_count++] = dst_air;
-      }
-    }
-  }
-}
-
 void refresh_can_fighter_land_here() {
   LandArray& land_owners = state.land_owners;
   LandArray& factory_max = state.factory_max;
@@ -2719,7 +2642,7 @@ bool buy_units() {
 
 void crash_air_units() {
   // crash planes not on friendly land
-  pre_move_fighter_units();
+  pre_move_air_units();
   for (uint air_idx = 0; air_idx < LANDS_COUNT; air_idx++) {
     if (canFighterLandHere[air_idx]) {
       continue;
