@@ -21,7 +21,11 @@
 #include <unistd.h>
 #include <vector>
 
+#ifdef NDEBUG
+#define cause_breakpoint() ((void)0)
+#else
 void cause_breakpoint() { std::cout << "\nbreakpoint\n"; }
+#endif
 
 void load_game_data(GameState& state, const std::string& filename) {
   memset(&state, 0, sizeof(state));
@@ -556,8 +560,8 @@ void add_valid_land_moves(GameState& state, uint src_land, uint moves_remaining,
       valid_moves.push_back(dst_land);
     }
     // check for moving from land to sea (two moves away)
-    uint load_within_2_moves_count = LOAD_WITHIN_2_MOVES_COUNT[src_land];
-    SeaArray load_within_2_moves = LOAD_WITHIN_2_MOVES[src_land];
+    const uint load_within_2_moves_count = LOAD_WITHIN_2_MOVES_COUNT[src_land];
+    const SeaArray load_within_2_moves = LOAD_WITHIN_2_MOVES[src_land];
     for (uint sea_idx = 0; sea_idx < load_within_2_moves_count; sea_idx++) {
       uint dst_sea = load_within_2_moves[sea_idx];
       if (transports_with_large_cargo_space[dst_sea] == 0) { // assume large, only tanks move 2
@@ -607,40 +611,39 @@ void add_valid_land_moves(GameState& state, uint src_land, uint moves_remaining,
 }
 
 void add_valid_sub_moves(GameState& state, uint src_sea, uint moves_remaining) {
+  const uint canal_state = state.cache.canal_state;
+  std::vector<uint>& valid_moves = state.cache.valid_moves;
   if (moves_remaining == 2) {
     // check for moving from sea to sea (two moves away)
-    const uint seas_within_2_moves_count = seas_within_2_moves_count_canal[src_sea];
-    SeaArray seas_within_2_moves = seas_within_2_moves_canal[src_sea];
-    BoolSeaArray is_sub_path_blocked_src_sea = is_sub_path_blocked[src_sea];
+    const uint seas_within_2_moves_count = SEAS_WITHIN_2_MOVES_COUNT[canal_state][src_sea];
+    const SeaArray& seas_within_2_moves = SEAS_WITHIN_2_MOVES[canal_state][src_sea];
+    const BoolSeaArray sub_path_blocked_src_sea = state.cache.sub_path_blocked.arr(src_sea);
     for (uint sea_idx = 0; sea_idx < seas_within_2_moves_count; sea_idx++) {
       uint dst_sea = seas_within_2_moves[sea_idx];
-      if (is_sub_path_blocked_src_sea[dst_sea]) {
+      if (sub_path_blocked_src_sea[dst_sea]) {
         continue;
       }
-      uint src_air = src_sea + LANDS_COUNT;
       uint dst_air = dst_sea + LANDS_COUNT;
-      if (state.skipped_moves[src_air][dst_air].bit) {
+      if (state.skipped_moves[src_sea + LANDS_COUNT][dst_air]) {
         continue;
       }
-      valid_moves[valid_moves_count++] = dst_air;
+      valid_moves.push_back(dst_air);
     }
   } else {
     // check for moving from sea to sea (one move away)
-    uint seas_within_1_move_count = seas_within_1_move_count_canal[src_sea];
-    SeaArray seas_within_1_move = seas_within_1_move_canal[src_sea];
+    const uint seas_within_1_move_count = SEAS_WITHIN_1_MOVE_COUNT[canal_state][src_sea];
+    const SeaArray& seas_within_1_move = SEAS_WITHIN_1_MOVE[canal_state][src_sea];
     for (uint sea_idx = 0; sea_idx < seas_within_1_move_count; sea_idx++) {
-      uint dst_sea = seas_within_1_move[sea_idx];
-      uint src_air = src_sea + LANDS_COUNT;
-      uint dst_air = dst_sea + LANDS_COUNT;
-      if (state.skipped_moves[src_air][dst_air].bit) {
+      const uint dst_air = seas_within_1_move[sea_idx] + LANDS_COUNT;
+      if (state.skipped_moves[src_sea + LANDS_COUNT][dst_air]) {
         continue;
       }
-      valid_moves[valid_moves_count++] = dst_air;
+      valid_moves.push_back(dst_air);
     }
   }
 }
 
-void conquer_land(uint dst_land) {
+void conquer_land(GameState& state, uint dst_land) {
 #ifdef DEBUG
   if (state.cache.actually_print) {
     setPrintableStatus();
