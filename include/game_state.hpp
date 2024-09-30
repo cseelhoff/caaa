@@ -7,7 +7,9 @@
 #include "units/units.hpp"
 #include <array>
 #include <cmath>
+#include <list>
 #include <string>
+#include <vector>
 
 constexpr uint MAX_LAND_UNIT_STATES = std::max({FIGHTER_STATES, BOMBER_LAND_STATES, INFANTRY_STATES,
                                                 ARTILLERY_STATES, TANK_STATES, AA_GUN_STATES});
@@ -23,12 +25,14 @@ using BoolSeaArray = std::array<bool, SEAS_COUNT>;
 using BoolLandArray = std::array<bool, LANDS_COUNT>;
 using BoolLandLandArray = Bool2DArray<LANDS_COUNT, LANDS_COUNT>;
 using BoolSeaSeaArray = Bool2DArray<SEAS_COUNT, SEAS_COUNT>;
+using PlayerList = std::array<std::list<uint>, PLAYERS_COUNT>;
 
 struct GameCache {
   TeamAirArray team_units_count;
   PlayerArray income_per_turn;
-  PlayerArray total_factory_count;
-  PlayerLandArray factory_locations;
+  //PlayerArray total_factory_count;
+  //PlayerLandArray factory_locations;
+  PlayerList factory_locations;
   PlayerAirArray total_player_units;
   SeaArray enemy_destroyers_total;
   SeaArray enemy_blockade_total;
