@@ -111,7 +111,7 @@ bool move_air_units(GameState& state, AirUnitTypeEnum unit_type) {
         }
         air_units.at(0) += unmoved_air_units;
         unmoved_air_units = 0;
-        continue;
+        break;
       }
       uint airDistance = AIR_DIST[src_air][dst_air];
       if (team_units_count_enemy.at(dst_air) > 0 ||
@@ -440,7 +440,7 @@ bool stage_transport_units(GameState& state, SeaUnitTypesEnum unit_type) {
       if (src_air == dst_air) {
         sea_units.at(done_staging) += unmoved_sea_units;
         unmoved_sea_units = 0;
-        continue;
+        break;
       }
       const uint dst_sea = dst_air - LANDS_COUNT;
       uint sea_distance = sea_dist_src_sea[dst_air];
@@ -449,13 +449,13 @@ bool stage_transport_units(GameState& state, SeaUnitTypesEnum unit_type) {
         sea_distance = MAX_MOVE_SEA[unit_type];
         continue;
       }
-      get_active_sea_units(state).at(unit_type)->at(dst_sea)[staging_state - sea_distance - 1]++;
-      get_idle_sea_units(state).at(unit_type)->ref(state.current_turn, dst_sea)++;
+      get_active_sea_units(state).at(unit_type)->at(dst_sea)[staging_state - 1 - sea_distance]++;
+      get_idle_sea_units(state).at(unit_type)->ref(player_idx, dst_sea)++;
       total_player_units_player.at(dst_air)++;
       team_units_count_team.at(dst_air)++;
-      transports_with_small_cargo_space[dst_sea]++;
+      transports_with_small_cargo_space.at(dst_sea)++;
       unmoved_sea_units--;
-      get_idle_sea_units(state).at(unit_type)->ref(state.current_turn, src_sea)--;
+      get_idle_sea_units(state).at(unit_type)->ref(player_idx, src_sea)--;
       total_player_units_player.at(src_air)--;
       team_units_count_team.at(src_air)--;
       transports_with_small_cargo_space[src_sea]--;
@@ -676,13 +676,16 @@ bool move_land_unit_type(GameState& state, uint unit_type) {
   debug_checks(state);
   const uint player_idx = state.current_turn;
   const uint& answers_remaining = state.cache.answers_remaining;
-  const AirArray& enemy_units_count = state.cache.team_units_count.arr(ENEMY_TEAM[player_idx]);
   AirArray& total_player_units_player = state.cache.total_player_units.arr(player_idx);
   AirArray& team_units_count_team = state.cache.team_units_count.arr(PLAYER_TEAM[player_idx]);
   CombatStatusArray& combat_status = state.combat_status;
+  const BoolPlayerArray& is_allied = PLAYERS[player_idx].is_allied;
+  const LandArray& land_owners = state.land_owners;
   bool units_to_process = false;
   std::vector<uint>& valid_moves = state.cache.valid_moves;
+  BoolLandLandArray& land_path_blocked = state.cache.land_path_blocked;
   for (uint src_land = 0; src_land < LANDS_COUNT; src_land++) {
+    const BoolLandArray& land_path_blocked_src_land = land_path_blocked.arr(src_land);
     std::vector<uint>& land_units = get_active_land_units(state).at(unit_type)->at(src_land);
     for (uint moves_remaining1 = 0; moves_remaining1 < MAX_MOVE_LAND[unit_type];
          moves_remaining1++) {
@@ -707,7 +710,7 @@ bool move_land_unit_type(GameState& state, uint unit_type) {
         if (src_land == dst_air) {
           land_units.at(0) += total_units;
           total_units = 0;
-          continue;
+          break;
         }
         if (dst_air >= LANDS_COUNT) {
           load_transport(state, unit_type, src_land, dst_air - LANDS_COUNT, moves_remaining);
@@ -716,36 +719,29 @@ bool move_land_unit_type(GameState& state, uint unit_type) {
           add_valid_land_moves(state, src_land, moves_remaining, unit_type);
           continue;
         }
-        combat_status[dst_air] =
-            enemy_units_count[dst_air] > 0 ? CombatStatus::PRE_COMBAT : CombatStatus::NO_COMBAT;
         // if the destination is not blitzable, then end unit turn
-        const uint landDistance = land_dist_src_land[dst_air];
-        if (is_allied_0[*owner_idx[dst_air]] || enemy_units_count[dst_air] > 0) {
+        uint landDistance = land_dist_src_land[dst_air];
+        if(land_path_blocked_src_land[dst_air]) {
+          combat_status[dst_air] = CombatStatus::PRE_COMBAT;
           landDistance = moves_remaining;
+        } else if (is_allied[land_owners[dst_air]]) {
+          landDistance = moves_remaining;
+        } else {
+          conquer_land(state, dst_air);
         }
-        land_units_state[dst_air][unit_type][moves_remaining - landDistance]++;
-        current_player_land_unit_types[dst_air][unit_type]++;
-        total_player_land_units[0][dst_air]++;
-        current_player_land_unit_types[src_land][unit_type]--;
-        total_player_land_units[0][src_land]--;
-        *total_units -= 1;
-        if (!is_allied_0[*owner_idx[dst_air]] && enemy_units_count[dst_air] == 0) {
-#ifdef DEBUG
-          if (state.cache.actually_print) {
-            printf("Conquering land");
-          }
-#endif
-          conquer_land(dst_air);
-          state.combat_status[dst_air] = CombatStatus::PRE_COMBAT;
-        }
-#ifdef DEBUG
-        debug_checks();
-#endif
+        get_active_land_units(state).at(unit_type)->at(dst_air)[landDistance]++;
+        get_idle_land_units(state).at(unit_type)->ref(player_idx, dst_air)++;
+        total_player_units_player.at(dst_air)++;
+        team_units_count_team.at(dst_air)++;
+        total_units--;
+        get_idle_land_units(state).at(unit_type)->ref(player_idx, src_land)--;
+        total_player_units_player.at(src_land)--;
+        team_units_count_team.at(src_land)--;
       }
     }
   }
   if (units_to_process) {
-    clear_move_history();
+    clear_move_history(state);
   }
   return false;
 }
