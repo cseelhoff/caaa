@@ -51,7 +51,7 @@ void play_full_turn(GameState& state) {
   move_land_unit_type(state, INFANTRY);
   move_transport_units(state);
   move_subs(state);
-  move_destroyers_battleships(state);
+  move_subs_battleships(state);
   resolve_sea_battles(state);
   unload_transports(state);
   resolve_land_battles(state);
@@ -773,6 +773,7 @@ bool move_transport_units(GameState& state) {
   AirArray& total_player_units_player = state.cache.total_player_units.arr(player_idx);
   SeaArray& transports_with_small_cargo_space = state.cache.transports_with_small_cargo_space;
   SeaArray& transports_with_large_cargo_space = state.cache.transports_with_large_cargo_space;
+  std::vector<uint>& valid_moves = state.cache.valid_moves;
   skip_empty_transports(state);
   bool units_to_process = false;
   for (uint unit_type = TRANS1I; unit_type <= TRANS1I1T;
@@ -780,17 +781,11 @@ bool move_transport_units(GameState& state) {
     SeaVector* active_transports = sea_units_state[unit_type];
     SeaArray& idle_sea_transports = get_idle_sea_units(state).at(unit_type)->arr(player_idx);
     const uint max_state = STATES_MOVE_SEA[unit_type] - STATES_STAGING[unit_type];
-    // uint done_moving = 1;//STATES_UNLOADING[unit_type];
-    // uint min_state = 2;//STATES_UNLOADING[unit_type] + 1;
-    // clear_move_history();
-    std::vector<uint>& valid_moves = state.cache.valid_moves;
     for (uint src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      // for (uint cur_state = max_state; cur_state >= min_state; cur_state--) {
       std::vector<uint>& active_sea_transports_src = active_transports->at(src_sea);
       for (uint i = 1; i < 3; i++) {
         const uint cur_state = max_state - i;
         uint& total_ships = active_sea_transports_src[cur_state];
-        // unit_states_ptr unit_states = total_ships;
         if (total_ships == 0) {
           continue;
         }
@@ -842,102 +837,89 @@ bool move_transport_units(GameState& state) {
   }
   return false;
 }
-bool move_subs() {
+bool move_ships(GameState& state) {
+  debug_checks(state);
+  const uint& answers_remaining = state.cache.answers_remaining;
   bool units_to_process = false;
-  for (uint src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-    uint* total_subs = &sea_units_state[src_sea][SUBMARINES][SUB_UNMOVED];
-    if (*total_subs == 0) {
-      continue;
-    }
-    uint src_air = src_sea + LANDS_COUNT;
-    valid_moves[0] = src_air;
-    valid_moves_count = 1;
-    add_valid_sub_moves(src_sea, SUB_MOVES_MAX);
-    while (*total_subs > 0) {
-      units_to_process = true;
-      uint dst_air = valid_moves[0];
-      if (valid_moves_count > 1) {
-        if (answers_remaining == 0) {
-          return true;
-        }
-        dst_air = get_user_move_input(SUBMARINES, src_air);
-      }
-      // update_move_history(dst_air, src_air);
-      uint dst_sea = dst_air - LANDS_COUNT;
-      if (enemy_units_count[dst_sea] > 0) {
-        state.combat_status.at(dst_sea) = CombatStatus::PRE_COMBAT;
-        // break;
-      }
-      if (src_air == dst_air) {
-        sea_units_state[src_sea][SUBMARINES][SUB_DONE_MOVING] += *total_subs;
-        *total_subs = 0;
-        continue;
-      }
-      sea_units_state[dst_sea][SUBMARINES][SUB_DONE_MOVING]++;
-      current_player_sea_unit_types[dst_sea][SUBMARINES]++;
-      total_player_sea_units[0][dst_sea]++;
-      *total_subs -= 1;
-      current_player_sea_unit_types[src_sea][SUBMARINES]--;
-      total_player_sea_units[0][src_sea]--;
-    }
-  }
-  if (units_to_process) {
-    clear_move_history();
-  }
-  return false;
-}
-
-bool move_destroyers_battleships() {
-  bool units_to_process = false;
-  for (uint unit_type = DESTROYERS; unit_type <= BS_DAMAGED; unit_type++) {
+  const uint player_idx = state.current_turn;
+  const std::array<SeaVector*, SEA_UNIT_TYPES_COUNT>& sea_units_state = get_active_sea_units(state);
+  const std::array<PlayerSeaArray*, SEA_UNIT_TYPES_COUNT>& idle_sea_units =
+      get_idle_sea_units(state);
+  const AirArray& enemy_units_count = state.cache.team_units_count.arr(ENEMY_TEAM[player_idx]);
+  std::vector<uint>& valid_moves = state.cache.valid_moves;
+  AirArray& team_units_count_team = state.cache.team_units_count.arr(PLAYER_TEAM[player_idx]);
+  AirArray& total_player_units_player = state.cache.total_player_units.arr(player_idx);
+  SeaArray& transports_with_small_cargo_space = state.cache.transports_with_small_cargo_space;
+  SeaArray& transports_with_large_cargo_space = state.cache.transports_with_large_cargo_space;
+  skip_empty_transports(state);
+  for (uint unit_type = TRANS1I; unit_type <= BS_DAMAGED; unit_type++) {
     uint unmoved = UNMOVED_SEA[unit_type];
     uint done_moving = DONE_MOVING_SEA[unit_type];
     uint moves_remaining = MAX_MOVE_SEA[unit_type];
+    SeaVector* active_sea_units = sea_units_state.at(unit_type);
+    SeaArray& idle_ships = idle_sea_units.at(unit_type)->arr(player_idx);
     // clear_move_history();
     for (uint src_sea = 0; src_sea < SEAS_COUNT; src_sea++) {
-      uint* total_ships = &sea_units_state[src_sea][unit_type][unmoved];
-      if (*total_ships == 0) {
+      if (unit_type <= TRANS1I1T) {
+        uint max_state = STATES_MOVE_SEA[unit_type] - STATES_STAGING[unit_type];
+        for (uint i = 1; i < 3; i++) {
+          const uint cur_state = max_state - i;
+          unmoved = cur_state;
+        }
+      }
+      uint& active_unmoved_ships = active_sea_units->at(src_sea)[unmoved];
+      if (active_unmoved_ships == 0) {
         continue;
       }
       units_to_process = true;
       uint src_air = src_sea + LANDS_COUNT;
-      valid_moves[0] = src_air;
-      valid_moves_count = 1;
-      add_valid_sea_moves(src_sea, moves_remaining);
-      while (*total_ships > 0) {
-        units_to_process = true;
+      valid_moves.assign(1, src_air);
+      if (unit_type == SUBMARINES) {
+        add_valid_sub_moves(state, src_sea, moves_remaining);
+      } else {
+        add_valid_sea_moves(state, src_sea, moves_remaining);
+      }
+      while (active_unmoved_ships > 0) {
         uint dst_air = valid_moves[0];
-        if (valid_moves_count > 1) {
+        if (valid_moves.size() > 1) {
           if (answers_remaining == 0) {
             return true;
           }
-          dst_air = get_user_move_input(unit_type, src_air);
+          dst_air = get_user_move_input(state, unit_type, src_air);
         }
         // update_move_history(dst_air, src_air);
         if (enemy_units_count[dst_air] > 0) {
           state.combat_status.at(dst_air) = CombatStatus::PRE_COMBAT;
-          // break;
         }
         if (src_air == dst_air) {
-          sea_units_state[src_sea][unit_type][done_moving] += *total_ships;
-          *total_ships = 0;
-          continue;
+          active_sea_units->at(src_sea)[done_moving] += active_unmoved_ships;
+          active_unmoved_ships = 0;
+          break;
         }
         uint dst_sea = dst_air - LANDS_COUNT;
-        sea_units_state[dst_sea][unit_type][done_moving]++;
-        current_player_sea_unit_types[dst_sea][unit_type]++;
-        total_player_sea_units[0][dst_sea]++;
-        *total_ships -= 1;
-        current_player_sea_unit_types[src_sea][unit_type]--;
-        total_player_sea_units[0][src_sea]--;
+        idle_ships.at(dst_sea)++;
+        total_player_units_player.at(dst_air)++;
+        team_units_count_team.at(dst_air)++;
+        active_unmoved_ships--;
+        idle_ships.at(src_sea)--;
+        total_player_units_player.at(src_air)--;
+        team_units_count_team.at(src_air)--;
         if (unit_type == CARRIERS) {
-          carry_allied_fighters(src_sea, dst_sea);
+          carry_allied_fighters(state, src_sea, dst_sea);
+        }
+        if (unit_type <= TRANS1T) {
+          transports_with_small_cargo_space[dst_sea]++;
+          transports_with_small_cargo_space[src_sea]--;
+          if (unit_type <= TRANS1I) {
+            transports_with_large_cargo_space[dst_sea]++;
+            transports_with_large_cargo_space[src_sea]--;
+          }
         }
       }
     }
   }
   if (units_to_process) {
-    clear_move_history();
+    clear_move_history(state);
   }
   return false;
 }
@@ -2754,7 +2736,7 @@ void get_possible_actions(GameStateJson* game_state, uint* num_actions, ActionsP
       break;
     if (move_subs())
       break;
-    if (move_destroyers_battleships())
+    if (move_subs_battleships())
       break;
     if (resolve_sea_battles())
       break;
@@ -2823,7 +2805,7 @@ void apply_action(GameStateJson* game_state, uint action) {
       break;
     if (move_subs())
       break;
-    if (move_destroyers_battleships())
+    if (move_subs_battleships())
       break;
     if (resolve_sea_battles())
       break;
@@ -2896,7 +2878,7 @@ double random_play_until_terminal(GameStateJson* game_state) {
     debug_checks();
     move_subs();
     debug_checks();
-    move_destroyers_battleships();
+    move_subs_battleships();
     debug_checks();
     resolve_sea_battles();
     debug_checks();
@@ -3030,7 +3012,7 @@ void load_single_game() {
     move_land_unit_type(INFANTRY);
     move_transport_units();
     move_subs();
-    move_destroyers_battleships();
+    move_subs_battleships();
     resolve_sea_battles();
     unload_transports();
     resolve_land_battles();

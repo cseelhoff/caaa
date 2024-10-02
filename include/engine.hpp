@@ -28,7 +28,7 @@ bool stage_transport_units(GameState& state, SeaUnitTypesEnum unit_type);
 bool move_land_unit_type(GameState& state, uint unit_type);
 bool move_transport_units(GameState& state);
 bool move_subs(GameState& state);
-bool move_destroyers_battleships(GameState& state);
+bool move_subs_battleships(GameState& state);
 bool resolve_sea_battles(GameState& state);
 bool unload_transports(GameState& state);
 bool resolve_land_battles(GameState& state);
