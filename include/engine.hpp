@@ -57,7 +57,7 @@ void carry_allied_fighters(GameState& state, uint src_sea, uint dst_sea);
 uint ask_to_retreat(GameState& state);
 void remove_land_defenders(GameState& state, uint src_land, uint hits);
 void remove_land_attackers(GameState& state, uint src_land, uint hits);
-void remove_sea_defenders(GameState& state, uint src_sea, uint hits, bool defender_submerged);
+void remove_sea_defenders(GameState& state, uint src_sea, uint hits);
 void remove_sea_attackers(GameState& state, uint src_sea, uint hits);
 void add_valid_unload_moves(GameState& state, uint src_sea);
 void add_valid_fighter_landing(GameState& state, uint src_air, uint remaining_moves);

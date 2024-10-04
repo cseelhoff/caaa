@@ -35,6 +35,8 @@ struct GameCache {
   PlayerList factory_locations;
   PlayerAirArray total_player_units;
   SeaArray enemy_destroyers_total;
+  SeaArray enemy_submarines_total;
+  SeaArray enemy_fighters_total;
   SeaArray enemy_blockade_total;
   SeaArray allied_carriers;
   SeaArray transports_with_large_cargo_space;
@@ -201,7 +203,7 @@ void refresh_canals(GameState& state);
 void refresh_fleets(GameState& state);
 void refresh_land_path_blocked(GameState& state);
 void refresh_sea_path_blocked(GameCache& cache);
-void refresh_transports_with_cargo_space(GameState& state, uint player_idx, uint sea_idx);
+void refresh_transports_with_cargo_space(GameState& state, uint sea_idx);
 
 std::string get_printable_status(const GameState& state);
 std::string get_printable_status_lands(const GameState& state);

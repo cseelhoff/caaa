@@ -98,13 +98,13 @@ void refresh_canals(GameState& state, GameCache& cache) {
   }
 }
 
-void refresh_transports_with_cargo_space(GameState& state, GameCache& cache, uint player_idx,
-                                         uint sea_idx) {
-  cache.transports_with_large_cargo_space[sea_idx] =
+void refresh_transports_with_cargo_space(GameState& state, uint sea_idx) {
+  const uint player_idx = state.current_turn;
+  state.cache.transports_with_large_cargo_space[sea_idx] =
       state.idle_sea_transempty.val(player_idx, sea_idx) +
       state.idle_sea_trans1i.val(player_idx, sea_idx);
-  cache.transports_with_small_cargo_space[sea_idx] =
-      cache.transports_with_large_cargo_space[sea_idx] +
+  state.cache.transports_with_small_cargo_space[sea_idx] =
+      state.cache.transports_with_large_cargo_space[sea_idx] +
       state.idle_sea_trans1a.val(player_idx, sea_idx) +
       state.idle_sea_trans1t.val(player_idx, sea_idx);
 }
@@ -112,6 +112,8 @@ void refresh_transports_with_cargo_space(GameState& state, GameCache& cache, uin
 void refresh_fleets(GameState& state, GameCache& cache) {
   FILL_ARRAY(cache.allied_carriers, 0);
   FILL_ARRAY(cache.enemy_destroyers_total, 0);
+  FILL_ARRAY(cache.enemy_submarines_total, 0);
+  FILL_ARRAY(cache.enemy_fighters_total, 0);
   FILL_ARRAY(cache.enemy_blockade_total, 0);
   FILL_ARRAY(cache.transports_with_large_cargo_space, 0);
   FILL_ARRAY(cache.transports_with_small_cargo_space, 0);
@@ -122,15 +124,18 @@ void refresh_fleets(GameState& state, GameCache& cache) {
       if (current_player.is_allied[player_idx]) {
         cache.allied_carriers[sea_idx] += state.idle_sea_carriers.val(player_idx, sea_idx);
       } else {
+        cache.enemy_submarines_total[sea_idx] += state.idle_sea_destroyers.val(player_idx, sea_idx);
+        cache.enemy_fighters_total[sea_idx] += state.idle_sea_fighters.val(player_idx, sea_idx);
         cache.enemy_destroyers_total[sea_idx] += state.idle_sea_destroyers.val(player_idx, sea_idx);
-        cache.enemy_blockade_total[sea_idx] += state.idle_sea_destroyers.val(player_idx, sea_idx) +
+        cache.enemy_blockade_total[sea_idx] += state.idle_sea_fighters.val(player_idx, sea_idx) +
+                                               state.idle_sea_destroyers.val(player_idx, sea_idx) +
                                                state.idle_sea_carriers.val(player_idx, sea_idx) +
                                                state.idle_sea_cruisers.val(player_idx, sea_idx) +
                                                state.idle_sea_battleships.val(player_idx, sea_idx) +
                                                state.idle_sea_bs_damaged.val(player_idx, sea_idx);
       }
     }
-    refresh_transports_with_cargo_space(state, cache, current_turn, sea_idx);
+    refresh_transports_with_cargo_space(state, sea_idx);
   }
 }
 void refresh_land_path_blocked(GameState& state, GameCache& cache) {

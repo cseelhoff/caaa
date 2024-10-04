@@ -9,5 +9,6 @@ constexpr uint BOMBER_DEFENSE = 1;
 constexpr uint BOMBER_MOVES_MAX = 6;
 constexpr uint BOMBER_COST = 14;
 constexpr uint BOMBER_RAID_STRENGTH = 1;
+constexpr uint BOMBER_BOMBARD = 0;
 constexpr uint BOMBER_LAND_STATES = BOMBER_MOVES_MAX + 1;
 constexpr uint BOMBER_SEA_STATES = BOMBER_MOVES_MAX - 1;

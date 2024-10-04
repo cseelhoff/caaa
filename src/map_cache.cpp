@@ -55,9 +55,11 @@ void initialize_enemies() {
   for (uint player = 0; player < PLAYERS_COUNT; player++) {
     PLAYER_TEAM[player] = PLAYERS[player].team;
     ENEMY_TEAM[player] = 1 - PLAYER_TEAM[player];
-    for (uint enemy = 0; enemy < PLAYERS_COUNT; enemy++) {
-      if (!PLAYERS[player].is_allied[enemy]) {
-        ENEMIES[player].push_back(enemy);
+    for (uint other_player_idx = 0; other_player_idx < PLAYERS_COUNT; other_player_idx++) {
+      if (PLAYERS[player].is_allied[other_player_idx]) {
+        ALLIES[player].push_back(other_player_idx);
+      } else {
+        ENEMIES[player].push_back(other_player_idx);
       }
     }
   }

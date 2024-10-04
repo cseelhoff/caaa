@@ -9,5 +9,5 @@ constexpr uint DESTROYER_DEFENSE = 2;
 constexpr uint DESTROYER_MOVES_MAX = 2;
 constexpr uint DESTROYER_COST = 8;
 constexpr uint DESTROYER_DONE_MOVING = 0;
-constexpr uint DESTROYER_UNMOVED = 1;
-constexpr uint DESTROYER_STATES = 2;
+constexpr uint DESTROYER_BOMBARD = 0;
+constexpr uint DESTROYER_STATES = DESTROYER_MOVES_MAX + DESTROYER_BOMBARD;

@@ -81,6 +81,7 @@ extern SeaArray SEA_TO_LAND_COUNT;
 extern SeaS2LArray SEA_TO_LAND_CONN;
 extern FightermovesAirAirArray AIRS_X_TO_4_MOVES_AWAY;
 extern FightermovesAirArray AIRS_X_TO_4_MOVES_AWAY_COUNT;
+extern PlayersPlayersVector ALLIES;
 extern PlayersPlayersVector ENEMIES;
 extern PlayerArray PLAYER_TEAM;
 extern PlayerArray ENEMY_TEAM;
