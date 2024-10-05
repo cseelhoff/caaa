@@ -13,7 +13,7 @@
 void cause_breakpoint();
 void load_game_data(GameState& state, const std::string& filename);
 void play_full_turn(GameState& state);
-bool move_air_units(GameState& state, AirUnitTypeEnum unit_type);
+bool move_air_units(GameState& state);
 void refresh_can_planes_land_here(GameState& state, AirUnitTypeEnum unit_type);
 void refresh_can_fighters_land_here(GameState& state);
 void add_valid_air_moves(GameState& state, uint src_air, AirUnitTypeEnum unit_type);
@@ -24,7 +24,7 @@ void apply_skip(GameState& state, uint src_air, uint dst_air);
 bool move_bomber_units(GameState& state);
 void refresh_can_bombers_land_here(GameState& state);
 void add_valid_bomber_moves(GameState& state, uint src_air);
-bool stage_transport_units(GameState& state, SeaUnitTypesEnum unit_type);
+bool stage_transport_units(GameState& state);
 bool move_land_unit_type(GameState& state, uint unit_type);
 bool move_transport_units(GameState& state);
 bool move_subs(GameState& state);
