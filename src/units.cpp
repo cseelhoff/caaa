@@ -76,39 +76,39 @@ const Seaunitarray COST_UNIT_SEA = {FIGHTER_COST,
                                     BOMBER_COST};
 
 const SeaunitVector BUY_UNIT_SEA = {FIGHTERS, TRANSEMPTY, SUBMARINES, DESTROYERS,
-                                   CARRIERS, CRUISERS,   BATTLESHIPS};
+                                    CARRIERS, CRUISERS,   BATTLESHIPS};
 
 const Seaunitarray STATES_STAGING = {0,
-                             TRANSEMPTY_STAGING_STATES,
-                             TRANS1I_STAGING_STATES,
-                             TRANS1A_STAGING_STATES,
-                             TRANS1T_STAGING_STATES,
-                             TRANS2I_STAGING_STATES,
-                             TRANS1I1A_STAGING_STATES,
-                             TRANS1I1T_STAGING_STATES,
-                             0,
-                             0,
-                             0,
-                             0,
-                             0,
-                             0,
-                             0};
+                                     TRANSEMPTY_STAGING_STATES,
+                                     TRANS1I_STAGING_STATES,
+                                     TRANS1A_STAGING_STATES,
+                                     TRANS1T_STAGING_STATES,
+                                     TRANS2I_STAGING_STATES,
+                                     TRANS1I1A_STAGING_STATES,
+                                     TRANS1I1T_STAGING_STATES,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0};
 
 const Seaunitarray STATES_UNLOADING = {0,
-                               TRANSEMPTY_UNLOADING_STATES,
-                               TRANS1I_UNLOADING_STATES,
-                               TRANS1A_UNLOADING_STATES,
-                               TRANS1T_UNLOADING_STATES,
-                               TRANS2I_UNLOADING_STATES,
-                               TRANS1I1A_UNLOADING_STATES,
-                               TRANS1I1T_UNLOADING_STATES,
-                               0,
-                               0,
-                               0,
-                               0,
-                               0,
-                               0,
-                               0};
+                                       TRANSEMPTY_UNLOADING_STATES,
+                                       TRANS1I_UNLOADING_STATES,
+                                       TRANS1A_UNLOADING_STATES,
+                                       TRANS1T_UNLOADING_STATES,
+                                       TRANS2I_UNLOADING_STATES,
+                                       TRANS1I1A_UNLOADING_STATES,
+                                       TRANS1I1T_UNLOADING_STATES,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       0};
 
 const LandUTSeaUT NEW_TRANS_TYPE_AFTER_LOAD = {
     {// FIGHTER
@@ -174,14 +174,14 @@ const LandunitCargo UNLOAD_CARGO2 = {LAND_UNIT_TYPES_COUNT,
                                      LAND_UNIT_TYPES_COUNT,
                                      LAND_UNIT_TYPES_COUNT};
 
-const Seaunitarray DONE_MOVING_SEA = {FIGHTER_DONE_MOVING,    TRANSEMPTY_DONE_MOVING, TRANS1I_DONE_MOVING,
-                              TRANS1A_DONE_MOVING,    TRANS1T_DONE_MOVING,    TRANS2I_DONE_MOVING,
-                              TRANS1I1A_DONE_MOVING,  TRANS1I1T_DONE_MOVING,  SUB_DONE_MOVING,
-                              DESTROYER_DONE_MOVING,  CARRIER_DONE_MOVING,    CRUISER_DONE_MOVING,
-                              BATTLESHIP_DONE_MOVING, BATTLESHIP_DONE_MOVING, 0};
+const Seaunitarray DONE_MOVING_SEA = {
+    FIGHTER_DONE_MOVING,    TRANSEMPTY_DONE_MOVING, TRANS1I_DONE_MOVING,
+    TRANS1A_DONE_MOVING,    TRANS1T_DONE_MOVING,    TRANS2I_DONE_MOVING,
+    TRANS1I1A_DONE_MOVING,  TRANS1I1T_DONE_MOVING,  SUB_DONE_MOVING,
+    DESTROYER_DONE_MOVING,  CARRIER_DONE_MOVING,    CRUISER_DONE_MOVING,
+    BATTLESHIP_DONE_MOVING, BATTLESHIP_DONE_MOVING, 0};
 
-const SeaunitVector BLOCKADE_UNIT_TYPES = {DESTROYERS, CARRIERS, CRUISERS,
-                                                           BATTLESHIPS, BS_DAMAGED};
+const SeaunitVector BLOCKADE_UNIT_TYPES = {DESTROYERS, CARRIERS, CRUISERS, BATTLESHIPS, BS_DAMAGED};
 
 const Landunittypes ORDER_OF_LAND_DEFENDERS = {AAGUNS, BOMBERS_LAND_AIR, INFANTRY, ARTILLERY,
                                                TANKS,  FIGHTERS_LAND};
@@ -189,12 +189,12 @@ const Landunittypes ORDER_OF_LAND_DEFENDERS = {AAGUNS, BOMBERS_LAND_AIR, INFANTR
 const LandunitVector ORDER_OF_LAND_ATTACKERS_1 = {INFANTRY, ARTILLERY, TANKS};
 const LandunitVector ORDER_OF_LAND_ATTACKERS_2 = {FIGHTERS, BOMBERS_LAND_AIR};
 
-const SeaunitVector ORDER_OF_SEA_DEFENDERS = {
-    SUBMARINES, DESTROYERS, CARRIERS, CRUISERS, FIGHTERS,  BS_DAMAGED, TRANSEMPTY,
-    TRANS1I,    TRANS1A,    TRANS1T,  TRANS2I,  TRANS1I1A, TRANS1I1T};
+const SeaunitVector ORDER_OF_SEA_DEFENDERS = {SUBMARINES, DESTROYERS, CARRIERS, CRUISERS, FIGHTERS,
+                                              BS_DAMAGED, TRANSEMPTY, TRANS1I,  TRANS1A,  TRANS1T,
+                                              TRANS2I,    TRANS1I1A,  TRANS1I1T};
 const SeaunitVector ORDER_OF_SEA_ATTACKERS_1 = {SUBMARINES, DESTROYERS};
 const SeaunitVector ORDER_OF_SEA_ATTACKERS_2 = {FIGHTERS, BOMBERS_SEA};
-const SeaunitVector ORDER_OF_SEA_ATTACKERS_3 = {
-    BS_DAMAGED, TRANSEMPTY, TRANS1I, TRANS1A, TRANS1T, TRANS2I, TRANS1I1A, TRANS1I1T};
+const SeaunitVector ORDER_OF_SEA_ATTACKERS_3 = {BS_DAMAGED, TRANSEMPTY, TRANS1I,   TRANS1A,
+                                                TRANS1T,    TRANS2I,    TRANS1I1A, TRANS1I1T};
 
 const Airunitarray MAX_MOVE_AIR = {FIGHTER_MOVES_MAX, BOMBER_MOVES_MAX};
